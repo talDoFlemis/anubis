@@ -14,6 +14,8 @@ async function bootstrap() {
     origin: configService.getOrThrow('APP_CORS_ORIGIN'),
     credentials: true,
   });
+  app.enableShutdownHooks();
+  app.setGlobalPrefix(configService.getOrThrow('APP_PREFIX'));
 
   app.use(
     session({
