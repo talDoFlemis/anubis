@@ -2,6 +2,11 @@ import {
   HttpStatus,
   Injectable,
   UnprocessableEntityException,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+  Inject,
+  ConflictException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +23,8 @@ import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger } from 'winston';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -29,6 +36,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
   async validateLogin(loginDto: AuthEmailLoginDto): Promise<{
@@ -38,15 +46,13 @@ export class AuthService {
     const user = await this.usersService.findByEmail(loginDto.email);
 
     if (!user) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new UnauthorizedException({
         errors: { email: 'emailOrPasswordInvalid' },
       });
     }
 
     if ((user.provider as AuthProvidersEnum) !== AuthProvidersEnum.email) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { email: `needLoginViaProvider:${user.provider}` },
       });
     }
@@ -57,8 +63,7 @@ export class AuthService {
     );
 
     if (!isValidPassword) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { email: 'emailOrPasswordInvalid' },
       });
     }
@@ -133,8 +138,7 @@ export class AuthService {
     const existingUser = await this.usersService.findByEmail(dto.email);
 
     if (existingUser) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new ConflictException({
         errors: { email: 'emailAlreadyExists' },
       });
     }
@@ -178,20 +182,20 @@ export class AuthService {
       });
       userId = jwtData.confirmEmailUserId;
     } catch {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { hash: 'invalidHash' },
       });
     }
 
     const user = await this.usersService.findById(userId);
 
-    if (!user || user.status !== StatusEnum.inactive) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+    if (!user) {
+      throw new NotFoundException({
         errors: { hash: 'notFound' },
       });
     }
+
+    this.logger.info('User exists');
 
     await this.usersService.update(user.id, { status: StatusEnum.active });
   }
@@ -210,8 +214,7 @@ export class AuthService {
       userId = jwtData.confirmEmailUserId;
       newEmail = jwtData.newEmail;
     } catch {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { hash: 'invalidHash' },
       });
     }
@@ -219,8 +222,7 @@ export class AuthService {
     const user = await this.usersService.findById(userId);
 
     if (!user) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new NotFoundException({
         errors: { hash: 'notFound' },
       });
     }
@@ -235,8 +237,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { email: 'emailNotExists' },
       });
     }
@@ -266,8 +267,7 @@ export class AuthService {
       });
       userId = jwtData.forgotUserId;
     } catch {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { hash: 'invalidHash' },
       });
     }
@@ -275,8 +275,7 @@ export class AuthService {
     const user = await this.usersService.findById(userId);
 
     if (!user) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new NotFoundException({
         errors: { hash: 'notFound' },
       });
     }
@@ -298,8 +297,7 @@ export class AuthService {
     const currentUser = await this.usersService.findById(userId);
 
     if (!currentUser) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new NotFoundException({
         errors: { user: 'userNotFound' },
       });
     }
@@ -310,8 +308,7 @@ export class AuthService {
       const userByEmail = await this.usersService.findByEmail(userDto.email);
 
       if (userByEmail && userByEmail.id !== currentUser.id) {
-        throw new UnprocessableEntityException({
-          status: HttpStatus.UNPROCESSABLE_ENTITY,
+        throw new ConflictException({
           errors: { email: 'emailExists' },
         });
       }
@@ -366,6 +363,7 @@ export class AuthService {
       status: user.status,
     };
   }
+
   private async handlePasswordUpdate(
     sessionId: string,
     userDto: AuthUpdateDto,
@@ -374,15 +372,13 @@ export class AuthService {
     if (!userDto.password) return;
 
     if (!userDto.oldPassword) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { oldPassword: 'missingOldPassword' },
       });
     }
 
     if (!currentUser.password) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { oldPassword: 'incorrectOldPassword' },
       });
     }
@@ -393,8 +389,7 @@ export class AuthService {
     );
 
     if (!isValidOldPassword) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      throw new BadRequestException({
         errors: { oldPassword: 'incorrectOldPassword' },
       });
     }
