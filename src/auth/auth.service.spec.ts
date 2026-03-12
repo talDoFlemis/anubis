@@ -1,7 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnprocessableEntityException } from '@nestjs/common';
+import {
+  UnprocessableEntityException,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -95,6 +102,15 @@ describe('AuthService', () => {
             }),
           },
         },
+        {
+          provide: WINSTON_MODULE_PROVIDER,
+          useValue: {
+            info: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            debug: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -143,7 +159,7 @@ describe('AuthService', () => {
           email: 'notfound@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(UnauthorizedException);
 
       await expect(
         authService.validateLogin({
@@ -167,7 +183,7 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(BadRequestException);
 
       await expect(
         authService.validateLogin({
@@ -189,7 +205,7 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(BadRequestException);
 
       await expect(
         authService.validateLogin({
@@ -210,7 +226,7 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'wrongpassword',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(BadRequestException);
 
       await expect(
         authService.validateLogin({
@@ -390,7 +406,7 @@ describe('AuthService', () => {
           firstName: 'John',
           lastName: 'Doe',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -423,19 +439,38 @@ describe('AuthService', () => {
       jwtService.verifyAsync.mockRejectedValue(new Error('invalid'));
 
       await expect(authService.confirmEmail('invalid-hash')).rejects.toThrow(
-        UnprocessableEntityException,
+        BadRequestException,
       );
     });
 
-    it('should throw if user not found or already active', async () => {
+    it('should throw if user not found', async () => {
+      jwtService.verifyAsync.mockResolvedValue({
+        confirmEmailUserId: 'user-uuid-1',
+      });
+      usersService.findById.mockResolvedValue(null);
+
+      await expect(authService.confirmEmail('valid-hash')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should succeed even if user is already active', async () => {
       jwtService.verifyAsync.mockResolvedValue({
         confirmEmailUserId: 'user-uuid-1',
       });
       usersService.findById.mockResolvedValue(mockUser); // already active
+      usersService.update.mockResolvedValue({
+        ...mockUser,
+        status: StatusEnum.active,
+      });
 
-      await expect(authService.confirmEmail('valid-hash')).rejects.toThrow(
-        UnprocessableEntityException,
-      );
+      await expect(
+        authService.confirmEmail('valid-hash'),
+      ).resolves.toBeUndefined();
+
+      expect(usersService.update).toHaveBeenCalledWith('user-uuid-1', {
+        status: StatusEnum.active,
+      });
     });
   });
 
@@ -463,7 +498,7 @@ describe('AuthService', () => {
       jwtService.verifyAsync.mockRejectedValue(new Error('invalid'));
 
       await expect(authService.confirmNewEmail('invalid-hash')).rejects.toThrow(
-        UnprocessableEntityException,
+        BadRequestException,
       );
     });
 
@@ -475,7 +510,7 @@ describe('AuthService', () => {
       usersService.findById.mockResolvedValue(null);
 
       await expect(authService.confirmNewEmail('valid-hash')).rejects.toThrow(
-        UnprocessableEntityException,
+        NotFoundException,
       );
     });
   });
@@ -503,7 +538,7 @@ describe('AuthService', () => {
 
       await expect(
         authService.forgotPassword('notfound@example.com'),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -532,7 +567,7 @@ describe('AuthService', () => {
 
       await expect(
         authService.resetPassword('invalid-hash', 'newpassword123'),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw if user not found', async () => {
@@ -543,7 +578,7 @@ describe('AuthService', () => {
 
       await expect(
         authService.resetPassword('valid-hash', 'newpassword123'),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -613,7 +648,7 @@ describe('AuthService', () => {
         authService.update('user-uuid-1', 'session-1', {
           password: 'newpassword',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw if old password is incorrect', async () => {
@@ -625,7 +660,7 @@ describe('AuthService', () => {
           password: 'newpassword',
           oldPassword: 'wrongpassword',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should send confirmation email when email changes', async () => {
@@ -661,7 +696,7 @@ describe('AuthService', () => {
         authService.update('user-uuid-1', 'session-1', {
           email: 'taken@example.com',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(ConflictException);
     });
 
     it('should throw if user not found', async () => {
@@ -671,7 +706,7 @@ describe('AuthService', () => {
         authService.update('nonexistent', 'session-1', {
           firstName: 'Test',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
