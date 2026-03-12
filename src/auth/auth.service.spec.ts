@@ -143,13 +143,16 @@ describe('AuthService', () => {
           email: 'notfound@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(
-        expect.objectContaining({
-          response: expect.objectContaining({
-            errors: { email: 'emailOrPasswordInvalid' },
-          }),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      await expect(
+        authService.validateLogin({
+          email: 'notfound@example.com',
+          password: 'password123',
         }),
-      );
+      ).rejects.toMatchObject({
+        response: { errors: { email: 'emailOrPasswordInvalid' } },
+      });
     });
 
     it('should throw needLoginViaProvider if user registered via social provider', async () => {
@@ -164,13 +167,16 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(
-        expect.objectContaining({
-          response: expect.objectContaining({
-            errors: { email: 'needLoginViaProvider:google' },
-          }),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      await expect(
+        authService.validateLogin({
+          email: 'test@example.com',
+          password: 'password123',
         }),
-      );
+      ).rejects.toMatchObject({
+        response: { errors: { email: 'needLoginViaProvider:google' } },
+      });
     });
 
     it('should throw emailOrPasswordInvalid if user has no password', async () => {
@@ -183,13 +189,16 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(
-        expect.objectContaining({
-          response: expect.objectContaining({
-            errors: { email: 'emailOrPasswordInvalid' },
-          }),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      await expect(
+        authService.validateLogin({
+          email: 'test@example.com',
+          password: 'password123',
         }),
-      );
+      ).rejects.toMatchObject({
+        response: { errors: { email: 'emailOrPasswordInvalid' } },
+      });
     });
 
     it('should throw emailOrPasswordInvalid if password is incorrect', async () => {
@@ -201,13 +210,16 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'wrongpassword',
         }),
-      ).rejects.toThrow(
-        expect.objectContaining({
-          response: expect.objectContaining({
-            errors: { email: 'emailOrPasswordInvalid' },
-          }),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      await expect(
+        authService.validateLogin({
+          email: 'test@example.com',
+          password: 'wrongpassword',
         }),
-      );
+      ).rejects.toMatchObject({
+        response: { errors: { email: 'emailOrPasswordInvalid' } },
+      });
     });
   });
 
