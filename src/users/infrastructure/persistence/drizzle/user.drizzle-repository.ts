@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, isNull } from 'drizzle-orm';
-import { DRIZZLE } from '../../../../database/drizzle.constants';
+import { DRIZZLE_TX } from '../../../../database/drizzle.constants';
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import { users } from '../../../../database/schema/users';
 import { User } from '../../../domain/user';
@@ -32,7 +32,7 @@ function toDomain(row: UserRow): User {
 
 @Injectable()
 export class UserDrizzleRepository extends UserRepository {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {
+  constructor(@Inject(DRIZZLE_TX) private readonly db: DrizzleDB) {
     super();
   }
 
