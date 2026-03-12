@@ -44,7 +44,7 @@ services:
 
       MAIL_TRANSPORT: smtp
 
-      MAIL_HOST: localhost
+      MAIL_HOST: mailpit
       MAIL_PORT: 1025
       MAIL_USER:
       MAIL_PASSWORD:
