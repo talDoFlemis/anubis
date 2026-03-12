@@ -12,6 +12,8 @@ import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
 
+/* eslint-disable @typescript-eslint/unbound-method */
+
 // Mock bcrypt at module level
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
@@ -24,7 +26,6 @@ describe('AuthService', () => {
   let sessionService: jest.Mocked<SessionService>;
   let mailService: jest.Mocked<MailService>;
   let jwtService: jest.Mocked<JwtService>;
-  let configService: jest.Mocked<ConfigService>;
 
   const mockUser: User = {
     id: 'user-uuid-1',
@@ -102,7 +103,6 @@ describe('AuthService', () => {
     sessionService = module.get(SessionService);
     mailService = module.get(MailService);
     jwtService = module.get(JwtService);
-    configService = module.get(ConfigService);
   });
 
   afterEach(() => {
@@ -112,7 +112,7 @@ describe('AuthService', () => {
   describe('validateLogin', () => {
     it('should return user and login response on valid credentials', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
 
       const result = await authService.validateLogin({
         email: 'test@example.com',
@@ -129,7 +129,7 @@ describe('AuthService', () => {
         status: mockUser.status,
       });
       expect(usersService.findByEmail).toHaveBeenCalledWith('test@example.com');
-      expect(bcrypt.compare).toHaveBeenCalledWith(
+      expect(jest.mocked(bcrypt.compare)).toHaveBeenCalledWith(
         'password123',
         mockUser.password,
       );
@@ -175,7 +175,7 @@ describe('AuthService', () => {
 
     it('should throw if password is incorrect', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      jest.mocked(bcrypt.compare).mockResolvedValue(false as never);
 
       await expect(
         authService.validateLogin({
@@ -308,7 +308,7 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should register a new user and send confirmation email', async () => {
       usersService.findByEmail.mockResolvedValue(null);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+      jest.mocked(bcrypt.hash).mockResolvedValue('hashed-password' as never);
       usersService.create.mockResolvedValue({
         ...mockUser,
         id: 'new-user-id',
@@ -476,7 +476,9 @@ describe('AuthService', () => {
         forgotUserId: 'user-uuid-1',
       });
       usersService.findById.mockResolvedValue(mockUser);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('new-hashed-password');
+      jest
+        .mocked(bcrypt.hash)
+        .mockResolvedValue('new-hashed-password' as never);
       usersService.update.mockResolvedValue(mockUser);
       sessionService.deleteByUserId.mockResolvedValue(undefined);
 
@@ -548,8 +550,8 @@ describe('AuthService', () => {
 
     it('should change password when old password is valid', async () => {
       usersService.findById.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('new-hashed-pw');
+      jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      jest.mocked(bcrypt.hash).mockResolvedValue('new-hashed-pw' as never);
       usersService.update.mockResolvedValue(mockUser);
       sessionService.deleteByUserIdWithExclude.mockResolvedValue(undefined);
 
@@ -579,7 +581,7 @@ describe('AuthService', () => {
 
     it('should throw if old password is incorrect', async () => {
       usersService.findById.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      jest.mocked(bcrypt.compare).mockResolvedValue(false as never);
 
       await expect(
         authService.update('user-uuid-1', 'session-1', {

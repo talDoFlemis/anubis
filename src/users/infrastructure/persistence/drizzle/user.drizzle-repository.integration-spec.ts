@@ -10,6 +10,7 @@ import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
 import { users } from '../../../../database/schema/users';
 import { eq } from 'drizzle-orm';
+import type { DrizzleDB } from '../../../../database/drizzle.provider';
 
 describe('UserDrizzleRepository (integration)', () => {
   let db: TestDrizzleDB;
@@ -34,7 +35,7 @@ describe('UserDrizzleRepository (integration)', () => {
 
     // Instantiate the repository directly with the real Drizzle DB.
     // The @Inject decorator is only relevant when using the NestJS DI container.
-    repository = new UserDrizzleRepository(db as any);
+    repository = new UserDrizzleRepository(db as unknown as DrizzleDB);
   });
 
   afterEach(async () => {

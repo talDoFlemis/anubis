@@ -6,7 +6,7 @@ import {
 } from '../../../../database/testing/integration-database';
 import { SessionDrizzleRepository } from './session.drizzle-repository';
 import { sessions } from '../../../../database/schema/sessions';
-import { eq } from 'drizzle-orm';
+import type { DrizzleDB } from '../../../../database/drizzle.provider';
 
 describe('SessionDrizzleRepository (integration)', () => {
   let db: TestDrizzleDB;
@@ -17,7 +17,7 @@ describe('SessionDrizzleRepository (integration)', () => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-    repository = new SessionDrizzleRepository(db as any);
+    repository = new SessionDrizzleRepository(db as unknown as DrizzleDB);
   });
 
   afterEach(async () => {

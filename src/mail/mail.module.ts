@@ -11,7 +11,7 @@ import { GoogleOauthTransport } from './transports/google-oauth.transport';
       provide: MAIL_TRANSPORT,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const transport = configService.getOrThrow('MAIL_TRANSPORT');
+        const transport = configService.getOrThrow<string>('MAIL_TRANSPORT');
 
         if (transport === 'google-oauth') {
           return new GoogleOauthTransport(configService);

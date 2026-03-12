@@ -9,14 +9,16 @@ export class GoogleOauthTransport implements MailTransport {
   constructor(private readonly configService: ConfigService) {}
 
   private async createTransporter(): Promise<nodemailer.Transporter> {
-    const clientId = this.configService.getOrThrow('MAIL_GOOGLE_CLIENT_ID');
-    const clientSecret = this.configService.getOrThrow(
+    const clientId = this.configService.getOrThrow<string>(
+      'MAIL_GOOGLE_CLIENT_ID',
+    );
+    const clientSecret = this.configService.getOrThrow<string>(
       'MAIL_GOOGLE_CLIENT_SECRET',
     );
-    const refreshToken = this.configService.getOrThrow(
+    const refreshToken = this.configService.getOrThrow<string>(
       'MAIL_GOOGLE_REFRESH_TOKEN',
     );
-    const user = this.configService.getOrThrow('MAIL_GOOGLE_USER');
+    const user = this.configService.getOrThrow<string>('MAIL_GOOGLE_USER');
 
     const oauth2Client = new google.auth.OAuth2(
       clientId,
@@ -47,7 +49,7 @@ export class GoogleOauthTransport implements MailTransport {
     html: string;
   }): Promise<void> {
     const transporter = await this.createTransporter();
-    const from = this.configService.getOrThrow('MAIL_DEFAULT_FROM');
+    const from = this.configService.getOrThrow<string>('MAIL_DEFAULT_FROM');
 
     await transporter.sendMail({
       from,

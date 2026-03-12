@@ -16,7 +16,7 @@ export class MailService {
     to: string;
     data: { hash: string };
   }): Promise<void> {
-    const frontendUrl = this.configService.getOrThrow('FRONTEND_URL');
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const confirmUrl = `${frontendUrl}/auth/confirm-email?hash=${params.data.hash}`;
 
     await this.transport.sendMail({
@@ -35,7 +35,7 @@ export class MailService {
     to: string;
     data: { hash: string };
   }): Promise<void> {
-    const frontendUrl = this.configService.getOrThrow('FRONTEND_URL');
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const resetUrl = `${frontendUrl}/auth/reset-password?hash=${params.data.hash}`;
 
     await this.transport.sendMail({
@@ -54,7 +54,7 @@ export class MailService {
     to: string;
     data: { hash: string };
   }): Promise<void> {
-    const frontendUrl = this.configService.getOrThrow('FRONTEND_URL');
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const confirmUrl = `${frontendUrl}/auth/confirm-new-email?hash=${params.data.hash}`;
 
     await this.transport.sendMail({

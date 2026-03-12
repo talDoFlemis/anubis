@@ -109,7 +109,7 @@ export class AuthController {
     await this.authService.softDelete(req.session.userId!);
     await new Promise<void>((resolve, reject) => {
       req.session.destroy((err) => {
-        if (err) reject(err);
+        if (err) reject(err instanceof Error ? err : new Error(String(err)));
         else resolve();
       });
     });
@@ -121,7 +121,7 @@ export class AuthController {
   async logout(@Req() req: Request): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       req.session.destroy((err) => {
-        if (err) reject(err);
+        if (err) reject(err instanceof Error ? err : new Error(String(err)));
         else resolve();
       });
     });

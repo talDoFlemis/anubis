@@ -1,7 +1,6 @@
 import {
   HttpStatus,
   Injectable,
-  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -43,7 +42,7 @@ export class AuthService {
       });
     }
 
-    if (user.provider !== AuthProvidersEnum.email) {
+    if ((user.provider as AuthProvidersEnum) !== AuthProvidersEnum.email) {
       throw new UnprocessableEntityException({
         status: HttpStatus.UNPROCESSABLE_ENTITY,
         errors: { email: `needLoginViaProvider:${user.provider}` },
