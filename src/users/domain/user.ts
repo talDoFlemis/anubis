@@ -1,0 +1,17 @@
+import { RoleEnum } from '../../roles/roles.enum';
+import { StatusEnum } from '../../statuses/statuses.enum';
+
+export class User {
+  id: string;
+  email: string | null;
+  password?: string | null;
+  provider: string;
+  socialId?: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  role: RoleEnum;
+  status: StatusEnum;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}

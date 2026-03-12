@@ -41,7 +41,7 @@ export class LoggingInterceptor implements NestInterceptor {
             statusCode: response.statusCode,
           });
         },
-        error: (error) => {
+        error: (error: { status?: number; message?: string }) => {
           const duration = Date.now() - startTime;
           this.logger.error('Request finished with error', {
             method: method,
