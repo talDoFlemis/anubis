@@ -23,7 +23,7 @@ export class MailHealthIndicator extends HealthIndicatorService {
     try {
       isHealthy = await this.transport.verify();
     } catch (error) {
-      this.logger.error('Database health check failed', {
+      this.logger.error('Mail Transport health check failed', {
         errorMessage: error as unknown,
       });
     }
