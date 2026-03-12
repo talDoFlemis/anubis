@@ -58,4 +58,9 @@ export class GoogleOauthTransport implements MailTransport {
       html: options.html,
     });
   }
+
+  async verify(): Promise<boolean> {
+    const transporter = await this.createTransporter();
+    return await transporter.verify();
+  }
 }

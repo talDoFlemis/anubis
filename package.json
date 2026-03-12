@@ -26,6 +26,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
@@ -33,6 +34,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.6",
+    "@nestjs/terminus": "^11.1.1",
     "@scalar/nestjs-api-reference": "^1.1.2",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",

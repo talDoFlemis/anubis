@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuthGoogleModule } from './auth-google/auth-google.module';
 import { SessionModule } from './session/session.module';
 import { MailModule } from './mail/mail.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MailModule } from './mail/mail.module';
     AuthGoogleModule,
     SessionModule,
     MailModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [

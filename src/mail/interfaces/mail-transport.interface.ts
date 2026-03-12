@@ -4,6 +4,7 @@ export interface MailTransport {
     subject: string;
     html: string;
   }): Promise<void>;
+  verify(): Promise<boolean>;
 }
 
 export const MAIL_TRANSPORT = Symbol('MAIL_TRANSPORT');

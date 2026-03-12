@@ -7,9 +7,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - '5432:5432'
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -h localhost -U $$POSTGRES_USER" ]
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U $$POSTGRES_USER']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,7 +26,7 @@ services:
       DATABASE_USER: postgres
       DATABASE_PORT: 5432
       DATABASE_PASSWORD: postgres
-      DATABASE_HOST: localhost
+      DATABASE_HOST: postgres
       DATABASE_NAME: anubis
       APP_PORT: 3000
       APP_SESSION_SECRET: superdupersecrethereasdfasdfasdfasdfasdfasdfasdfasdfasdfasfdasfasdf
@@ -46,14 +46,14 @@ services:
 
       MAIL_HOST: localhost
       MAIL_PORT: 1025
-      MAIL_USER: 
-      MAIL_PASSWORD: 
+      MAIL_USER:
+      MAIL_PASSWORD:
       MAIL_DEFAULT_FROM: noreply@anubis.local
 
-      MAIL_GOOGLE_CLIENT_ID: 
-      MAIL_GOOGLE_CLIENT_SECRET: 
-      MAIL_GOOGLE_REFRESH_TOKEN: 
-      MAIL_GOOGLE_USER: 
+      MAIL_GOOGLE_CLIENT_ID:
+      MAIL_GOOGLE_CLIENT_SECRET:
+      MAIL_GOOGLE_REFRESH_TOKEN:
+      MAIL_GOOGLE_USER:
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,3 +66,10 @@ services:
     environment:
       - MP_SMTP_AUTH_ACCEPT_ANY=true
       - MP_SMTP_AUTH_ALLOW_INSECURE=true
+    healthcheck:
+      test: ['CMD-SHELL', 'wget http://localhost:8025']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+

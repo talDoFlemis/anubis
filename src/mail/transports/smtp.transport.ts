@@ -21,6 +21,9 @@ export class SmtpTransport implements MailTransport {
           : undefined,
     });
   }
+  verify(): Promise<boolean> {
+    return this.transporter.verify();
+  }
 
   async sendMail(options: {
     to: string;
