@@ -18,7 +18,9 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Connecting to ${host}:${port}/${database} as ${user}...`);
+  console.log(
+    `Connecting to ${host}:${port}/${database}?ssl=${ssl} as ${user}...`,
+  );
 
   const pool = new Pool({ host, port, user, password, database, ssl });
   const db = drizzle(pool);
