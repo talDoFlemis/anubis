@@ -10,6 +10,6 @@ export default defineConfig({
     user: process.env.DATABASE_USER || 'postgres',
     password: process.env.DATABASE_PASSWORD || 'postgres',
     database: process.env.DATABASE_NAME || 'anubis',
-    ssl: (process.env.DATABASE_SSL as unknown) || false,
+    ssl: process.env.DATABASE_SSL === 'true',
   },
 });
