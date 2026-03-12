@@ -40,7 +40,7 @@ export class AuthService {
     if (!user) {
       throw new UnprocessableEntityException({
         status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: { email: 'notFound' },
+        errors: { email: 'emailOrPasswordInvalid' },
       });
     }
 
@@ -51,22 +51,15 @@ export class AuthService {
       });
     }
 
-    if (!user.password) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: { password: 'incorrectPassword' },
-      });
-    }
-
     const isValidPassword = await bcrypt.compare(
       loginDto.password,
-      user.password,
+      user.password ?? '',
     );
 
     if (!isValidPassword) {
       throw new UnprocessableEntityException({
         status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: { password: 'incorrectPassword' },
+        errors: { email: 'emailOrPasswordInvalid' },
       });
     }
 

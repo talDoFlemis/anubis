@@ -135,7 +135,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('should throw if user not found', async () => {
+    it('should throw emailOrPasswordInvalid if user not found', async () => {
       usersService.findByEmail.mockResolvedValue(null);
 
       await expect(
@@ -143,10 +143,16 @@ describe('AuthService', () => {
           email: 'notfound@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(
+        expect.objectContaining({
+          response: expect.objectContaining({
+            errors: { email: 'emailOrPasswordInvalid' },
+          }),
+        }),
+      );
     });
 
-    it('should throw if user registered via social provider', async () => {
+    it('should throw needLoginViaProvider if user registered via social provider', async () => {
       const socialUser: User = {
         ...mockUser,
         provider: AuthProvidersEnum.google,
@@ -158,10 +164,16 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(
+        expect.objectContaining({
+          response: expect.objectContaining({
+            errors: { email: 'needLoginViaProvider:google' },
+          }),
+        }),
+      );
     });
 
-    it('should throw if user has no password', async () => {
+    it('should throw emailOrPasswordInvalid if user has no password', async () => {
       const noPasswordUser: User = { ...mockUser, password: null };
       usersService.findByEmail.mockResolvedValue(noPasswordUser);
 
@@ -170,10 +182,16 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(
+        expect.objectContaining({
+          response: expect.objectContaining({
+            errors: { email: 'emailOrPasswordInvalid' },
+          }),
+        }),
+      );
     });
 
-    it('should throw if password is incorrect', async () => {
+    it('should throw emailOrPasswordInvalid if password is incorrect', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
       jest.mocked(bcrypt.compare).mockResolvedValue(false as never);
 
@@ -182,7 +200,13 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'wrongpassword',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(
+        expect.objectContaining({
+          response: expect.objectContaining({
+            errors: { email: 'emailOrPasswordInvalid' },
+          }),
+        }),
+      );
     });
   });
 
