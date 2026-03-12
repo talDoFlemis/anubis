@@ -28,6 +28,14 @@ export class TransactionMiddleware implements NestMiddleware {
             reject(err);
           });
 
+          res.on('aborted', (err: Error) => {
+            reject(err);
+          });
+
+          res.on('close', (err: Error) => {
+            reject(err);
+          });
+
           next();
         });
       });
