@@ -19,6 +19,8 @@ import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
 import { LoginResponseDto } from './dto/login-response.dto';
 
+const BCRYPT_SALT_ROUNDS = 12;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -144,7 +146,7 @@ export class AuthService {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
 
     const user = await this.usersService.create({
       email: dto.email,
@@ -286,7 +288,7 @@ export class AuthService {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
     await this.usersService.update(user.id, { password: hashedPassword });
     await this.sessionService.deleteByUserId(user.id);
   }
@@ -309,38 +311,7 @@ export class AuthService {
       });
     }
 
-    if (userDto.password) {
-      if (!userDto.oldPassword) {
-        throw new UnprocessableEntityException({
-          status: HttpStatus.UNPROCESSABLE_ENTITY,
-          errors: { oldPassword: 'missingOldPassword' },
-        });
-      }
-
-      if (!currentUser.password) {
-        throw new UnprocessableEntityException({
-          status: HttpStatus.UNPROCESSABLE_ENTITY,
-          errors: { oldPassword: 'incorrectOldPassword' },
-        });
-      }
-
-      const isValidOldPassword = await bcrypt.compare(
-        userDto.oldPassword,
-        currentUser.password,
-      );
-
-      if (!isValidOldPassword) {
-        throw new UnprocessableEntityException({
-          status: HttpStatus.UNPROCESSABLE_ENTITY,
-          errors: { oldPassword: 'incorrectOldPassword' },
-        });
-      }
-
-      await this.sessionService.deleteByUserIdWithExclude({
-        userId,
-        excludeSessionId: sessionId,
-      });
-    }
+    await this.handlePasswordUpdate(sessionId, userDto, currentUser);
 
     if (userDto.email && userDto.email !== currentUser.email) {
       const userByEmail = await this.usersService.findByEmail(userDto.email);
@@ -374,7 +345,10 @@ export class AuthService {
     if (userDto.lastName !== undefined)
       updatePayload.lastName = userDto.lastName;
     if (userDto.password) {
-      updatePayload.password = await bcrypt.hash(userDto.password, 10);
+      updatePayload.password = await bcrypt.hash(
+        userDto.password,
+        BCRYPT_SALT_ROUNDS,
+      );
     }
 
     if (Object.keys(updatePayload).length > 0) {
@@ -398,5 +372,43 @@ export class AuthService {
       role: user.role,
       status: user.status,
     };
+  }
+  private async handlePasswordUpdate(
+    sessionId: string,
+    userDto: AuthUpdateDto,
+    currentUser: User,
+  ) {
+    if (!userDto.password) return;
+
+    if (!userDto.oldPassword) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: { oldPassword: 'missingOldPassword' },
+      });
+    }
+
+    if (!currentUser.password) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: { oldPassword: 'incorrectOldPassword' },
+      });
+    }
+
+    const isValidOldPassword = await bcrypt.compare(
+      userDto.oldPassword,
+      currentUser.password,
+    );
+
+    if (!isValidOldPassword) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        errors: { oldPassword: 'incorrectOldPassword' },
+      });
+    }
+
+    await this.sessionService.deleteByUserIdWithExclude({
+      userId: currentUser.id,
+      excludeSessionId: sessionId,
+    });
   }
 }
