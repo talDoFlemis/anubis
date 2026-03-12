@@ -72,3 +72,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend/
+    image: ghcr.io/taldoflemis/anubis/frontend:latest
+    environment:
+      VITE_API_URL: http://localhost:3000
+      VITE_GOOGLE_CLIENT_ID: your-google-client-id

@@ -106,7 +106,7 @@ describe('AuthService', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('validateLogin', () => {
@@ -176,6 +176,7 @@ describe('AuthService', () => {
     it('should throw emailOrPasswordInvalid if user has no password', async () => {
       const noPasswordUser: User = { ...mockUser, password: null };
       usersService.findByEmail.mockResolvedValue(noPasswordUser);
+      jest.mocked(bcrypt.compare).mockResolvedValue(false as never);
 
       await expect(
         authService.validateLogin({

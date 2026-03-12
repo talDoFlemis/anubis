@@ -4,6 +4,7 @@
     "node_modules",
     "test",
     "dist",
+    "frontend",
     "**/*spec.ts",
     "nestjs-boilerplate"
   ]
