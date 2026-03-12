@@ -63,8 +63,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
 
-  typecheck:
-    name: Typecheck
+  build:
+    name: Build & Typecheck
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -82,33 +82,13 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+      - run: cp .env.example .env
       - run: pnpm build
       - run: pnpm typecheck
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-
   publish:
     name: Publish to GHCR
-    needs: [format, lint, typecheck, build]
+    needs: [format, lint, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
