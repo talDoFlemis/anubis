@@ -77,9 +77,6 @@ importers:
       pg:
         specifier: ^8.20.0
         version: 8.20.0
-      postgres:
-        specifier: ^3.4.8
-        version: 3.4.8
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -9444,7 +9441,8 @@ snapshots:
     dependencies:
       xtend: 4.0.2
 
-  postgres@3.4.8: {}
+  postgres@3.4.8:
+    optional: true
 
   prelude-ls@1.2.1: {}
 
