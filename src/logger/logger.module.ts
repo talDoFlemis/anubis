@@ -25,6 +25,6 @@ import * as winston from 'winston';
       ],
     }),
   ],
-  exports: [WinstonModule]
+  exports: [WinstonModule],
 })
 export class LoggerModule {}
