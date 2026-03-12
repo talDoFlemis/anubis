@@ -11,7 +11,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const logger = app.get<Logger>(WINSTON_MODULE_PROVIDER);
 
