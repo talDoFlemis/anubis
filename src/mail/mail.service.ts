@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -7,10 +10,27 @@ import {
 
 @Injectable()
 export class MailService {
+  private readonly confirmEmailTemplate: string;
+  private readonly forgotPasswordTemplate: string;
+  private readonly confirmNewEmailTemplate: string;
+
   constructor(
     @Inject(MAIL_TRANSPORT) private readonly transport: MailTransport,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    this.confirmEmailTemplate = readFileSync(
+      join(__dirname, 'confirm-email.template.html'),
+      'utf-8',
+    );
+    this.forgotPasswordTemplate = readFileSync(
+      join(__dirname, 'forgot-password.template.html'),
+      'utf-8',
+    );
+    this.confirmNewEmailTemplate = readFileSync(
+      join(__dirname, 'confirm-new-email.template.html'),
+      'utf-8',
+    );
+  }
 
   async userSignUp(params: {
     to: string;
@@ -19,15 +39,15 @@ export class MailService {
     const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const confirmUrl = `${frontendUrl}/auth/confirm-email?hash=${params.data.hash}`;
 
+    const html = this.confirmEmailTemplate.replaceAll(
+      '{confirmEmailLink}',
+      confirmUrl,
+    );
+
     await this.transport.sendMail({
       to: params.to,
-      subject: 'Confirm your email - Anubis',
-      html: `
-        <p>Hello,</p>
-        <p>Please confirm your email by clicking the link below:</p>
-        <p><a href="${confirmUrl}">${confirmUrl}</a></p>
-        <p>If you did not create an account, please ignore this email.</p>
-      `,
+      subject: 'Confirme seu email - Anubis',
+      html,
     });
   }
 
@@ -38,15 +58,15 @@ export class MailService {
     const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const resetUrl = `${frontendUrl}/auth/reset-password?hash=${params.data.hash}`;
 
+    const html = this.forgotPasswordTemplate.replaceAll(
+      '{forgotPasswordLink}',
+      resetUrl,
+    );
+
     await this.transport.sendMail({
       to: params.to,
-      subject: 'Reset your password - Anubis',
-      html: `
-        <p>Hello,</p>
-        <p>You requested a password reset. Click the link below:</p>
-        <p><a href="${resetUrl}">${resetUrl}</a></p>
-        <p>If you did not request this, please ignore this email.</p>
-      `,
+      subject: 'Redefina sua senha - Anubis',
+      html,
     });
   }
 
@@ -57,15 +77,15 @@ export class MailService {
     const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
     const confirmUrl = `${frontendUrl}/auth/confirm-new-email?hash=${params.data.hash}`;
 
+    const html = this.confirmNewEmailTemplate.replaceAll(
+      '{confirmNewEmailLink}',
+      confirmUrl,
+    );
+
     await this.transport.sendMail({
       to: params.to,
-      subject: 'Confirm your new email - Anubis',
-      html: `
-        <p>Hello,</p>
-        <p>Please confirm your new email address by clicking the link below:</p>
-        <p><a href="${confirmUrl}">${confirmUrl}</a></p>
-        <p>If you did not request this change, please ignore this email.</p>
-      `,
+      subject: 'Confirme seu novo email - Anubis',
+      html,
     });
   }
 }
