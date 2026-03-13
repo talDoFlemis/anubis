@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres
-    restart: always
     environment:
       POSTGRES_DB: anubis
       POSTGRES_USER: postgres
@@ -21,7 +20,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3000:3000'
-    image: ghcr.io/taldoflemis/dc-warehouse-poc-api:latest
+    image: ghcr.io/taldoflemis/anubis:latest
     environment:
       DATABASE_USER: postgres
       DATABASE_PORT: 5432
@@ -53,9 +52,11 @@ services:
       MAIL_GOOGLE_CLIENT_ID:
       MAIL_GOOGLE_CLIENT_SECRET:
       MAIL_GOOGLE_REFRESH_TOKEN:
-      MAIL_GOOGLE_USER:
+      MAIL_GOOGLE_USER: tubias@gmail.com
     depends_on:
       postgres:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
 
   mailpit:
@@ -67,7 +68,7 @@ services:
       - MP_SMTP_AUTH_ACCEPT_ANY=true
       - MP_SMTP_AUTH_ALLOW_INSECURE=true
     healthcheck:
-      test: ['CMD-SHELL', 'wget http://localhost:8025']
+      test: ['CMD-SHELL', 'wget http://localhost:8025 -O /dev/null']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -77,6 +78,8 @@ services:
     build:
       context: ./frontend/
     image: ghcr.io/taldoflemis/anubis/frontend:latest
+    ports:
+      - 5173:8080
     environment:
       VITE_API_URL: http://localhost:3000
       VITE_GOOGLE_CLIENT_ID: your-google-client-id
