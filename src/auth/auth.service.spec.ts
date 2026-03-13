@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -18,6 +17,7 @@ import { AuthProvidersEnum } from './auth-providers.enum';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
+import { getLoggerToken } from 'nestjs-pino';
 
 /* eslint-disable @typescript-eslint/unbound-method */
 
@@ -103,7 +103,7 @@ describe('AuthService', () => {
           },
         },
         {
-          provide: WINSTON_MODULE_PROVIDER,
+          provide: getLoggerToken(AuthService.name),
           useValue: {
             info: jest.fn(),
             warn: jest.fn(),

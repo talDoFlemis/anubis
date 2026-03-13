@@ -9,7 +9,7 @@ import * as path from 'node:path';
 const CONTAINER_ID_FILE = path.join(os.tmpdir(), 'anubis-test-container-id');
 
 export default async function globalSetup() {
-  const container = await new PostgreSqlContainer('postgres:16-alpine').start();
+  const container = await new PostgreSqlContainer('postgres:18-alpine').start();
 
   const connectionUri = container.getConnectionUri();
   const pool = new Pool({ connectionString: connectionUri });

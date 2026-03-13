@@ -3,6 +3,7 @@ import { HealthCheckService, HttpHealthIndicator } from '@nestjs/terminus';
 import { HealthController } from './health.controller';
 import { DrizzleDBHealthIndicator } from 'src/database/drizzle.health';
 import { MailHealthIndicator } from 'src/mail/mail.health';
+import { getLoggerToken } from 'nestjs-pino';
 
 describe('HealthController', () => {
   let controller: HealthController;
@@ -26,6 +27,10 @@ describe('HealthController', () => {
         {
           provide: MailHealthIndicator,
           useValue: { isHealthy: jest.fn() },
+        },
+        {
+          provide: getLoggerToken(HealthController.name),
+          useValue: { debug: jest.fn() },
         },
       ],
     }).compile();
