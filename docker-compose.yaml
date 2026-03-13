@@ -61,6 +61,8 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   mailpit:
     image: axllent/mailpit:latest
@@ -82,7 +84,21 @@ services:
       context: ./frontend/
     image: ghcr.io/taldoflemis/anubis/frontend:latest
     ports:
-      - 5173:8080
+      - '5173:8080'
     environment:
       VITE_API_URL: http://localhost:3000
       VITE_GOOGLE_CLIENT_ID: your-google-client-id
+
+  migrate:
+    build:
+      dockerfile: ./Dockerfile.migrate
+    environment:
+      DATABASE_USER: postgres
+      DATABASE_PORT: 5432
+      DATABASE_PASSWORD: postgres
+      DATABASE_HOST: postgres
+      DATABASE_NAME: anubis
+    depends_on:
+      postgres:
+        condition: service_healthy
+
