@@ -144,6 +144,13 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsEmail()
   MAIL_GOOGLE_USER: string = '';
+
+  // Admin
+
+  @IsNumber()
+  @Min(0)
+  @Max(65535)
+  ADMIN_PORT: number;
 }
 
 export function validate(config: Record<string, unknown>) {

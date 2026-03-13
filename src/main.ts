@@ -8,6 +8,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { ConfigService } from '@nestjs/config';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
+import { AdminModule } from './admin/admin.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -86,6 +87,11 @@ async function bootstrap() {
     port: port,
   });
 
+  const adminApp = await NestFactory.create(AdminModule, { bufferLogs: true });
+  const adminPort = configService.getOrThrow<string>('ADMIN_PORT');
+  adminApp.useLogger(logger);
+
   await app.listen(port);
+  await adminApp.listen(adminPort);
 }
 void bootstrap();

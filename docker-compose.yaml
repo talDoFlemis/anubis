@@ -20,6 +20,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3000:3000'
+      - '3001:3001'
     image: ghcr.io/taldoflemis/anubis:latest
     environment:
       DATABASE_USER: postgres
@@ -53,6 +54,8 @@ services:
       MAIL_GOOGLE_CLIENT_SECRET:
       MAIL_GOOGLE_REFRESH_TOKEN:
       MAIL_GOOGLE_USER: tubias@gmail.com
+
+      ADMIN_PORT: 3001
     depends_on:
       postgres:
         condition: service_healthy
