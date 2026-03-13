@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ChangeLogLevelDto } from './dto/change-log-level.dto';
 import { PinoLogger } from 'nestjs-pino';
 
