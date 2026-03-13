@@ -1,17 +1,17 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
 import {
   MAIL_TRANSPORT,
   type MailTransport,
 } from './interfaces/mail-transport.interface';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class MailHealthIndicator extends HealthIndicatorService {
   constructor(
     private readonly healthIndicatorService: HealthIndicatorService,
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    @InjectPinoLogger(MailHealthIndicator.name)
+    private readonly logger: PinoLogger,
     @Inject(MAIL_TRANSPORT) private readonly transport: MailTransport,
   ) {
     super();

@@ -7,13 +7,15 @@ import { Pool } from 'pg';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { ConfigService } from '@nestjs/config';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const configService = app.get(ConfigService);
-  const logger = app.get<Logger>(WINSTON_MODULE_PROVIDER);
+  const logger = app.get(Logger);
+  app.useLogger(logger);
+
+  app.useGlobalInterceptors(new LoggerErrorInterceptor());
 
   app.enableCors({
     origin: configService.getOrThrow<string>('APP_CORS_ORIGIN'),
@@ -80,7 +82,7 @@ async function bootstrap() {
   }
   const port = configService.getOrThrow<string>('APP_PORT');
 
-  logger.info('Starting application', {
+  logger.log('Starting application', {
     port: port,
   });
 

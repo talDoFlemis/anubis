@@ -3,15 +3,15 @@ import { HealthIndicatorService } from '@nestjs/terminus';
 import type { DrizzleDB } from './drizzle.provider';
 import { DRIZZLE } from './drizzle.constants';
 import { sql } from 'drizzle-orm';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class DrizzleDBHealthIndicator extends HealthIndicatorService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly healthIndicatorService: HealthIndicatorService,
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    @InjectPinoLogger(DrizzleDBHealthIndicator.name)
+    private readonly logger: PinoLogger,
   ) {
     super();
   }
