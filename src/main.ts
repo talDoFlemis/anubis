@@ -90,6 +90,7 @@ async function bootstrap() {
   const adminApp = await NestFactory.create(AdminModule, { bufferLogs: true });
   const adminPort = configService.getOrThrow<string>('ADMIN_PORT');
   adminApp.useLogger(logger);
+  adminApp.enableShutdownHooks();
 
   await app.listen(port);
   await adminApp.listen(adminPort);
