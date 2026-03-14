@@ -120,6 +120,23 @@ jobs:
           DSLIM_HTTP_PROBE: true
           DSLIM_HTTP_PROBE_CMD: "GET:/"
           DSLIM_PUBLISH_EXPOSED_PORTS: true
+          DSLIM_HTTP_PROBE_START_WAIT: "15"
+          DSLIM_TARGET_ENV: >-
+            DATABASE_USER=slim_probe
+            DATABASE_PASSWORD=slim_probe
+            DATABASE_NAME=slim_probe
+            DATABASE_HOST=localhost
+            DATABASE_PORT=5432
+            APP_PORT=3000
+            APP_CORS_ORIGIN=http://localhost:3000
+            APP_SESSION_SECRET=supersecretpasswordforslimprobe123
+            GOOGLE_CLIENT_ID=slim_probe
+            GOOGLE_CLIENT_SECRET=slim_probe
+            AUTH_CONFIRM_EMAIL_SECRET=supersecretpasswordforslimprobe123
+            AUTH_FORGOT_SECRET=supersecretpasswordforslimprobe123
+            FRONTEND_URL=http://localhost:5173
+            MAIL_GOOGLE_USER=slim@probe.com
+            ADMIN_PORT=3001
         with:
           target: backend-pre-slim:${{ github.run_number }}
           tag: slim
@@ -178,6 +195,23 @@ jobs:
           DSLIM_HTTP_PROBE: true
           DSLIM_HTTP_PROBE_CMD: "GET:/"
           DSLIM_PUBLISH_EXPOSED_PORTS: true
+          DSLIM_HTTP_PROBE_START_WAIT: "15"
+          DSLIM_TARGET_ENV: >-
+            DATABASE_USER=slim_probe
+            DATABASE_PASSWORD=slim_probe
+            DATABASE_NAME=slim_probe
+            DATABASE_HOST=localhost
+            DATABASE_PORT=5432
+            APP_PORT=3000
+            APP_CORS_ORIGIN=http://localhost:3000
+            APP_SESSION_SECRET=supersecretpasswordforslimprobe123
+            GOOGLE_CLIENT_ID=slim_probe
+            GOOGLE_CLIENT_SECRET=slim_probe
+            AUTH_CONFIRM_EMAIL_SECRET=supersecretpasswordforslimprobe123
+            AUTH_FORGOT_SECRET=supersecretpasswordforslimprobe123
+            FRONTEND_URL=http://localhost:5173
+            MAIL_GOOGLE_USER=slim@probe.com
+            ADMIN_PORT=3001
         with:
           target: migrate-pre-slim:${{ github.run_number }}
           tag: slim
