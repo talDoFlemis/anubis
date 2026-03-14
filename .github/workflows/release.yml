@@ -120,12 +120,12 @@ jobs:
           DSLIM_HTTP_PROBE: false
         with:
           target: backend-pre-slim:${{ github.run_number }}
-          tag: backend-slim:${{ github.run_number }}
+          tag: slim
 
       - name: Tag and push slimmed image
         run: |
           for tag in ${{ steps.meta.outputs.tags }}; do
-            docker tag backend-slim:${{ github.run_number }} $tag
+            docker tag backend-pre-slim:slim $tag
             docker push $tag
           done
 
@@ -175,12 +175,12 @@ jobs:
           DSLIM_HTTP_PROBE: false
         with:
           target: migrate-pre-slim:${{ github.run_number }}
-          tag: migrate-slim:${{ github.run_number }}
+          tag: slim
 
       - name: Tag and push slimmed image
         run: |
           for tag in ${{ steps.meta.outputs.tags }}; do
-            docker tag migrate-slim:${{ github.run_number }} $tag
+            docker tag migrate-slim:slim $tag
             docker push $tag
           done
 
