@@ -124,8 +124,7 @@ jobs:
             --env-file .env \
             --http-probe-cmd GET:/ \
             --publish-exposed-ports \
-            --target backend-pre-slim:${{ github.run_number }} \
-            --tag slim
+            --target backend-pre-slim:${{ github.run_number }}
 
       - name: Tag and push slimmed image
         run: |
@@ -184,8 +183,7 @@ jobs:
           slim build \
             --env-file .env \
             --http-probe=false \
-            --target migrate-pre-slim:${{ github.run_number }} \
-            --tag slim
+            --target migrate-pre-slim:${{ github.run_number }}
 
       - name: Tag and push slimmed image
         run: |
