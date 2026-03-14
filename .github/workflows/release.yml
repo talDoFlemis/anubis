@@ -104,28 +104,30 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image (local)
+      - name: Build image locally (pre-slim)
         uses: docker/build-push-action@v6
         with:
           context: .
           push: false
-          tags: ${{ env.IMAGE_NAME }}:${{ env.LOCAL_TAG }}
+          load: true
+          tags: backend-pre-slim:${{ github.run_number }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
-      - name: Slim image
+      - name: Slim the image
         uses: kitabisa/docker-slim-action@v1
         env:
           DSLIM_HTTP_PROBE: false
         with:
-          target: ${{ env.IMAGE_NAME }}:${{ env.LOCAL_TAG }}
-          tag: slim-${{ env.LOCAL_TAG }}
+          target: backend-pre-slim:${{ github.run_number }}
+          tag: backend-slim:${{ github.run_number }}
 
-      - name: Push slim image to Docker Hub
+      - name: Tag and push slimmed image
         run: |
-          docker tag ${{ env.IMAGE_NAME }}:slim-${{ env.LOCAL_TAG }} \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:slim-${{ env.LOCAL_TAG }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:slim-${{ env.LOCAL_TAG }}
+          for tag in ${{ steps.meta.outputs.tags }}; do
+            docker tag backend-slim:${{ github.run_number }} $tag
+            docker push $tag
+          done
 
   publish-migrate:
     name: Publish Migrate to GHCR
@@ -156,29 +158,31 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build migrate image (local)
+      - name: Build image locally (pre-slim)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.migrate
           push: false
-          tags: ${{ env.IMAGE_NAME }}-migrate:${{ env.LOCAL_TAG }}
+          load: true
+          tags: migrate-pre-slim:${{ github.run_number }}
           cache-from: type=gha,scope=migrate
           cache-to: type=gha,mode=max,scope=migrate
 
-      - name: Slim migrate image
+      - name: Slim the image
         uses: kitabisa/docker-slim-action@v1
         env:
           DSLIM_HTTP_PROBE: false
         with:
-          target: ${{ env.IMAGE_NAME }}-migrate:${{ env.LOCAL_TAG }}
-          tag: slim-${{ env.LOCAL_TAG }}
+          target: migrate-pre-slim:${{ github.run_number }}
+          tag: migrate-slim:${{ github.run_number }}
 
-      - name: Push slim image
+      - name: Tag and push slimmed image
         run: |
-          docker tag ${{ env.IMAGE_NAME }}-migrate:slim-${{ env.LOCAL_TAG }} \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}-migrate:slim-${{ env.LOCAL_TAG }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}-migrate:slim-${{ env.LOCAL_TAG }}
+          for tag in ${{ steps.meta.outputs.tags }}; do
+            docker tag migrate-slim:${{ github.run_number }} $tag
+            docker push $tag
+          done
 
   publish-frontend:
     name: Publish Frontend to GHCR
