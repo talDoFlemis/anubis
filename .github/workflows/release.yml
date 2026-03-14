@@ -117,7 +117,9 @@ jobs:
       - name: Slim the image
         uses: kitabisa/docker-slim-action@v1
         env:
-          DSLIM_HTTP_PROBE: false
+          DSLIM_HTTP_PROBE: true
+          DSLIM_HTTP_PROBE_CMD: "GET:/"
+          DSLIM_PUBLISH_EXPOSED_PORTS: true
         with:
           target: backend-pre-slim:${{ github.run_number }}
           tag: slim
@@ -173,7 +175,9 @@ jobs:
       - name: Slim the image
         uses: kitabisa/docker-slim-action@v1
         env:
-          DSLIM_HTTP_PROBE: false
+          DSLIM_HTTP_PROBE: true
+          DSLIM_HTTP_PROBE_CMD: "GET:/"
+          DSLIM_PUBLISH_EXPOSED_PORTS: true
         with:
           target: migrate-pre-slim:${{ github.run_number }}
           tag: slim
