@@ -119,33 +119,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image locally (pre-slim)
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: false
-          load: true
-          tags: backend-pre-slim:${{ github.run_number }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
-
-      - name: Slim the image
-        uses: kitabisa/docker-slim-action@v1
-        env:
-          DSLIM_HTTP_PROBE: true
-          DSLIM_HTTP_PROBE_CMD: "GET:/"
-          DSLIM_PUBLISH_EXPOSED_PORTS: true
-        with:
-          target: backend-pre-slim:${{ github.run_number }}
-          tag: slim
-
-      - name: Tag and push slimmed image
-        run: |
-          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
-            [ -z "$tag" ] && continue
-            docker tag backend-pre-slim:slim "$tag"
-            docker push "$tag"
-          done
 
   publish-migrate:
     name: Publish Migrate to GHCR
@@ -176,34 +158,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image locally (pre-slim)
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile.migrate
-          push: false
-          load: true
-          tags: migrate-pre-slim:${{ github.run_number }}
-          cache-from: type=gha,scope=migrate
-          cache-to: type=gha,mode=max,scope=migrate
-
-      - name: Slim the image
-        uses: kitabisa/docker-slim-action@v1
-        env:
-          DSLIM_HTTP_PROBE: true
-          DSLIM_HTTP_PROBE_CMD: "GET:/"
-          DSLIM_PUBLISH_EXPOSED_PORTS: true
-        with:
-          target: migrate-pre-slim:${{ github.run_number }}
-          tag: slim
-
-      - name: Tag and push slimmed image
-        run: |
-          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
-            [ -z "$tag" ] && continue
-            docker tag migrate-slim:slim $tag
-            docker push $tag
-          done
+          context: frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
 
   publish-frontend:
     name: Publish Frontend to GHCR
