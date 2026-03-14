@@ -104,15 +104,32 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+      - name: Build local Image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          load: true
+          push: false
+          tags: backend-local:latest
           cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Slim the Image
+        uses: kitabisa/docker-slim-action@v1
+        id: slim
+        env:
+          DSLIM_HTTP_PROBE: false
+        with:
+          target: backend-local:latest
+          tag: "slim"
+
+      - name: Push Slimmed Image
+        run: |
+          for tag in ${TAGS}; do
+            docker tag backend-local.slim ${tag}
+            docker push ${tag}
+          done
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
 
   publish-migrate:
     name: Publish Migrate to GHCR
@@ -143,16 +160,33 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+      - name: Build local Image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.migrate
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          load: true
+          push: false
+          tags: migrate-local:latest
           cache-from: type=gha,scope=migrate
-          cache-to: type=gha,mode=max,scope=migrate
+
+      - name: Slim the Image
+        uses: kitabisa/docker-slim-action@v1
+        id: slim
+        env:
+          DSLIM_HTTP_PROBE: false
+        with:
+          target: migrate-local:latest
+          tag: "slim"
+
+      - name: Push Slimmed Image
+        run: |
+          for tag in ${TAGS}; do
+            docker tag migrate-local.slim ${tag}
+            docker push ${tag}
+          done
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
 
   publish-frontend:
     name: Publish Frontend to GHCR
