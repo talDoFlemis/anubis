@@ -4,6 +4,11 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["**/*.template.html"]
+    "assets": [
+      {
+        "include": "**/*.template.html",
+        "outDir": "dist/src"
+      }
+    ]
   }
 }
