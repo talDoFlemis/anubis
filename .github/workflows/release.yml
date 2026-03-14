@@ -17,21 +17,6 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  DATABASE_USER: "slim_probe"
-  DATABASE_PASSWORD: "slim_probe"
-  DATABASE_NAME: "slim_probe"
-  DATABASE_HOST: "localhost"
-  DATABASE_PORT: "5432"
-  APP_PORT: "3000"
-  APP_CORS_ORIGIN: "http://localhost:3000"
-  APP_SESSION_SECRET: "supersecretpsswordforslimprobe123"
-  GOOGLE_CLIENT_ID: "slim_probe"
-  GOOGLE_CLIENT_SECRET: "slim_probe"
-  AUTH_CONFIRM_EMAIL_SECRET: "supersecretpsswordforslimprobe123"
-  AUTH_FORGOT_SECRET: "supersecretpasswordforslimprobe123"
-  FRONTEND_URL: "http://localhost:5173"
-  MAIL_GOOGLE_USER: "slim@probe.com"
-  ADMIN_PORT: "3001"
 
 jobs:
   ci:
@@ -119,15 +104,34 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+      - name: Build image locally (pre-slim)
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          push: false
+          load: true
+          tags: backend-pre-slim:${{ github.run_number }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
+
+      - name: Slim the image
+        uses: kitabisa/docker-slim-action@v1
+        env:
+          DSLIM_HTTP_PROBE: true
+          DSLIM_HTTP_PROBE_CMD: "GET:/"
+          DSLIM_PUBLISH_EXPOSED_PORTS: true
+          DSLIM_RC_ENV: DATABASE_USER=slim_probe,DATABASE_PASSWORD=slim_probe,DATABASE_NAME=slim_probeDATABASE_HOST=localhost,DATABASE_PORT=5432,APP_PORT=3000,APP_CORS_ORIGIN=http://localhost:3000,APP_SESSION_SECRET=supersecretpsswordforslimprobe123,GOOGLE_CLIENT_ID=slim_probe,GOOGLE_CLIENT_SECRET=slim_probe,AUTH_CONFIRM_EMAIL_SECRET=supersecretpsswordforslimprobe123,AUTH_FORGOT_SECRET=supersecretpasswordforslimprobe123,FRONTEND_URL=http://localhost:5173,MAIL_GOOGLE_USER=slim@probe.com,ADMIN_PORT=3001
+        with:
+          target: backend-pre-slim:${{ github.run_number }}
+          tag: slim
+
+      - name: Tag and push slimmed image
+        run: |
+          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            docker tag backend-pre-slim:slim "$tag"
+            docker push "$tag"
+          done
 
   publish-migrate:
     name: Publish Migrate to GHCR
@@ -158,15 +162,35 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+      - name: Build image locally (pre-slim)
         uses: docker/build-push-action@v6
         with:
-          context: frontend
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend
+          context: .
+          file: Dockerfile.migrate
+          push: false
+          load: true
+          tags: migrate-pre-slim:${{ github.run_number }}
+          cache-from: type=gha,scope=migrate
+          cache-to: type=gha,mode=max,scope=migrate
+
+      - name: Slim the image
+        uses: kitabisa/docker-slim-action@v1
+        env:
+          DSLIM_HTTP_PROBE: true
+          DSLIM_HTTP_PROBE_CMD: "GET:/"
+          DSLIM_PUBLISH_EXPOSED_PORTS: true
+          DSLIM_RC_ENV: DATABASE_USER=slim_probe,DATABASE_PASSWORD=slim_probe,DATABASE_NAME=slim_probeDATABASE_HOST=localhost,DATABASE_PORT=5432,APP_PORT=3000,APP_CORS_ORIGIN=http://localhost:3000,APP_SESSION_SECRET=supersecretpsswordforslimprobe123,GOOGLE_CLIENT_ID=slim_probe,GOOGLE_CLIENT_SECRET=slim_probe,AUTH_CONFIRM_EMAIL_SECRET=supersecretpsswordforslimprobe123,AUTH_FORGOT_SECRET=supersecretpasswordforslimprobe123,FRONTEND_URL=http://localhost:5173,MAIL_GOOGLE_USER=slim@probe.com,ADMIN_PORT=3001
+        with:
+          target: migrate-pre-slim:${{ github.run_number }}
+          tag: slim
+
+      - name: Tag and push slimmed image
+        run: |
+          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            docker tag migrate-slim:slim $tag
+            docker push $tag
+          done
 
   publish-frontend:
     name: Publish Frontend to GHCR
