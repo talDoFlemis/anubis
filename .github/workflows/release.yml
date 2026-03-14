@@ -71,7 +71,7 @@ jobs:
         id: semantic
         uses: cycjimmy/semantic-release-action@v4
         with:
-          semantic_version: ""
+          semantic_version: ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -114,22 +114,24 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
-      - name: Slim the image
-        uses: kitabisa/docker-slim-action@v1
-        env:
-          DSLIM_HTTP_PROBE: true
-          DSLIM_HTTP_PROBE_CMD: "GET:/"
-          DSLIM_PUBLISH_EXPOSED_PORTS: true
-          DSLIM_RC_ENV: DATABASE_USER=slim_probe,DATABASE_PASSWORD=slim_probe,DATABASE_NAME=slim_probeDATABASE_HOST=localhost,DATABASE_PORT=5432,APP_PORT=3000,APP_CORS_ORIGIN=http://localhost:3000,APP_SESSION_SECRET=supersecretpsswordforslimprobe123,GOOGLE_CLIENT_ID=slim_probe,GOOGLE_CLIENT_SECRET=slim_probe,AUTH_CONFIRM_EMAIL_SECRET=supersecretpsswordforslimprobe123,AUTH_FORGOT_SECRET=supersecretpasswordforslimprobe123,FRONTEND_URL=http://localhost:5173,MAIL_GOOGLE_USER=slim@probe.com,ADMIN_PORT=3001
-        with:
-          target: backend-pre-slim:${{ github.run_number }}
-          tag: slim
+      - name: Prepare env file
+        run: cp .env.example .env
+
+      - name: Install and run docker-slim
+        run: |
+          curl -sL https://raw.githubusercontent.com/slimtoolkit/slim/master/scripts/install-slim.sh | sudo -E bash -s
+          slim build \
+            --env-file .env \
+            --http-probe-cmd GET:/ \
+            --publish-exposed-ports \
+            --target backend-pre-slim:${{ github.run_number }} \
+            --tag slim
 
       - name: Tag and push slimmed image
         run: |
           echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
             [ -z "$tag" ] && continue
-            docker tag backend-pre-slim:slim "$tag"
+            docker tag backend-pre-slim.slim "$tag"
             docker push "$tag"
           done
 
@@ -173,23 +175,24 @@ jobs:
           cache-from: type=gha,scope=migrate
           cache-to: type=gha,mode=max,scope=migrate
 
-      - name: Slim the image
-        uses: kitabisa/docker-slim-action@v1
-        env:
-          DSLIM_HTTP_PROBE: true
-          DSLIM_HTTP_PROBE_CMD: "GET:/"
-          DSLIM_PUBLISH_EXPOSED_PORTS: true
-          DSLIM_RC_ENV: DATABASE_USER=slim_probe,DATABASE_PASSWORD=slim_probe,DATABASE_NAME=slim_probeDATABASE_HOST=localhost,DATABASE_PORT=5432,APP_PORT=3000,APP_CORS_ORIGIN=http://localhost:3000,APP_SESSION_SECRET=supersecretpsswordforslimprobe123,GOOGLE_CLIENT_ID=slim_probe,GOOGLE_CLIENT_SECRET=slim_probe,AUTH_CONFIRM_EMAIL_SECRET=supersecretpsswordforslimprobe123,AUTH_FORGOT_SECRET=supersecretpasswordforslimprobe123,FRONTEND_URL=http://localhost:5173,MAIL_GOOGLE_USER=slim@probe.com,ADMIN_PORT=3001
-        with:
-          target: migrate-pre-slim:${{ github.run_number }}
-          tag: slim
+      - name: Prepare env file
+        run: cp .env.example .env
+
+      - name: Install and run docker-slim
+        run: |
+          curl -sL https://raw.githubusercontent.com/slimtoolkit/slim/master/scripts/install-slim.sh | sudo -E bash -s
+          slim build \
+            --env-file .env \
+            --http-probe=false \
+            --target migrate-pre-slim:${{ github.run_number }} \
+            --tag slim
 
       - name: Tag and push slimmed image
         run: |
           echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
             [ -z "$tag" ] && continue
-            docker tag migrate-slim:slim $tag
-            docker push $tag
+            docker tag migrate-pre-slim.slim "$tag"
+            docker push "$tag"
           done
 
   publish-frontend:
