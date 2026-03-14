@@ -71,7 +71,7 @@ jobs:
         id: semantic
         uses: cycjimmy/semantic-release-action@v4
         with:
-          semantic_version: ''
+          semantic_version: ""
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -124,9 +124,10 @@ jobs:
 
       - name: Push Slimmed Image
         run: |
-          for tag in ${TAGS}; do
-            docker tag backend-local.slim ${tag}
-            docker push ${tag}
+          IFS=$'\n' read -rd '' -a tags <<< "${{ steps.meta.outputs.tags }}"
+          for tag in "${tags[@]}"; do
+            docker tag backend-local.slim "$tag"
+            docker push "$tag"
           done
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
@@ -181,9 +182,10 @@ jobs:
 
       - name: Push Slimmed Image
         run: |
-          for tag in ${TAGS}; do
-            docker tag migrate-local.slim ${tag}
-            docker push ${tag}
+          IFS=$'\n' read -rd '' -a tags <<< "${{ steps.meta.outputs.tags }}"
+          for tag in "${tags[@]}"; do
+            docker tag backend-local.slim "$tag"
+            docker push "$tag"
           done
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
