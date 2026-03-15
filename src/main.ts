@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { AdminModule } from './admin/admin.module';
 import helmet from 'helmet';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -18,6 +19,7 @@ async function bootstrap() {
   app.useLogger(logger);
 
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
+  app.useGlobalFilters(app.get(AllExceptionsFilter));
 
   app.use(helmet());
 
