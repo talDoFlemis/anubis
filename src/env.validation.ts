@@ -151,6 +151,10 @@ export class EnvironmentVariables {
   @Min(0)
   @Max(65535)
   ADMIN_PORT: number;
+
+  @IsNotEmpty()
+  @MinLength(32)
+  ADMIN_SECRET: string;
 }
 
 export function validate(config: Record<string, unknown>) {
