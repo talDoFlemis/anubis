@@ -71,7 +71,6 @@ export function configureApp(app: INestApplication): void {
       cookie: {
         secure: configService.getOrThrow<boolean>('APP_SECURE_COOKIE'),
         httpOnly: true,
-        sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       },
     }),

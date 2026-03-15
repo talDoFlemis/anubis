@@ -1,4 +1,4 @@
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsNumber,
   validateSync,
@@ -38,12 +38,14 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   DATABASE_HOST: string;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(65535)
   DATABASE_PORT: number;
 
   // App
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(65535)
@@ -60,6 +62,11 @@ export class EnvironmentVariables {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  })
   APP_SECURE_COOKIE: boolean = true;
 
   @IsOptional()
@@ -111,6 +118,7 @@ export class EnvironmentVariables {
   MAIL_HOST: string = 'localhost';
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(65535)
@@ -146,7 +154,7 @@ export class EnvironmentVariables {
   MAIL_GOOGLE_USER: string = '';
 
   // Admin
-
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(65535)
@@ -159,7 +167,7 @@ export class EnvironmentVariables {
 
 export function validate(config: Record<string, unknown>) {
   const validatedConfig = plainToInstance(EnvironmentVariables, config, {
-    enableImplicitConversion: true,
+    enableImplicitConversion: false,
   });
   const errors = validateSync(validatedConfig, {
     skipMissingProperties: false,
