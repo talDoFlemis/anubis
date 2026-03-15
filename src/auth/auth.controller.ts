@@ -12,7 +12,18 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiConflictResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
+  ApiBadRequestResponse,
+  ApiCookieAuth,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -33,8 +44,15 @@ export class AuthController {
 
   @Post('email/login')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @ApiOkResponse({ type: LoginResponseDto })
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiOkResponse({ type: LoginResponseDto, description: 'Login successful' })
+  @ApiBadRequestResponse({
+    description:
+      'Account registered via a social provider — use that provider to log in',
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid email or password' })
+  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   async login(
     @Body() loginDto: AuthEmailLoginDto,
     @Req() req: Request,
@@ -51,12 +69,29 @@ export class AuthController {
   @Post('email/register')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Register a new account' })
+  @ApiNoContentResponse({
+    description: 'Registration successful — confirmation email sent',
+  })
+  @ApiConflictResponse({ description: 'Email address is already registered' })
+  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   async register(@Body() registerDto: AuthRegisterDto): Promise<void> {
     return this.authService.register(registerDto);
   }
 
   @Post('email/confirm')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Confirm email address using the hash from the confirmation email',
+  })
+  @ApiNoContentResponse({ description: 'Email confirmed successfully' })
+  @ApiBadRequestResponse({
+    description: 'Invalid or expired confirmation hash',
+  })
+  @ApiNotFoundResponse({
+    description: 'User associated with the hash not found',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   async confirmEmail(
     @Body() confirmEmailDto: AuthConfirmEmailDto,
   ): Promise<void> {
@@ -65,6 +100,15 @@ export class AuthController {
 
   @Post('email/confirm/new')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Confirm a new email address change' })
+  @ApiNoContentResponse({ description: 'New email confirmed successfully' })
+  @ApiBadRequestResponse({
+    description: 'Invalid or expired confirmation hash',
+  })
+  @ApiNotFoundResponse({
+    description: 'User associated with the hash not found',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   async confirmNewEmail(
     @Body() confirmEmailDto: AuthConfirmEmailDto,
   ): Promise<void> {
@@ -74,6 +118,12 @@ export class AuthController {
   @Post('forgot/password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Request a password reset email' })
+  @ApiNoContentResponse({
+    description:
+      'Request processed — if the email is registered a reset link will be sent',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   async forgotPassword(
     @Body() forgotPasswordDto: AuthForgotPasswordDto,
   ): Promise<void> {
@@ -82,6 +132,15 @@ export class AuthController {
 
   @Post('reset/password')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Reset password using the hash from the reset email',
+  })
+  @ApiNoContentResponse({ description: 'Password reset successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid or expired reset hash' })
+  @ApiNotFoundResponse({
+    description: 'User associated with the hash not found',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   async resetPassword(
     @Body() resetPasswordDto: AuthResetPasswordDto,
   ): Promise<void> {
@@ -94,8 +153,11 @@ export class AuthController {
   @UseGuards(SessionAuthGuard)
   @UseInterceptors(ClassSerializerInterceptor)
   @Get('me')
-  @ApiOkResponse({ type: User })
   @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'Get the current authenticated user' })
+  @ApiOkResponse({ type: User, description: 'Current user profile' })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
   async me(@Req() req: Request): Promise<User | null> {
     return this.authService.me(req.session.userId!);
   }
@@ -103,8 +165,14 @@ export class AuthController {
   @UseGuards(SessionAuthGuard)
   @UseInterceptors(ClassSerializerInterceptor)
   @Patch('me')
-  @ApiOkResponse({ type: User })
   @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'Update the current authenticated user' })
+  @ApiOkResponse({ type: User, description: 'Updated user profile' })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiBadRequestResponse({ description: 'Old password missing or incorrect' })
+  @ApiConflictResponse({ description: 'New email address is already taken' })
+  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
   async update(
     @Req() req: Request,
     @Body() userDto: AuthUpdateDto,
@@ -119,6 +187,12 @@ export class AuthController {
   @UseGuards(SessionAuthGuard)
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: 'Soft-delete the current account and destroy the session',
+  })
+  @ApiNoContentResponse({ description: 'Account deleted successfully' })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
   async delete(@Req() req: Request): Promise<void> {
     await this.authService.softDelete(req.session.userId!);
     await new Promise<void>((resolve, reject) => {
@@ -132,6 +206,10 @@ export class AuthController {
   @UseGuards(SessionAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'Destroy the current session (logout)' })
+  @ApiNoContentResponse({ description: 'Logged out successfully' })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
   async logout(@Req() req: Request): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       req.session.destroy((err) => {

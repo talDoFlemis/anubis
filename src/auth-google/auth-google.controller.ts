@@ -6,7 +6,12 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { AuthGoogleService } from './auth-google.service';
@@ -21,9 +26,14 @@ export class AuthGoogleController {
     private readonly authGoogleService: AuthGoogleService,
   ) {}
 
-  @ApiOkResponse({ type: LoginResponseDto })
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login or register using a Google ID token' })
+  @ApiOkResponse({ type: LoginResponseDto, description: 'Login successful' })
+  @ApiUnprocessableEntityResponse({
+    description:
+      'Invalid Google ID token or unable to resolve a user from social data',
+  })
   async login(
     @Body() loginDto: AuthGoogleLoginDto,
     @Req() req: Request,
