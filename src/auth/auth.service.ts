@@ -62,7 +62,7 @@ export class AuthService {
     );
 
     if (!isValidPassword) {
-      throw new BadRequestException({
+      throw new UnauthorizedException({
         errors: { email: 'emailOrPasswordInvalid' },
       });
     }
@@ -236,9 +236,9 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
-      throw new BadRequestException({
-        errors: { email: 'emailNotExists' },
-      });
+      // Return silently to prevent user enumeration: do not reveal
+      // whether the email address is registered.
+      return;
     }
 
     const hash = await this.jwtService.signAsync(
