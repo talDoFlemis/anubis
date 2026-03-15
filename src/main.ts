@@ -52,6 +52,7 @@ async function bootstrap() {
       cookie: {
         secure: configService.getOrThrow<boolean>('APP_SECURE_COOKIE'),
         httpOnly: true,
+        sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       },
     }),
@@ -61,6 +62,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
+      forbidNonWhitelisted: true,
     }),
   );
 
@@ -88,9 +90,17 @@ async function bootstrap() {
   });
 
   const adminApp = await NestFactory.create(AdminModule, { bufferLogs: true });
-  const adminPort = configService.getOrThrow<string>('ADMIN_PORT');
+  const adminConfigService = adminApp.get(ConfigService);
+  const adminPort = adminConfigService.getOrThrow<string>('ADMIN_PORT');
   adminApp.useLogger(logger);
   adminApp.enableShutdownHooks();
+  adminApp.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   await app.listen(port);
   await adminApp.listen(adminPort);

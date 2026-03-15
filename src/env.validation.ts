@@ -60,7 +60,7 @@ export class EnvironmentVariables {
 
   @IsOptional()
   @IsBoolean()
-  APP_SECURE_COOKIE: boolean = false;
+  APP_SECURE_COOKIE: boolean = true;
 
   @IsOptional()
   APP_PREFIX: string = '';
