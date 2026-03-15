@@ -9,7 +9,11 @@ import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import helmet from 'helmet';
+import type { Request, Response, NextFunction } from 'express';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+
+const helmetWithCsp = helmet();
+const helmetWithoutCsp = helmet({ contentSecurityPolicy: false });
 
 /**
  * Applies the standard middleware, pipes, guards, and interceptors to a
@@ -24,7 +28,15 @@ export async function configureApp(app: INestApplication): Promise<void> {
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
   app.useGlobalFilters(app.get(AllExceptionsFilter));
 
-  app.use(helmet());
+  // Disable CSP only for the Scalar API reference page (dev-only) so that
+  // its CDN script and inline init script are not blocked. All other routes
+  // keep the full default helmet CSP.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/reference')) {
+      return helmetWithoutCsp(req, res, next);
+    }
+    return helmetWithCsp(req, res, next);
+  });
 
   app.enableCors({
     origin: configService.getOrThrow<string>('APP_CORS_ORIGIN'),
