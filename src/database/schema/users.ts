@@ -14,6 +14,7 @@ export const statusEnum = pgEnum('status', ['active', 'inactive']);
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: varchar('email', { length: 255 }).unique(),
+  cpf: varchar('cpf', { length: 11 }).unique(),
   password: varchar('password', { length: 255 }),
   provider: authProviderEnum('provider').notNull().default('email'),
   socialId: varchar('social_id', { length: 255 }),

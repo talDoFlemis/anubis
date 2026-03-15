@@ -8,6 +8,13 @@
       "when": 1773275474866,
       "tag": "0000_harsh_ulik",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773583189841,
+      "tag": "0001_add_cpf_and_candidates",
+      "breakpoints": true
     }
   ]
 }
