@@ -6,11 +6,22 @@ import { transactionStorage } from './transaction.cls';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { DrizzleSchema } from './drizzle.provider';
 
+// Read-only methods and path prefixes that do not need a write transaction.
+const READ_ONLY_METHODS = new Set(['GET', 'HEAD']);
+const SKIP_PATHS = ['/health'];
+
 @Injectable()
 export class TransactionMiddleware implements NestMiddleware {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  use(_req: Request, res: Response, next: NextFunction): void {
+  use(req: Request, res: Response, next: NextFunction): void {
+    if (
+      READ_ONLY_METHODS.has(req.method) ||
+      SKIP_PATHS.some((p) => req.path.startsWith(p))
+    ) {
+      return next();
+    }
+
     const db = this.db as NodePgDatabase<DrizzleSchema>;
 
     db.transaction(async (tx) => {
