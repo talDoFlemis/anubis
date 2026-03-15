@@ -10,7 +10,7 @@ import { configureApp } from './common/configure-app';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
-  await configureApp(app);
+  configureApp(app);
 
   const configService = app.get(ConfigService);
   const logger = app.get(Logger);

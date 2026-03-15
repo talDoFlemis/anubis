@@ -30,7 +30,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : 'Internal server error';
 
-    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (status >= (HttpStatus.INTERNAL_SERVER_ERROR as number)) {
       this.logger.error(
         { err: exception, path: request.url, method: request.method },
         'Unhandled exception',

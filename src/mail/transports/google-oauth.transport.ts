@@ -41,7 +41,14 @@ export class GoogleOauthTransport implements MailTransport, OnModuleDestroy {
     const { token, res } = await oauth2Client.getAccessToken();
 
     // Cache the expiry time so we can proactively refresh before expiry
-    const expiryDate: number | null | undefined = res?.data?.expiry_date;
+    const responseData: unknown = res?.data;
+    const expiryDate =
+      responseData !== null &&
+      typeof responseData === 'object' &&
+      'expiry_date' in responseData &&
+      typeof (responseData as { expiry_date: unknown }).expiry_date === 'number'
+        ? (responseData as { expiry_date: number }).expiry_date
+        : null;
     this.tokenExpiresAt =
       typeof expiryDate === 'number' ? expiryDate : Date.now() + 3600_000;
 

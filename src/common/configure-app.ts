@@ -20,7 +20,7 @@ const helmetWithoutCsp = helmet({ contentSecurityPolicy: false });
  * NestJS application instance. Called from both main.ts and E2E tests so the
  * test environment mirrors production exactly.
  */
-export async function configureApp(app: INestApplication): Promise<void> {
+export function configureApp(app: INestApplication): void {
   const configService = app.get(ConfigService);
   const logger = app.get(Logger);
   app.useLogger(logger);
