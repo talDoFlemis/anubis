@@ -1,5 +1,6 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -9,6 +10,7 @@ import {
   Post,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -22,6 +24,7 @@ import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
 import { AuthUpdateDto } from './dto/auth-update.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { SessionAuthGuard } from './guards/session-auth.guard';
+import { User } from '../users/domain/user';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -89,16 +92,23 @@ export class AuthController {
   }
 
   @UseGuards(SessionAuthGuard)
+  @UseInterceptors(ClassSerializerInterceptor)
   @Get('me')
+  @ApiOkResponse({ type: User })
   @HttpCode(HttpStatus.OK)
-  async me(@Req() req: Request) {
+  async me(@Req() req: Request): Promise<User | null> {
     return this.authService.me(req.session.userId!);
   }
 
   @UseGuards(SessionAuthGuard)
+  @UseInterceptors(ClassSerializerInterceptor)
   @Patch('me')
+  @ApiOkResponse({ type: User })
   @HttpCode(HttpStatus.OK)
-  async update(@Req() req: Request, @Body() userDto: AuthUpdateDto) {
+  async update(
+    @Req() req: Request,
+    @Body() userDto: AuthUpdateDto,
+  ): Promise<User | null> {
     return this.authService.update(
       req.session.userId!,
       req.session.id,
