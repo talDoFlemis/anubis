@@ -78,6 +78,18 @@ export class AuthService {
       });
     }
 
+    if (user.status !== StatusEnum.active) {
+      this.logger.warn(
+        { userId: user.id, status: user.status },
+        'Login failed: user account is inactive',
+      );
+      throw new UnauthorizedException({
+        message:
+          'Usuário inativo. Verifique seu e-mail para ativar sua conta ou entre em contato com um administrador.',
+        errors: { user: 'userInactive' },
+      });
+    }
+
     this.logger.info({ userId: user.id }, 'Login successful');
 
     return {
