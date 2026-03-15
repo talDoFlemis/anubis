@@ -1,14 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
 import type { MailTransport } from '../interfaces/mail-transport.interface';
 
+// Refresh the access token this many milliseconds before it expires
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
+
 @Injectable()
-export class GoogleOauthTransport implements MailTransport {
+export class GoogleOauthTransport implements MailTransport, OnModuleDestroy {
   constructor(private readonly configService: ConfigService) {}
 
-  private async createTransporter(): Promise<nodemailer.Transporter> {
+  private cachedTransporter: nodemailer.Transporter | null = null;
+  private tokenExpiresAt: number = 0;
+
+  private isTokenExpired(): boolean {
+    return Date.now() >= this.tokenExpiresAt - TOKEN_REFRESH_BUFFER_MS;
+  }
+
+  private async buildTransporter(): Promise<nodemailer.Transporter> {
     const clientId = this.configService.getOrThrow<string>(
       'MAIL_GOOGLE_CLIENT_ID',
     );
@@ -28,9 +38,16 @@ export class GoogleOauthTransport implements MailTransport {
 
     oauth2Client.setCredentials({ refresh_token: refreshToken });
 
-    const { token } = await oauth2Client.getAccessToken();
+    const { token, res } = await oauth2Client.getAccessToken();
 
-    return nodemailer.createTransport({
+    // Cache the expiry time so we can proactively refresh before expiry
+    const expiryDate: number | null | undefined =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (res?.data as any)?.expiry_date;
+    this.tokenExpiresAt =
+      typeof expiryDate === 'number' ? expiryDate : Date.now() + 3600_000;
+
+    this.cachedTransporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         type: 'OAuth2',
@@ -41,6 +58,22 @@ export class GoogleOauthTransport implements MailTransport {
         accessToken: token ?? undefined,
       },
     });
+
+    return this.cachedTransporter;
+  }
+
+  private async getTransporter(): Promise<nodemailer.Transporter> {
+    if (!this.cachedTransporter || this.isTokenExpired()) {
+      this.cachedTransporter = await this.buildTransporter();
+    }
+    return this.cachedTransporter;
+  }
+
+  onModuleDestroy(): void {
+    if (this.cachedTransporter) {
+      this.cachedTransporter.close();
+      this.cachedTransporter = null;
+    }
   }
 
   async sendMail(options: {
@@ -48,7 +81,7 @@ export class GoogleOauthTransport implements MailTransport {
     subject: string;
     html: string;
   }): Promise<void> {
-    const transporter = await this.createTransporter();
+    const transporter = await this.getTransporter();
     const from = this.configService.getOrThrow<string>('MAIL_DEFAULT_FROM');
 
     await transporter.sendMail({
@@ -60,7 +93,7 @@ export class GoogleOauthTransport implements MailTransport {
   }
 
   async verify(): Promise<boolean> {
-    const transporter = await this.createTransporter();
+    const transporter = await this.getTransporter();
     return await transporter.verify();
   }
 }
