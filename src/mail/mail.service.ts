@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   MAIL_TRANSPORT,
@@ -9,27 +9,27 @@ import {
 } from './interfaces/mail-transport.interface';
 
 @Injectable()
-export class MailService {
-  private readonly confirmEmailTemplate: string;
-  private readonly forgotPasswordTemplate: string;
-  private readonly confirmNewEmailTemplate: string;
+export class MailService implements OnModuleInit {
+  private confirmEmailTemplate!: string;
+  private forgotPasswordTemplate!: string;
+  private confirmNewEmailTemplate!: string;
 
   constructor(
     @Inject(MAIL_TRANSPORT) private readonly transport: MailTransport,
     private readonly configService: ConfigService,
-  ) {
-    this.confirmEmailTemplate = readFileSync(
-      join(__dirname, 'confirm-email.template.html'),
-      'utf-8',
-    );
-    this.forgotPasswordTemplate = readFileSync(
-      join(__dirname, 'forgot-password.template.html'),
-      'utf-8',
-    );
-    this.confirmNewEmailTemplate = readFileSync(
-      join(__dirname, 'confirm-new-email.template.html'),
-      'utf-8',
-    );
+  ) {}
+
+  async onModuleInit(): Promise<void> {
+    const dir = join(__dirname, '.');
+    [
+      this.confirmEmailTemplate,
+      this.forgotPasswordTemplate,
+      this.confirmNewEmailTemplate,
+    ] = await Promise.all([
+      readFile(join(dir, 'confirm-email.template.html'), 'utf-8'),
+      readFile(join(dir, 'forgot-password.template.html'), 'utf-8'),
+      readFile(join(dir, 'confirm-new-email.template.html'), 'utf-8'),
+    ]);
   }
 
   async userSignUp(params: {
