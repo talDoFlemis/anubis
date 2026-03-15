@@ -7,15 +7,13 @@ import {
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
-export class MailHealthIndicator extends HealthIndicatorService {
+export class MailHealthIndicator {
   constructor(
     private readonly healthIndicatorService: HealthIndicatorService,
     @InjectPinoLogger(MailHealthIndicator.name)
     private readonly logger: PinoLogger,
     @Inject(MAIL_TRANSPORT) private readonly transport: MailTransport,
-  ) {
-    super();
-  }
+  ) {}
 
   async isHealthy(key: string) {
     const indicator = this.healthIndicatorService.check(key);

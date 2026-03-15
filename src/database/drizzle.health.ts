@@ -6,15 +6,13 @@ import { sql } from 'drizzle-orm';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
-export class DrizzleDBHealthIndicator extends HealthIndicatorService {
+export class DrizzleDBHealthIndicator {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly healthIndicatorService: HealthIndicatorService,
     @InjectPinoLogger(DrizzleDBHealthIndicator.name)
     private readonly logger: PinoLogger,
-  ) {
-    super();
-  }
+  ) {}
 
   async isHealthy(key: string) {
     const indicator = this.healthIndicatorService.check(key);
