@@ -205,7 +205,7 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(UnauthorizedException);
 
       await expect(
         authService.validateLogin({
@@ -226,7 +226,7 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'wrongpassword',
         }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(UnauthorizedException);
 
       await expect(
         authService.validateLogin({
@@ -533,12 +533,12 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw if email not found', async () => {
+    it('should return silently if email not found (user enumeration prevention)', async () => {
       usersService.findByEmail.mockResolvedValue(null);
 
       await expect(
         authService.forgotPassword('notfound@example.com'),
-      ).rejects.toThrow(BadRequestException);
+      ).resolves.toBeUndefined();
     });
   });
 

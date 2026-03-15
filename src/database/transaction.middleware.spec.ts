@@ -29,7 +29,7 @@ describe('TransactionMiddleware', () => {
   }
 
   it('should begin a database transaction for each request', () => {
-    const req = {} as Request;
+    const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     const next = jest.fn();
 
@@ -40,7 +40,7 @@ describe('TransactionMiddleware', () => {
   });
 
   it('should store the transaction in AsyncLocalStorage and call next', (done) => {
-    const req = {} as Request;
+    const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
 
     const next = jest.fn(() => {
@@ -65,7 +65,7 @@ describe('TransactionMiddleware', () => {
   });
 
   it('should commit transaction when response status is < 400', (done) => {
-    const req = {} as Request;
+    const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
 
     mockDb.transaction.mockImplementation(
@@ -86,7 +86,7 @@ describe('TransactionMiddleware', () => {
   });
 
   it('should rollback transaction when response status is >= 400', (done) => {
-    const req = {} as Request;
+    const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     res.headersSent = true;
 
@@ -112,7 +112,7 @@ describe('TransactionMiddleware', () => {
   });
 
   it('should rollback transaction on response error event', (done) => {
-    const req = {} as Request;
+    const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     res.headersSent = true;
     const streamError = new Error('connection reset');
@@ -137,7 +137,7 @@ describe('TransactionMiddleware', () => {
   });
 
   it('should forward error to next() if response not yet sent', (done) => {
-    const req = {} as Request;
+    const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     res.headersSent = false;
 
@@ -157,7 +157,7 @@ describe('TransactionMiddleware', () => {
   });
 
   it('should not call next(err) if headers already sent on rollback', (done) => {
-    const req = {} as Request;
+    const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     res.headersSent = true;
 
