@@ -194,8 +194,6 @@ export class AuthService {
       });
     }
 
-    this.logger.info('User exists');
-
     await this.usersService.update(user.id, { status: StatusEnum.active });
   }
 

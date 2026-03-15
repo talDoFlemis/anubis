@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { validate } from './env.validation';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './users/users.module';
@@ -21,21 +21,24 @@ import { randomUUID } from 'crypto';
       isGlobal: true,
       validate,
     }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        name: 'anubis',
-        level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
-        genReqId: function (req, res) {
-          const existingID = req.id ?? req.headers['x-request-id'];
-          if (existingID) return existingID;
-          const id = randomUUID();
-          res.setHeader('X-Request-Id', id);
-          return id;
-        },
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty' }
-            : undefined,
+    LoggerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const isProduction = config.get<string>('NODE_ENV') === 'production';
+        return {
+          pinoHttp: {
+            name: 'anubis',
+            level: isProduction ? 'info' : 'debug',
+            genReqId: function (req, res) {
+              const existingID = req.id ?? req.headers['x-request-id'];
+              if (existingID) return existingID;
+              const id = randomUUID();
+              res.setHeader('X-Request-Id', id);
+              return id;
+            },
+            transport: isProduction ? undefined : { target: 'pino-pretty' },
+          },
+        };
       },
     }),
     ThrottlerModule.forRoot([
