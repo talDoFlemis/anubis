@@ -11,6 +11,7 @@ import { SessionModule } from './session/session.module';
 import { MailModule } from './mail/mail.module';
 import { HealthModule } from './health/health.module';
 import { LoggerModule } from 'nestjs-pino';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { randomUUID } from 'crypto';
 
 @Module({
@@ -36,6 +37,13 @@ import { randomUUID } from 'crypto';
             : undefined,
       },
     }),
+    ThrottlerModule.forRoot([
+      {
+        // Default: 100 requests per minute per IP
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     DatabaseModule,
     UsersModule,
     AuthModule,

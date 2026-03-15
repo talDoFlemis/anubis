@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { AuthRegisterDto } from './dto/auth-register.dto';
@@ -28,6 +29,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('email/login')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOkResponse({ type: LoginResponseDto })
   @HttpCode(HttpStatus.OK)
   async login(
@@ -44,6 +46,7 @@ export class AuthController {
   }
 
   @Post('email/register')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.NO_CONTENT)
   async register(@Body() registerDto: AuthRegisterDto): Promise<void> {
     return this.authService.register(registerDto);
@@ -66,6 +69,7 @@ export class AuthController {
   }
 
   @Post('forgot/password')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.NO_CONTENT)
   async forgotPassword(
     @Body() forgotPasswordDto: AuthForgotPasswordDto,
