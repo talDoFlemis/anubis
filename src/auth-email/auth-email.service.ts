@@ -465,6 +465,8 @@ export class AuthEmailService {
         );
       }
 
+      await this.resolveOwnedEmailSelectionForLink(user, dto);
+
       await this.validateProviderProof(user.id, dto);
 
       const hashedPassword = await bcrypt.hash(
@@ -554,7 +556,9 @@ export class AuthEmailService {
   private async listUserOwnedEmails(user: User): Promise<
     Array<{
       accountId: string | null;
+      email: string;
       normalizedEmail: string | null;
+      verifiedAt: Date | null;
       isPrimary: boolean;
     }>
   > {
@@ -562,7 +566,9 @@ export class AuthEmailService {
       listUserEmails?: (userId: string) => Promise<
         Array<{
           accountId: string | null;
+          email: string;
           normalizedEmail: string | null;
+          verifiedAt: Date | null;
           isPrimary: boolean;
         }>
       >;
@@ -579,10 +585,32 @@ export class AuthEmailService {
     return [
       {
         accountId: null,
+        email: user.email,
         normalizedEmail: user.email.toLowerCase(),
+        verifiedAt: null,
         isPrimary: true,
       },
     ];
+  }
+
+  private async resolveOwnedEmailSelectionForLink(
+    user: User,
+    dto: AuthLinkEmailProviderDto,
+  ): Promise<void> {
+    if (!dto.ownedEmailAccountId) {
+      return;
+    }
+
+    const ownedEmails = await this.listUserOwnedEmails(user);
+    const selectedOwnedEmail = ownedEmails.find(
+      (ownedEmail) => ownedEmail.accountId === dto.ownedEmailAccountId,
+    );
+
+    if (!selectedOwnedEmail || !selectedOwnedEmail.verifiedAt) {
+      throw new BadRequestException(
+        'Conta de e-mail informada para vinculacao e invalida.',
+      );
+    }
   }
 
   private async attachVerifiedOwnedEmail(params: {

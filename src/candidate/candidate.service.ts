@@ -56,25 +56,18 @@ export class CandidateService {
       const user = await this.usersService.findById(userId);
 
       if (!user) {
-        throw new NotFoundException({
-          message: 'Usuario nao encontrado.',
-          errors: { user: 'userNotFound' },
-        });
+        throw new NotFoundException('Usuario nao encontrado.');
       }
 
       if (user.role !== RoleEnum.candidate) {
-        throw new BadRequestException({
-          message: 'Apenas candidatos podem concluir onboarding de candidato.',
-          errors: { user: 'candidateOnly' },
-        });
+        throw new BadRequestException(
+          'Apenas candidatos podem concluir onboarding de candidato.',
+        );
       }
 
       const existingCpf = await this.usersService.findByCpf(dto.cpf);
       if (existingCpf && existingCpf.id !== user.id) {
-        throw new ConflictException({
-          message: 'Este CPF ja esta cadastrado.',
-          errors: { cpf: 'cpfAlreadyExists' },
-        });
+        throw new ConflictException('Este CPF ja esta cadastrado.');
       }
 
       await this.usersService.update(user.id, {

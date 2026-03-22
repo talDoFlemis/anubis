@@ -347,4 +347,30 @@ describe('Auth journeys (e2e)', () => {
     );
     expect(body.linkedProviders).toEqual(['google', 'email']);
   });
+
+  it('forwards ownedEmailAccountId on email-provider link requests', async () => {
+    authEmailService.linkEmailProvider.mockResolvedValue({
+      id: 'user-1',
+      linkedProviders: [AuthProvidersEnum.google, AuthProvidersEnum.email],
+    });
+
+    await request(app.getHttpServer())
+      .post('/auth/provider/email/link')
+      .send({
+        password: 'password123',
+        provider: AuthProvidersEnum.google,
+        providerToken: 'google-id-token',
+        ownedEmailAccountId: 'b7c2f7c0-7b5f-4b61-9b74-2fc5f47a8f8e',
+      })
+      .expect(200);
+
+    expect(authEmailService.linkEmailProvider).toHaveBeenCalledWith(
+      'user-1',
+      'session-1',
+      expect.objectContaining({
+        provider: 'google',
+        ownedEmailAccountId: 'b7c2f7c0-7b5f-4b61-9b74-2fc5f47a8f8e',
+      }),
+    );
+  });
 });

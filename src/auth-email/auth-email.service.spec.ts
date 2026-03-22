@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -253,6 +257,133 @@ describe('AuthEmailService', () => {
       userId: 'user-1',
       excludeSessionId: 'sid-1',
     });
+    expect(usersService.listUserEmails).not.toHaveBeenCalled();
+  });
+
+  it('links email provider using explicitly selected owned verified e-mail account', async () => {
+    usersService.findById
+      .mockResolvedValueOnce({
+        ...baseUser,
+        linkedProviders: [AuthProvidersEnum.google],
+        password: null,
+      })
+      .mockResolvedValueOnce({
+        ...baseUser,
+        linkedProviders: [AuthProvidersEnum.google, AuthProvidersEnum.email],
+      });
+    usersService.hasProviderAccount.mockResolvedValue(false);
+    usersService.listUserEmails.mockResolvedValue([
+      {
+        accountId: null,
+        email: 'user@example.com',
+        normalizedEmail: 'user@example.com',
+        verifiedAt: null,
+        verificationTokenVersion: 0,
+        isPrimary: true,
+      },
+      {
+        accountId: 'owned-verified-id',
+        email: 'alias@example.com',
+        normalizedEmail: 'alias@example.com',
+        verifiedAt: new Date('2024-01-01T00:00:00.000Z'),
+        verificationTokenVersion: 0,
+        isPrimary: false,
+      },
+    ]);
+    authGoogleService.getProfileByToken.mockResolvedValue({
+      id: 'google-1',
+      email: 'user@example.com',
+    });
+    usersService.findByProviderAccount.mockResolvedValue({
+      ...baseUser,
+      id: 'user-1',
+      linkedProviders: [AuthProvidersEnum.google],
+    });
+    jest.mocked(bcrypt.hash).mockResolvedValue('hashed' as never);
+
+    await service.linkEmailProvider('user-1', 'sid-1', {
+      password: 'password123',
+      provider: AuthProvidersEnum.google,
+      providerToken: 'google-token',
+      ownedEmailAccountId: 'owned-verified-id',
+    });
+
+    expect(usersService.listUserEmails).toHaveBeenCalledWith('user-1');
+    expect(usersService.linkProviderAccount).toHaveBeenCalledWith({
+      userId: 'user-1',
+      provider: AuthProvidersEnum.email,
+      socialId: null,
+    });
+  });
+
+  it('rejects linking when explicit owned e-mail account is missing or from another user', async () => {
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      linkedProviders: [AuthProvidersEnum.google],
+      password: null,
+    });
+    usersService.hasProviderAccount.mockResolvedValue(false);
+    usersService.listUserEmails.mockResolvedValue([
+      {
+        accountId: null,
+        email: 'user@example.com',
+        normalizedEmail: 'user@example.com',
+        verifiedAt: null,
+        verificationTokenVersion: 0,
+        isPrimary: true,
+      },
+    ]);
+
+    await expect(
+      service.linkEmailProvider('user-1', 'sid-1', {
+        password: 'password123',
+        provider: AuthProvidersEnum.google,
+        providerToken: 'google-token',
+        ownedEmailAccountId: 'not-owned-id',
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(authGoogleService.getProfileByToken).not.toHaveBeenCalled();
+    expect(usersService.linkProviderAccount).not.toHaveBeenCalled();
+  });
+
+  it('rejects linking when explicit owned e-mail account is unverified', async () => {
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      linkedProviders: [AuthProvidersEnum.google],
+      password: null,
+    });
+    usersService.hasProviderAccount.mockResolvedValue(false);
+    usersService.listUserEmails.mockResolvedValue([
+      {
+        accountId: null,
+        email: 'user@example.com',
+        normalizedEmail: 'user@example.com',
+        verifiedAt: null,
+        verificationTokenVersion: 0,
+        isPrimary: true,
+      },
+      {
+        accountId: 'owned-unverified-id',
+        email: 'unverified@example.com',
+        normalizedEmail: 'unverified@example.com',
+        verifiedAt: null,
+        verificationTokenVersion: 1,
+        isPrimary: false,
+      },
+    ]);
+
+    await expect(
+      service.linkEmailProvider('user-1', 'sid-1', {
+        password: 'password123',
+        provider: AuthProvidersEnum.google,
+        providerToken: 'google-token',
+        ownedEmailAccountId: 'owned-unverified-id',
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(authGoogleService.getProfileByToken).not.toHaveBeenCalled();
+    expect(usersService.linkProviderAccount).not.toHaveBeenCalled();
   });
 
   it('consumes forgot/reset token versions to reduce replay risk', async () => {

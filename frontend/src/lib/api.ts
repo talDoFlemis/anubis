@@ -6,17 +6,17 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
 
 export class ApiError extends Error {
   status: number;
-  errors: Record<string, string> | null;
+  legacyErrors: Record<string, string> | null;
 
   constructor(
     status: number,
     message: string,
-    errors: Record<string, string> | null = null,
+    legacyErrors: Record<string, string> | null = null,
   ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
-    this.errors = errors;
+    this.legacyErrors = legacyErrors;
   }
 }
 
@@ -70,31 +70,20 @@ function normalizeErrors(value: unknown): Record<string, string> | null {
 
 function parseErrorBody(body: unknown): {
   message: string;
-  errors: Record<string, string> | null;
+  legacyErrors: Record<string, string> | null;
 } {
   if (!body || typeof body !== 'object') {
-    return { message: 'Erro desconhecido', errors: null };
+    return { message: 'Erro desconhecido', legacyErrors: null };
   }
 
   const obj = body as Record<string, unknown>;
   const message = 'message' in obj ? normalizeMessage(obj.message) : null;
-  const errors = 'errors' in obj ? normalizeErrors(obj.errors) : null;
+  const legacyErrors = 'errors' in obj ? normalizeErrors(obj.errors) : null;
 
-  if (message) {
-    return {
-      message,
-      errors,
-    };
-  }
-
-  if (errors) {
-    return {
-      message: Object.values(errors).join('. '),
-      errors,
-    };
-  }
-
-  return { message: 'Erro desconhecido', errors: null };
+  return {
+    message: message ?? 'Erro desconhecido',
+    legacyErrors,
+  };
 }
 
 async function request<T>(
@@ -115,8 +104,8 @@ async function request<T>(
 
   if (!response.ok) {
     const rawBody = await response.json().catch(() => null);
-    const { message, errors } = parseErrorBody(rawBody);
-    throw new ApiError(response.status, message, errors);
+    const { message, legacyErrors } = parseErrorBody(rawBody);
+    throw new ApiError(response.status, message, legacyErrors);
   }
 
   if (response.status === 204) {
