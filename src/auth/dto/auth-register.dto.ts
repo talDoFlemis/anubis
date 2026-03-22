@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  MaxLength,
+  MinLength,
+  Matches,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class AuthRegisterDto {
@@ -20,4 +26,13 @@ export class AuthRegisterDto {
   @ApiProperty({ example: 'Doe' })
   @IsNotEmpty()
   lastName: string;
+
+  @ApiProperty({ example: '12345678901' })
+  @Transform(({ value }) => (value as string).replace(/\D/g, '').trim())
+  @Matches(/^\d{11}$/)
+  cpf: string;
+
+  @ApiProperty({ example: 'UFRN' })
+  @IsNotEmpty()
+  universityOfOrigin: string;
 }

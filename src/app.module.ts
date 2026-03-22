@@ -6,14 +6,17 @@ import { validate } from './env.validation';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { AuthEmailModule } from './auth-email/auth-email.module';
 import { AuthGoogleModule } from './auth-google/auth-google.module';
 import { SessionModule } from './session/session.module';
 import { MailModule } from './mail/mail.module';
 import { HealthModule } from './health/health.module';
-import { LoggerModule } from 'nestjs-pino';
+import { CandidateModule } from './candidate/candidate.module';
+import { ProfessorsModule } from './professors/professors.module';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LoggingModule } from './common/logging.module';
 import { randomUUID } from 'crypto';
+import { SystemModule } from './system/system.module';
 
 @Module({
   imports: [
@@ -21,26 +24,7 @@ import { randomUUID } from 'crypto';
       isGlobal: true,
       validate,
     }),
-    LoggerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const isProduction = config.get<string>('NODE_ENV') === 'production';
-        return {
-          pinoHttp: {
-            name: 'anubis',
-            level: isProduction ? 'info' : 'debug',
-            genReqId: function (req, res) {
-              const existingID = req.id ?? req.headers['x-request-id'];
-              if (existingID) return existingID;
-              const id = randomUUID();
-              res.setHeader('X-Request-Id', id);
-              return id;
-            },
-            transport: isProduction ? undefined : { target: 'pino-pretty' },
-          },
-        };
-      },
-    }),
+    LoggingModule,
     ThrottlerModule.forRoot([
       {
         // Default: 100 requests per minute per IP
@@ -50,13 +34,17 @@ import { randomUUID } from 'crypto';
     ]),
     DatabaseModule,
     UsersModule,
+    CandidateModule,
+    ProfessorsModule,
     AuthModule,
+    AuthEmailModule,
     AuthGoogleModule,
     SessionModule,
     MailModule,
     HealthModule,
+    SystemModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AllExceptionsFilter],
+  providers: [AppService],
 })
 export class AppModule {}

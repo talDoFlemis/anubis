@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { AdminController } from './admin.controller';
+import { SystemController } from './system.controller';
 
-describe('AdminController', () => {
-  let controller: AdminController;
+describe('SystemController', () => {
+  let controller: SystemController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AdminController],
+      controllers: [SystemController],
       providers: [
         {
           provide: ConfigService,
@@ -16,7 +16,7 @@ describe('AdminController', () => {
       ],
     }).compile();
 
-    controller = module.get<AdminController>(AdminController);
+    controller = module.get<SystemController>(SystemController);
   });
 
   it('should be defined', () => {

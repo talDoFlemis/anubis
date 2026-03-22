@@ -18,4 +18,13 @@ export class LoginResponseDto {
 
   @ApiProperty()
   status: string;
+
+  @ApiProperty({ isArray: true, enum: ['email', 'google'] })
+  linkedProviders: string[];
+
+  @ApiProperty()
+  onboardingCompleted: boolean;
+
+  @ApiProperty()
+  mustChangePassword: boolean;
 }

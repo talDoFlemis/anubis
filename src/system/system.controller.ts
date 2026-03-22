@@ -16,18 +16,18 @@ import {
 } from '@nestjs/swagger';
 import { ChangeLogLevelDto } from './dto/change-log-level.dto';
 import { PinoLogger } from 'nestjs-pino';
-import { AdminTokenGuard } from './guards/admin-token.guard';
+import { SystemTokenGuard } from './guards/system-token.guard';
 
-@ApiTags('Admin')
-@UseGuards(AdminTokenGuard)
+@ApiTags('System')
+@UseGuards(SystemTokenGuard)
 @ApiHeader({
-  name: 'x-admin-token',
-  description: 'Secret admin token (ADMIN_SECRET env var)',
+  name: 'x-system-token',
+  description: 'Secret system token (SYSTEM_SECRET env var)',
   required: true,
 })
-@ApiUnauthorizedResponse({ description: 'Missing or invalid admin token' })
-@Controller('admin')
-export class AdminController {
+@ApiUnauthorizedResponse({ description: 'Missing or invalid system token' })
+@Controller('system')
+export class SystemController {
   @Post('change-log-level')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Change the runtime Pino log level' })

@@ -14,143 +14,55 @@ import {
 } from '@nestjs/common';
 import {
   ApiConflictResponse,
+  ApiCookieAuth,
   ApiNoContentResponse,
-  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
   ApiBadRequestResponse,
-  ApiCookieAuth,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { Throttle } from '@nestjs/throttler';
-import { AuthService } from './auth.service';
-import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
-import { AuthRegisterDto } from './dto/auth-register.dto';
-import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
-import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
-import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
+import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candidate-onboarding.dto';
 import { AuthUpdateDto } from './dto/auth-update.dto';
-import { LoginResponseDto } from './dto/login-response.dto';
 import { SessionAuthGuard } from './guards/session-auth.guard';
 import { User } from '../users/domain/user';
+import { AuthService } from './auth.service';
+import {
+  RestrictedSessionReason,
+  SessionLifecycleGuard,
+} from './guards/session-lifecycle.guard';
+import { AllowRestrictedSession } from './decorators/allow-restricted-session.decorator';
 
 @ApiTags('Auth')
+@UseGuards(SessionAuthGuard, SessionLifecycleGuard)
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('email/login')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @AllowRestrictedSession(RestrictedSessionReason.onboardingIncomplete)
+  @Post('onboarding/candidate')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login with email and password' })
-  @ApiOkResponse({ type: LoginResponseDto, description: 'Login successful' })
-  @ApiBadRequestResponse({
-    description:
-      'Account registered via a social provider — use that provider to log in',
-  })
-  @ApiUnauthorizedResponse({ description: 'Invalid email or password' })
-  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  async login(
-    @Body() loginDto: AuthEmailLoginDto,
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'Complete candidate onboarding requirements' })
+  @ApiOkResponse({ type: User, description: 'Candidate onboarding completed' })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiConflictResponse({ description: 'CPF already in use' })
+  async completeCandidateOnboarding(
     @Req() req: Request,
-  ): Promise<LoginResponseDto> {
-    const { user, loginResponse } =
-      await this.authService.validateLogin(loginDto);
-
-    req.session.userId = user.id;
-    req.session.userRole = user.role;
-
-    return loginResponse;
-  }
-
-  @Post('email/register')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Register a new account' })
-  @ApiNoContentResponse({
-    description: 'Registration successful — confirmation email sent',
-  })
-  @ApiConflictResponse({ description: 'Email address is already registered' })
-  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  async register(@Body() registerDto: AuthRegisterDto): Promise<void> {
-    return this.authService.register(registerDto);
-  }
-
-  @Post('email/confirm')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Confirm email address using the hash from the confirmation email',
-  })
-  @ApiNoContentResponse({ description: 'Email confirmed successfully' })
-  @ApiBadRequestResponse({
-    description: 'Invalid or expired confirmation hash',
-  })
-  @ApiNotFoundResponse({
-    description: 'User associated with the hash not found',
-  })
-  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  async confirmEmail(
-    @Body() confirmEmailDto: AuthConfirmEmailDto,
-  ): Promise<void> {
-    return this.authService.confirmEmail(confirmEmailDto.hash);
-  }
-
-  @Post('email/confirm/new')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Confirm a new email address change' })
-  @ApiNoContentResponse({ description: 'New email confirmed successfully' })
-  @ApiBadRequestResponse({
-    description: 'Invalid or expired confirmation hash',
-  })
-  @ApiNotFoundResponse({
-    description: 'User associated with the hash not found',
-  })
-  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  async confirmNewEmail(
-    @Body() confirmEmailDto: AuthConfirmEmailDto,
-  ): Promise<void> {
-    return this.authService.confirmNewEmail(confirmEmailDto.hash);
-  }
-
-  @Post('forgot/password')
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Request a password reset email' })
-  @ApiNoContentResponse({
-    description:
-      'Request processed — if the email is registered a reset link will be sent',
-  })
-  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  async forgotPassword(
-    @Body() forgotPasswordDto: AuthForgotPasswordDto,
-  ): Promise<void> {
-    return this.authService.forgotPassword(forgotPasswordDto.email);
-  }
-
-  @Post('reset/password')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Reset password using the hash from the reset email',
-  })
-  @ApiNoContentResponse({ description: 'Password reset successfully' })
-  @ApiBadRequestResponse({ description: 'Invalid or expired reset hash' })
-  @ApiNotFoundResponse({
-    description: 'User associated with the hash not found',
-  })
-  @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  async resetPassword(
-    @Body() resetPasswordDto: AuthResetPasswordDto,
-  ): Promise<void> {
-    return this.authService.resetPassword(
-      resetPasswordDto.hash,
-      resetPasswordDto.password,
+    @Body() dto: CompleteCandidateOnboardingDto,
+  ): Promise<User> {
+    return this.authService.completeCandidateOnboarding(
+      req.session.userId!,
+      dto,
     );
   }
 
-  @UseGuards(SessionAuthGuard)
+  @AllowRestrictedSession(
+    RestrictedSessionReason.onboardingIncomplete,
+    RestrictedSessionReason.mustChangePassword,
+  )
   @UseInterceptors(ClassSerializerInterceptor)
   @Get('me')
   @HttpCode(HttpStatus.OK)
@@ -162,7 +74,7 @@ export class AuthController {
     return this.authService.me(req.session.userId!);
   }
 
-  @UseGuards(SessionAuthGuard)
+  @AllowRestrictedSession(RestrictedSessionReason.mustChangePassword)
   @UseInterceptors(ClassSerializerInterceptor)
   @Patch('me')
   @HttpCode(HttpStatus.OK)
@@ -184,7 +96,6 @@ export class AuthController {
     );
   }
 
-  @UseGuards(SessionAuthGuard)
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiCookieAuth()
@@ -203,7 +114,10 @@ export class AuthController {
     });
   }
 
-  @UseGuards(SessionAuthGuard)
+  @AllowRestrictedSession(
+    RestrictedSessionReason.onboardingIncomplete,
+    RestrictedSessionReason.mustChangePassword,
+  )
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiCookieAuth()

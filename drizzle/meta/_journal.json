@@ -36,6 +36,13 @@
       "when": 1779100000000,
       "tag": "0004_auth_security_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779200000000,
+      "tag": "0005_accounts_attached_emails",
+      "breakpoints": true
     }
   ]
 }

@@ -1,14 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { UserRepository } from './infrastructure/persistence/user.repository';
+import {
+  AttachOwnedEmailData,
+  CreateUserData,
+  DetachOwnedEmailData,
+  PromoteOwnedEmailData,
+  UpdateUserData,
+  UserOwnedEmail,
+  UserRepository,
+} from './infrastructure/persistence/user.repository';
 import { User } from './domain/user';
+import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly userRepository: UserRepository) {}
 
-  create(
-    data: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>,
-  ): Promise<User> {
+  create(data: CreateUserData): Promise<User> {
     return this.userRepository.create(data);
   }
 
@@ -20,17 +27,55 @@ export class UsersService {
     return this.userRepository.findByEmail(email);
   }
 
-  findBySocialIdAndProvider(params: {
-    socialId: string;
-    provider: string;
-  }): Promise<User | null> {
-    return this.userRepository.findBySocialIdAndProvider(params);
+  findByCpf(cpf: string): Promise<User | null> {
+    return this.userRepository.findByCpf(cpf);
   }
 
-  update(
-    id: string,
-    payload: Partial<Omit<User, 'id' | 'createdAt' | 'deletedAt'>>,
+  findByProviderAccount(params: {
+    socialId: string;
+    provider: AuthProvidersEnum;
+  }): Promise<User | null> {
+    return this.userRepository.findByProviderAccount(params);
+  }
+
+  linkProviderAccount(params: {
+    userId: string;
+    provider: AuthProvidersEnum;
+    socialId?: string | null;
+  }): Promise<void> {
+    return this.userRepository.linkProviderAccount(params);
+  }
+
+  hasProviderAccount(params: {
+    userId: string;
+    provider: AuthProvidersEnum;
+  }): Promise<boolean> {
+    return this.userRepository.hasProviderAccount(params);
+  }
+
+  findUserByOwnedVerifiedEmail(email: string): Promise<User | null> {
+    return this.userRepository.findUserByOwnedVerifiedEmail(email);
+  }
+
+  listUserEmails(userId: string): Promise<UserOwnedEmail[]> {
+    return this.userRepository.listUserEmails(userId);
+  }
+
+  attachOwnedEmail(data: AttachOwnedEmailData): Promise<UserOwnedEmail> {
+    return this.userRepository.attachOwnedEmail(data);
+  }
+
+  detachOwnedEmail(data: DetachOwnedEmailData): Promise<void> {
+    return this.userRepository.detachOwnedEmail(data);
+  }
+
+  promoteOwnedEmailToPrimary(
+    params: PromoteOwnedEmailData,
   ): Promise<User | null> {
+    return this.userRepository.promoteOwnedEmailToPrimary(params);
+  }
+
+  update(id: string, payload: UpdateUserData): Promise<User | null> {
     return this.userRepository.update(id, payload);
   }
 

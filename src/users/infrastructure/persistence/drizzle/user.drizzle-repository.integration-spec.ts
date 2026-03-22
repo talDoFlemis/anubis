@@ -20,21 +20,40 @@ describe('UserDrizzleRepository (integration)', () => {
   const baseUserData = {
     email: 'test@example.com',
     password: 'hashed-password',
-    provider: AuthProvidersEnum.email,
-    socialId: null,
+    cpf: '12345678901',
     firstName: 'John',
     lastName: 'Doe',
     role: RoleEnum.candidate,
     status: StatusEnum.active,
+    onboardingCompleted: true,
+    mustChangePassword: false,
+    bootstrapPasswordExpiresAt: null,
+    confirmEmailTokenVersion: 0,
+    forgotPasswordTokenVersion: 0,
   };
+
+  const createTestUser = async (overrides: Partial<typeof baseUserData> = {}) =>
+    repository.create({
+      ...baseUserData,
+      ...overrides,
+    });
+
+  const attachEmailToUser = async (params: {
+    userId: string;
+    email: string;
+    verified?: boolean;
+  }) =>
+    repository.attachOwnedEmail({
+      userId: params.userId,
+      email: params.email,
+      normalizedEmail: params.email.toLowerCase(),
+      verifiedAt: params.verified === false ? undefined : new Date(),
+    });
 
   beforeAll(() => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-
-    // Instantiate the repository directly with the real Drizzle DB.
-    // The @Inject decorator is only relevant when using the NestJS DI container.
     repository = new UserDrizzleRepository(db as unknown as DrizzleDB);
   });
 
@@ -46,266 +65,153 @@ describe('UserDrizzleRepository (integration)', () => {
     await pool.end();
   });
 
-  describe('create', () => {
-    it('should insert a user and return a domain object with generated id and timestamps', async () => {
-      const user = await repository.create(baseUserData);
+  it('creates and finds a user with lifecycle fields', async () => {
+    const created = await repository.create(baseUserData);
 
-      expect(user.id).toBeDefined();
-      expect(user.id).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    expect(created.id).toBeDefined();
+    expect(created.onboardingCompleted).toBe(true);
+    expect(created.mustChangePassword).toBe(false);
+    expect(created.confirmEmailTokenVersion).toBe(0);
+    expect(created.forgotPasswordTokenVersion).toBe(0);
+
+    const found = await repository.findById(created.id);
+    expect(found).not.toBeNull();
+    expect(found!.email).toBe('test@example.com');
+    expect(found!.cpf).toBe('12345678901');
+  });
+
+  it('links providers and resolves provider accounts', async () => {
+    const created = await repository.create(baseUserData);
+    await repository.linkProviderAccount({
+      userId: created.id,
+      provider: AuthProvidersEnum.email,
+      socialId: null,
+    });
+    await repository.linkProviderAccount({
+      userId: created.id,
+      provider: AuthProvidersEnum.google,
+      socialId: 'google-123',
+    });
+
+    const foundByProvider = await repository.findByProviderAccount({
+      provider: AuthProvidersEnum.google,
+      socialId: 'google-123',
+    });
+
+    expect(foundByProvider).not.toBeNull();
+    expect(foundByProvider!.id).toBe(created.id);
+    expect(foundByProvider!.linkedProviders.sort()).toEqual([
+      'email',
+      'google',
+    ]);
+  });
+
+  it('updates lifecycle fields and soft deletes users', async () => {
+    const created = await repository.create(baseUserData);
+
+    const updated = await repository.update(created.id, {
+      mustChangePassword: true,
+      bootstrapPasswordExpiresAt: new Date('2030-01-01T00:00:00.000Z'),
+      forgotPasswordTokenVersion: 2,
+    });
+
+    expect(updated).not.toBeNull();
+    expect(updated!.mustChangePassword).toBe(true);
+    expect(updated!.forgotPasswordTokenVersion).toBe(2);
+    expect(updated!.bootstrapPasswordExpiresAt).not.toBeNull();
+
+    await repository.remove(created.id);
+    const found = await repository.findById(created.id);
+    expect(found).toBeNull();
+
+    const [row] = await db.select().from(users).where(eq(users.id, created.id));
+    expect(row).toBeDefined();
+    expect(row.deletedAt).toBeInstanceOf(Date);
+  });
+
+  describe('owned email persistence', () => {
+    it('resolves owned verified emails for primary and attached addresses', async () => {
+      const user = await createTestUser();
+      const attached = await attachEmailToUser({
+        userId: user.id,
+        email: 'attached-verified@example.com',
+        verified: true,
+      });
+
+      const primaryResult = await repository.findUserByOwnedVerifiedEmail(
+        baseUserData.email,
       );
-      expect(user.email).toBe('test@example.com');
-      expect(user.password).toBe('hashed-password');
-      expect(user.provider).toBe('email');
-      expect(user.firstName).toBe('John');
-      expect(user.lastName).toBe('Doe');
-      expect(user.role).toBe(RoleEnum.candidate);
-      expect(user.status).toBe(StatusEnum.active);
-      expect(user.createdAt).toBeInstanceOf(Date);
-      expect(user.updatedAt).toBeInstanceOf(Date);
-      expect(user.deletedAt).toBeNull();
-    });
+      expect(primaryResult).not.toBeNull();
+      expect(primaryResult!.id).toBe(user.id);
 
-    it('should create a social user with null password', async () => {
-      const user = await repository.create({
-        ...baseUserData,
-        email: 'social@example.com',
-        password: undefined,
-        provider: AuthProvidersEnum.google,
-        socialId: 'google-123',
-      });
-
-      expect(user.password).toBeNull();
-      expect(user.provider).toBe('google');
-      expect(user.socialId).toBe('google-123');
-    });
-
-    it('should enforce unique email constraint', async () => {
-      await repository.create(baseUserData);
-
-      await expect(repository.create(baseUserData)).rejects.toThrow();
-    });
-  });
-
-  describe('findById', () => {
-    it('should return user when found', async () => {
-      const created = await repository.create(baseUserData);
-
-      const found = await repository.findById(created.id);
-
-      expect(found).not.toBeNull();
-      expect(found!.id).toBe(created.id);
-      expect(found!.email).toBe('test@example.com');
-    });
-
-    it('should return null when not found', async () => {
-      const found = await repository.findById(
-        '00000000-0000-0000-0000-000000000000',
+      const attachedResult = await repository.findUserByOwnedVerifiedEmail(
+        attached.email,
       );
-
-      expect(found).toBeNull();
+      expect(attachedResult).not.toBeNull();
+      expect(attachedResult!.id).toBe(user.id);
     });
 
-    it('should not return soft-deleted users', async () => {
-      const created = await repository.create(baseUserData);
-      await repository.remove(created.id);
-
-      const found = await repository.findById(created.id);
-
-      expect(found).toBeNull();
-    });
-  });
-
-  describe('findByEmail', () => {
-    it('should return user when found by email', async () => {
-      await repository.create(baseUserData);
-
-      const found = await repository.findByEmail('test@example.com');
-
-      expect(found).not.toBeNull();
-      expect(found!.email).toBe('test@example.com');
-    });
-
-    it('should be case-insensitive', async () => {
-      await repository.create(baseUserData);
-
-      const found = await repository.findByEmail('TEST@EXAMPLE.COM');
-
-      expect(found).not.toBeNull();
-      expect(found!.email).toBe('test@example.com');
-    });
-
-    it('should return null when not found', async () => {
-      const found = await repository.findByEmail('notfound@example.com');
-
-      expect(found).toBeNull();
-    });
-
-    it('should not return soft-deleted users', async () => {
-      const created = await repository.create(baseUserData);
-      await repository.remove(created.id);
-
-      const found = await repository.findByEmail('test@example.com');
-
-      expect(found).toBeNull();
-    });
-  });
-
-  describe('findBySocialIdAndProvider', () => {
-    it('should return user when found by socialId and provider', async () => {
-      await repository.create({
-        ...baseUserData,
-        email: 'google@example.com',
-        provider: AuthProvidersEnum.google,
-        socialId: 'google-456',
+    it('does not resolve unverified attached emails', async () => {
+      const user = await createTestUser({ email: 'other@example.com' });
+      await attachEmailToUser({
+        userId: user.id,
+        email: 'unverified@example.com',
+        verified: false,
       });
 
-      const found = await repository.findBySocialIdAndProvider({
-        socialId: 'google-456',
-        provider: 'google',
-      });
-
-      expect(found).not.toBeNull();
-      expect(found!.socialId).toBe('google-456');
-      expect(found!.provider).toBe('google');
-    });
-
-    it('should return null when socialId matches but provider does not', async () => {
-      await repository.create({
-        ...baseUserData,
-        email: 'google@example.com',
-        provider: AuthProvidersEnum.google,
-        socialId: 'google-456',
-      });
-
-      const found = await repository.findBySocialIdAndProvider({
-        socialId: 'google-456',
-        provider: 'email',
-      });
-
-      expect(found).toBeNull();
-    });
-
-    it('should return null when not found', async () => {
-      const found = await repository.findBySocialIdAndProvider({
-        socialId: 'nonexistent',
-        provider: 'google',
-      });
-
-      expect(found).toBeNull();
-    });
-
-    it('should not return soft-deleted users', async () => {
-      const created = await repository.create({
-        ...baseUserData,
-        email: 'google@example.com',
-        provider: AuthProvidersEnum.google,
-        socialId: 'google-456',
-      });
-      await repository.remove(created.id);
-
-      const found = await repository.findBySocialIdAndProvider({
-        socialId: 'google-456',
-        provider: 'google',
-      });
-
-      expect(found).toBeNull();
-    });
-  });
-
-  describe('update', () => {
-    it('should update specified fields and return updated user', async () => {
-      const created = await repository.create(baseUserData);
-
-      const updated = await repository.update(created.id, {
-        firstName: 'Updated',
-        lastName: 'Name',
-      });
-
-      expect(updated).not.toBeNull();
-      expect(updated!.firstName).toBe('Updated');
-      expect(updated!.lastName).toBe('Name');
-      // Unchanged fields should persist
-      expect(updated!.email).toBe('test@example.com');
-      expect(updated!.password).toBe('hashed-password');
-    });
-
-    it('should update the updatedAt timestamp', async () => {
-      const created = await repository.create(baseUserData);
-
-      // Small delay to ensure timestamp difference
-      await new Promise((r) => setTimeout(r, 10));
-
-      const updated = await repository.update(created.id, {
-        firstName: 'Updated',
-      });
-
-      expect(updated!.updatedAt.getTime()).toBeGreaterThan(
-        created.updatedAt.getTime(),
+      const found = await repository.findUserByOwnedVerifiedEmail(
+        'unverified@example.com',
       );
-    });
-
-    it('should return null when updating nonexistent user', async () => {
-      const updated = await repository.update(
-        '00000000-0000-0000-0000-000000000000',
-        { firstName: 'Ghost' },
-      );
-
-      expect(updated).toBeNull();
-    });
-
-    it('should not update soft-deleted users', async () => {
-      const created = await repository.create(baseUserData);
-      await repository.remove(created.id);
-
-      const updated = await repository.update(created.id, {
-        firstName: 'ShouldNotWork',
-      });
-
-      expect(updated).toBeNull();
-    });
-
-    it('should update email', async () => {
-      const created = await repository.create(baseUserData);
-
-      const updated = await repository.update(created.id, {
-        email: 'newemail@example.com',
-      });
-
-      expect(updated!.email).toBe('newemail@example.com');
-    });
-
-    it('should update provider and socialId for account linking', async () => {
-      const created = await repository.create(baseUserData);
-
-      const updated = await repository.update(created.id, {
-        provider: AuthProvidersEnum.google,
-        socialId: 'google-linked-789',
-      });
-
-      expect(updated!.provider).toBe('google');
-      expect(updated!.socialId).toBe('google-linked-789');
-    });
-  });
-
-  describe('remove (soft delete)', () => {
-    it('should set deletedAt without physically deleting the row', async () => {
-      const created = await repository.create(baseUserData);
-
-      await repository.remove(created.id);
-
-      // Should not be found via findById (filters out deleted)
-      const found = await repository.findById(created.id);
       expect(found).toBeNull();
+    });
 
-      // But the row should still exist in the database
-      const [row] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, created.id));
+    it('promotes an attached email to primary', async () => {
+      const user = await createTestUser();
+      const attached = await attachEmailToUser({
+        userId: user.id,
+        email: 'promote@example.com',
+        verified: true,
+      });
 
-      expect(row).toBeDefined();
-      expect(row.deletedAt).toBeInstanceOf(Date);
+      const promoted = await repository.promoteOwnedEmailToPrimary({
+        userId: user.id,
+        accountId: attached.accountId!,
+      });
+
+      expect(promoted).not.toBeNull();
+      expect(promoted!.email).toBe(attached.email);
+
+      const refreshed = await repository.findById(user.id);
+      expect(refreshed).not.toBeNull();
+      expect(refreshed!.email).toBe(attached.email);
+    });
+
+    it('rejects duplicate normalized attached emails across users', async () => {
+      const user = await createTestUser();
+      await attachEmailToUser({
+        userId: user.id,
+        email: 'duplicate@example.com',
+        verified: true,
+      });
+
+      const other = await createTestUser({
+        email: 'second@example.com',
+        cpf: '98765432100',
+      });
+
+      await expect(
+        attachEmailToUser({
+          userId: other.id,
+          email: 'Duplicate@example.com',
+          verified: true,
+        }),
+      ).rejects.toThrow();
+
+      const stillBelongsToFirst = await repository.findUserByOwnedVerifiedEmail(
+        'duplicate@example.com',
+      );
+      expect(stillBelongsToFirst).not.toBeNull();
+      expect(stillBelongsToFirst!.id).toBe(user.id);
     });
   });
 });

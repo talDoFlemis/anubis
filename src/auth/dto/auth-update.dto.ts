@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsNotEmpty,
   IsOptional,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -25,6 +26,12 @@ export class AuthUpdateDto {
   @IsEmail()
   @Transform(({ value }) => (value as string).toLowerCase().trim())
   email?: string;
+
+  @ApiPropertyOptional({ example: '12345678901' })
+  @IsOptional()
+  @Transform(({ value }) => (value as string).replace(/\D/g, '').trim())
+  @Matches(/^\d{11}$/)
+  cpf?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
