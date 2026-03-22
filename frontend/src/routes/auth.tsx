@@ -1,20 +1,47 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { authQueryOptions } from '@/hooks/use-auth';
+import {
+  getRestrictedSessionPath,
+  isLifecycleAuthPath,
+  isRedirectLikeError,
+} from '@/lib/auth-flow';
+
+const PUBLIC_HASH_AUTH_PATHS = new Set([
+  '/auth/confirm-email',
+  '/auth/confirm-new-email',
+  '/auth/reset-password',
+]);
 
 export const Route = createFileRoute('/auth')({
-  beforeLoad: async ({ context }) => {
+  beforeLoad: async ({ context, location }) => {
+    const isLifecycleRoute = isLifecycleAuthPath(location.pathname);
+    const isPublicHashRoute = PUBLIC_HASH_AUTH_PATHS.has(location.pathname);
+
+    if (isPublicHashRoute) {
+      return;
+    }
+
     try {
-      await context.queryClient.ensureQueryData(authQueryOptions);
+      const user = await context.queryClient.ensureQueryData(authQueryOptions);
+      const restrictedPath = getRestrictedSessionPath(user);
+
+      if (restrictedPath) {
+        if (location.pathname !== restrictedPath) {
+          throw redirect({ to: restrictedPath });
+        }
+
+        return;
+      }
+
       throw redirect({ to: '/' });
     } catch (error) {
-      if (error instanceof Error && error.message === 'REDIRECT') {
+      if (isRedirectLikeError(error)) {
         throw error;
       }
-      // Check if it's a redirect error from TanStack Router
-      if (error && typeof error === 'object' && 'to' in error) {
-        throw error;
+
+      if (isLifecycleRoute) {
+        throw redirect({ to: '/auth/sign-in' });
       }
-      // User is not authenticated, allow access to auth pages
     }
   },
   component: AuthLayout,

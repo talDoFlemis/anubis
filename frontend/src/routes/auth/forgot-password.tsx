@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ApiError } from '@/lib/api';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/forgot-password')({
@@ -61,9 +60,7 @@ function ForgotPasswordPage() {
 
           {forgotPassword.isError && (
             <p className="text-sm text-destructive">
-              {forgotPassword.error instanceof ApiError
-                ? forgotPassword.error.message
-                : 'Erro ao enviar email. Tente novamente.'}
+              {forgotPassword.error.message}
             </p>
           )}
 

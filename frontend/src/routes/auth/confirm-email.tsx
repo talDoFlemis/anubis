@@ -76,9 +76,7 @@ function ConfirmEmailPage() {
         <CardHeader className="text-center">
           <XCircle className="mx-auto h-12 w-12 text-destructive" />
           <CardTitle className="text-2xl">Erro na confirmacao</CardTitle>
-          <CardDescription>
-            Nao foi possivel confirmar seu email. O link pode ter expirado.
-          </CardDescription>
+          <CardDescription>{confirmEmail.error.message}</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
           <Button

@@ -76,9 +76,7 @@ function ConfirmNewEmailPage() {
         <CardHeader className="text-center">
           <XCircle className="mx-auto h-12 w-12 text-destructive" />
           <CardTitle className="text-2xl">Erro na confirmacao</CardTitle>
-          <CardDescription>
-            Nao foi possivel confirmar seu novo email. O link pode ter expirado.
-          </CardDescription>
+          <CardDescription>{confirmNewEmail.error.message}</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
           <Button variant="outline" onClick={() => navigate({ to: '/' })}>

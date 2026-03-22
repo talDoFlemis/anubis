@@ -14,7 +14,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ApiError } from '@/lib/api';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/sign-up')({
@@ -24,6 +23,8 @@ export const Route = createFileRoute('/auth/sign-up')({
 function SignUpPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [universityOfOrigin, setUniversityOfOrigin] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const register = useEmailRegister();
@@ -32,7 +33,14 @@ function SignUpPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     register.mutate(
-      { email, password, firstName, lastName },
+      {
+        email,
+        password,
+        firstName,
+        lastName,
+        cpf,
+        universityOfOrigin,
+      },
       {
         onSuccess: () => {
           toast.success(
@@ -49,7 +57,8 @@ function SignUpPage() {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Criar conta</CardTitle>
         <CardDescription>
-          Preencha os dados abaixo para se cadastrar
+          Cadastro aberto apenas para candidatos. Professores recebem convite da
+          equipe.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -88,6 +97,27 @@ function SignUpPage() {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="cpf">CPF</Label>
+            <Input
+              id="cpf"
+              inputMode="numeric"
+              placeholder="Somente numeros"
+              value={cpf}
+              onChange={(e) => setCpf(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="universityOfOrigin">Universidade de origem</Label>
+            <Input
+              id="universityOfOrigin"
+              placeholder="Ex.: UFRN"
+              value={universityOfOrigin}
+              onChange={(e) => setUniversityOfOrigin(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
             <Input
               id="password"
@@ -101,11 +131,7 @@ function SignUpPage() {
           </div>
 
           {register.isError && (
-            <p className="text-sm text-destructive">
-              {register.error instanceof ApiError
-                ? register.error.message
-                : 'Erro ao criar conta. Tente novamente.'}
-            </p>
+            <p className="text-sm text-destructive">{register.error.message}</p>
           )}
 
           <Button
@@ -124,7 +150,10 @@ function SignUpPage() {
           </span>
         </div>
 
-        <GoogleLoginButton />
+        <GoogleLoginButton
+          text="signup_with"
+          helperText="Quem continuar com Google pode precisar completar os dados de candidato logo apos a autenticacao."
+        />
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">

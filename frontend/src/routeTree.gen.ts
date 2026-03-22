@@ -15,9 +15,11 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
+import { Route as AuthOnboardingRouteImport } from './routes/auth/onboarding'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthConfirmNewEmailRouteImport } from './routes/auth/confirm-new-email'
 import { Route as AuthConfirmEmailRouteImport } from './routes/auth/confirm-email'
+import { Route as AuthChangePasswordRouteImport } from './routes/auth/change-password'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -48,6 +50,11 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
@@ -63,22 +70,31 @@ const AuthConfirmEmailRoute = AuthConfirmEmailRouteImport.update({
   path: '/confirm-email',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthChangePasswordRoute = AuthChangePasswordRouteImport.update({
+  id: '/change-password',
+  path: '/change-password',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/auth/change-password': typeof AuthChangePasswordRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/onboarding': typeof AuthOnboardingRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
+  '/auth/change-password': typeof AuthChangePasswordRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/onboarding': typeof AuthOnboardingRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -88,9 +104,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/auth/change-password': typeof AuthChangePasswordRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/onboarding': typeof AuthOnboardingRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -101,18 +119,22 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/auth/change-password'
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
     | '/auth/forgot-password'
+    | '/auth/onboarding'
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/auth/change-password'
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
     | '/auth/forgot-password'
+    | '/auth/onboarding'
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -121,9 +143,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/auth'
+    | '/auth/change-password'
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
     | '/auth/forgot-password'
+    | '/auth/onboarding'
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -179,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthResetPasswordRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/auth/onboarding': {
+      id: '/auth/onboarding'
+      path: '/onboarding'
+      fullPath: '/auth/onboarding'
+      preLoaderRoute: typeof AuthOnboardingRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/auth/forgot-password': {
       id: '/auth/forgot-password'
       path: '/forgot-password'
@@ -200,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfirmEmailRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/auth/change-password': {
+      id: '/auth/change-password'
+      path: '/change-password'
+      fullPath: '/auth/change-password'
+      preLoaderRoute: typeof AuthChangePasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
@@ -214,18 +252,22 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface AuthRouteChildren {
+  AuthChangePasswordRoute: typeof AuthChangePasswordRoute
   AuthConfirmEmailRoute: typeof AuthConfirmEmailRoute
   AuthConfirmNewEmailRoute: typeof AuthConfirmNewEmailRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthChangePasswordRoute: AuthChangePasswordRoute,
   AuthConfirmEmailRoute: AuthConfirmEmailRoute,
   AuthConfirmNewEmailRoute: AuthConfirmNewEmailRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthOnboardingRoute: AuthOnboardingRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,

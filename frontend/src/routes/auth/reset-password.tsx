@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ApiError } from '@/lib/api';
 import { toast } from 'sonner';
 import { XCircle } from 'lucide-react';
 
@@ -109,9 +108,7 @@ function ResetPasswordPage() {
 
           {resetPassword.isError && (
             <p className="text-sm text-destructive">
-              {resetPassword.error instanceof ApiError
-                ? resetPassword.error.message
-                : 'Erro ao redefinir senha. Tente novamente.'}
+              {resetPassword.error.message}
             </p>
           )}
 

@@ -14,7 +14,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ApiError } from '@/lib/api';
 
 export const Route = createFileRoute('/auth/sign-in')({
   component: SignInPage,
@@ -34,7 +33,7 @@ function SignInPage() {
     <Card>
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Entrar</CardTitle>
-        <CardDescription>Acesse sua conta para continuar</CardDescription>
+        <CardDescription>Acesse sua conta para continuar.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,9 +70,7 @@ function SignInPage() {
 
           {emailLogin.isError && (
             <p className="text-sm text-destructive">
-              {emailLogin.error instanceof ApiError
-                ? emailLogin.error.message
-                : 'Erro ao entrar. Tente novamente.'}
+              {emailLogin.error.message}
             </p>
           )}
 
@@ -93,17 +90,18 @@ function SignInPage() {
           </span>
         </div>
 
-        <GoogleLoginButton />
+        <GoogleLoginButton helperText="Se esta for seu primeiro login com Google, voce pode ser direcionado para concluir o onboarding antes de acessar o sistema." />
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
-          Nao tem uma conta?{' '}
+          Candidatos ainda nao cadastrados podem{' '}
           <Link
             to="/auth/sign-up"
             className="text-primary underline-offset-4 hover:underline"
           >
-            Cadastre-se
+            criar conta aqui
           </Link>
+          .
         </p>
       </CardFooter>
     </Card>

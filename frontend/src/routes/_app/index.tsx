@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/use-auth';
+import { AccountAccessCard } from '@/components/account-access-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -128,6 +129,8 @@ function HomePage() {
             </div>
           </CardContent>
         </Card>
+
+        <AccountAccessCard user={user} />
       </div>
     </div>
   );
