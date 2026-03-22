@@ -9,8 +9,14 @@ import { DRIZZLE } from './drizzle.constants';
 import * as usersSchema from './schema/users';
 import * as sessionsSchema from './schema/sessions';
 import * as accountsSchema from './schema/accounts';
+import * as candidatesSchema from './schema/candidates';
 
-const schema = { ...usersSchema, ...sessionsSchema, ...accountsSchema };
+const schema = {
+  ...usersSchema,
+  ...sessionsSchema,
+  ...accountsSchema,
+  ...candidatesSchema,
+};
 
 export type DrizzleSchema = typeof schema;
 

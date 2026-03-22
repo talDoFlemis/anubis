@@ -4,8 +4,14 @@ import { sql } from 'drizzle-orm';
 import * as usersSchema from '../schema/users';
 import * as sessionsSchema from '../schema/sessions';
 import * as candidatesSchema from '../schema/candidates';
+import * as accountsSchema from '../schema/accounts';
 
-const schema = { ...usersSchema, ...sessionsSchema, ...candidatesSchema };
+const schema = {
+  ...usersSchema,
+  ...sessionsSchema,
+  ...candidatesSchema,
+  ...accountsSchema,
+};
 
 export type TestDrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -36,6 +42,6 @@ export function createTestDrizzle(): { db: TestDrizzleDB; pool: Pool } {
  */
 export async function truncateAllTables(db: TestDrizzleDB): Promise<void> {
   await db.execute(
-    sql`TRUNCATE TABLE candidates, accounts, users, session, RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE candidates, accounts, users, session RESTART IDENTITY CASCADE`,
   );
 }

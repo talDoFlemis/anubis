@@ -1,4 +1,12 @@
-import { pgTable, uuid, varchar, pgEnum, timestamp } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  pgEnum,
+  timestamp,
+  boolean,
+  integer,
+} from 'drizzle-orm/pg-core';
 
 export const roleEnum = pgEnum('role', [
   'professor',
@@ -18,6 +26,17 @@ export const users = pgTable('users', {
   lastName: varchar('last_name', { length: 255 }),
   role: roleEnum('role').notNull().default('candidate'),
   status: statusEnum('status').notNull().default('inactive'),
+  onboardingCompleted: boolean('onboarding_completed').notNull().default(true),
+  mustChangePassword: boolean('must_change_password').notNull().default(false),
+  bootstrapPasswordExpiresAt: timestamp('bootstrap_password_expires_at', {
+    withTimezone: true,
+  }),
+  confirmEmailTokenVersion: integer('confirm_email_token_version')
+    .notNull()
+    .default(0),
+  forgotPasswordTokenVersion: integer('forgot_password_token_version')
+    .notNull()
+    .default(0),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),

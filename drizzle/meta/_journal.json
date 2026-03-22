@@ -22,6 +22,20 @@
       "when": 1774178282870,
       "tag": "0002_add_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779000000000,
+      "tag": "0003_auth_lifecycle_and_accounts_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779100000000,
+      "tag": "0004_auth_security_columns",
+      "breakpoints": true
     }
   ]
 }
