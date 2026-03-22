@@ -36,6 +36,6 @@ export function createTestDrizzle(): { db: TestDrizzleDB; pool: Pool } {
  */
 export async function truncateAllTables(db: TestDrizzleDB): Promise<void> {
   await db.execute(
-    sql`TRUNCATE TABLE candidates, users, session RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE candidates, accounts, users, session, RESTART IDENTITY CASCADE`,
   );
 }

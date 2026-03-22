@@ -1,7 +1,5 @@
 import { pgTable, uuid, varchar, pgEnum, timestamp } from 'drizzle-orm/pg-core';
 
-export const authProviderEnum = pgEnum('auth_provider', ['email', 'google']);
-
 export const roleEnum = pgEnum('role', [
   'professor',
   'candidate',
@@ -16,8 +14,6 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).unique(),
   cpf: varchar('cpf', { length: 11 }).unique(),
   password: varchar('password', { length: 255 }),
-  provider: authProviderEnum('provider').notNull().default('email'),
-  socialId: varchar('social_id', { length: 255 }),
   firstName: varchar('first_name', { length: 255 }),
   lastName: varchar('last_name', { length: 255 }),
   role: roleEnum('role').notNull().default('candidate'),
