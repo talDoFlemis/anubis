@@ -53,10 +53,6 @@ export class UsersService {
     return this.userRepository.hasProviderAccount(params);
   }
 
-  findUserByOwnedVerifiedEmail(email: string): Promise<User | null> {
-    return this.userRepository.findUserByOwnedVerifiedEmail(email);
-  }
-
   listUserEmails(userId: string): Promise<UserOwnedEmail[]> {
     return this.userRepository.listUserEmails(userId);
   }

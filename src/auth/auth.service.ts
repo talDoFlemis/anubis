@@ -28,7 +28,6 @@ import { AuthUpdateDto } from './dto/auth-update.dto';
 import { CandidateService } from '../candidate/candidate.service';
 import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candidate-onboarding.dto';
 import { buildLoginResponse } from './login-response.builder';
-import { getPreferredLoginProvider } from './auth-provider.utils';
 import { MailService } from '../mail/mail.service';
 
 const BCRYPT_SALT_ROUNDS = 12;
@@ -83,22 +82,8 @@ export class AuthService {
         };
       }
 
-      const socialEmail = socialData.email?.toLowerCase();
-      const userByOwnedVerifiedEmail = socialEmail
-        ? await this.usersService.findUserByOwnedVerifiedEmail(socialEmail)
-        : null;
-
-      if (userByOwnedVerifiedEmail) {
-        const loginProvider = getPreferredLoginProvider(
-          userByOwnedVerifiedEmail.linkedProviders,
-        );
-        throw new ConflictException({
-          message: `Este e-mail ja possui conta existente. Entre com ${loginProvider ?? 'o provedor ja vinculado'} e vincule ${authProvider} explicitamente.`,
-        });
-      }
-
       const createdUser = await this.usersService.create({
-        email: socialEmail ?? null,
+        email: socialData.email ?? null,
         firstName: socialData.firstName ?? null,
         lastName: socialData.lastName ?? null,
         role: RoleEnum.candidate,
@@ -414,28 +399,6 @@ export class AuthService {
       throw new ConflictException({
         message: `Esta conta ${provider} ja esta vinculada a outro usuario.`,
       });
-    }
-
-    const socialEmail = socialData.email?.toLowerCase();
-    if (socialEmail) {
-      const userByOwnedVerifiedEmail =
-        await this.usersService.findUserByOwnedVerifiedEmail(socialEmail);
-
-      if (userByOwnedVerifiedEmail && userByOwnedVerifiedEmail.id !== user.id) {
-        throw new ConflictException({
-          message: `Este e-mail do provedor ${provider} ja pertence a outro usuario.`,
-        });
-      }
-
-      if (
-        !userByOwnedVerifiedEmail ||
-        userByOwnedVerifiedEmail.id !== user.id
-      ) {
-        throw new BadRequestException({
-          message:
-            'O e-mail do provedor nao corresponde ao e-mail da sessao autenticada.',
-        });
-      }
     }
 
     await this.usersService.linkProviderAccount({

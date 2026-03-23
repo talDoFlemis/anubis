@@ -114,7 +114,7 @@ Provider linking is explicit and session-authenticated.
 
 ## Professor Invites
 
-Professors remain invite-only through `POST /professors/invite`.
+Professors remain invite-only through `POST /v1/professors/invite`.
 
 This route is guarded by session auth, the session lifecycle guard, and role checks. Only users with the `mdcc-secretary` or `post-graduate-coordinator` role can invite professors.
 

@@ -86,32 +86,6 @@ export class UserDrizzleRepository extends UserRepository {
     return this.toDomain(row);
   }
 
-  async findUserByOwnedVerifiedEmail(email: string): Promise<NullableUser> {
-    const primaryUser = await this.findByEmail(email);
-
-    if (primaryUser) {
-      return primaryUser;
-    }
-
-    const normalizedEmail = email.toLowerCase();
-    const [row] = await this.db
-      .select({ user: users })
-      .from(accounts)
-      .innerJoin(users, eq(accounts.userId, users.id))
-      .where(
-        and(
-          eq(accounts.entryType, ATTACHED_EMAIL_ENTRY_TYPE),
-          eq(accounts.attachedEmailNormalized, normalizedEmail),
-          isNotNull(accounts.attachedEmailVerifiedAt),
-          isNull(users.deletedAt),
-        ),
-      )
-      .limit(1);
-
-    if (!row) return null;
-    return this.toDomain(row.user);
-  }
-
   async listUserEmails(userId: string): Promise<UserOwnedEmail[]> {
     const [userRow] = await this.db
       .select()

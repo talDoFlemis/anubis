@@ -228,7 +228,18 @@ export class AuthEmailService {
         throw new NotFoundException('Usuario nao encontrado.');
       }
 
+      if (user.status === StatusEnum.active) {
+        return;
+      }
+
       if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
+        this.logger.error(
+          {
+            tokenVersion: token.confirmEmailTokenVersion,
+            userVersion: user.confirmEmailTokenVersion,
+          },
+          'Confirm e-mail token version mismatch',
+        );
         throw new BadRequestException(
           'Link de confirmacao invalido ou expirado.',
         );
@@ -465,7 +476,10 @@ export class AuthEmailService {
         );
       }
 
-      await this.resolveOwnedEmailSelectionForLink(user, dto);
+      const selectedOwnedEmail = await this.resolveOwnedEmailSelectionForLink(
+        user,
+        dto,
+      );
 
       await this.validateProviderProof(user.id, dto);
 
@@ -479,6 +493,15 @@ export class AuthEmailService {
         provider: AuthProvidersEnum.email,
         socialId: null,
       });
+
+      if (selectedOwnedEmail && !selectedOwnedEmail.isPrimary) {
+        await this.promoteOwnedEmailToPrimary({
+          userId: user.id,
+          accountId: selectedOwnedEmail.accountId,
+          email: selectedOwnedEmail.email,
+        });
+      }
+
       await this.sessionService.deleteByUserIdWithExclude({
         userId: user.id,
         excludeSessionId: sessionId,
@@ -596,9 +619,15 @@ export class AuthEmailService {
   private async resolveOwnedEmailSelectionForLink(
     user: User,
     dto: AuthLinkEmailProviderDto,
-  ): Promise<void> {
+  ): Promise<{
+    accountId: string | null;
+    email: string;
+    normalizedEmail: string | null;
+    verifiedAt: Date | null;
+    isPrimary: boolean;
+  } | null> {
     if (!dto.ownedEmailAccountId) {
-      return;
+      return null;
     }
 
     const ownedEmails = await this.listUserOwnedEmails(user);
@@ -611,6 +640,8 @@ export class AuthEmailService {
         'Conta de e-mail informada para vinculacao e invalida.',
       );
     }
+
+    return selectedOwnedEmail;
   }
 
   private async attachVerifiedOwnedEmail(params: {
@@ -653,9 +684,9 @@ export class AuthEmailService {
 
     if (typeof usersService.promoteOwnedEmailToPrimary === 'function') {
       if (!params.accountId) {
-        throw new BadRequestException({
-          message: 'Nao foi possivel confirmar o novo e-mail informado.',
-        });
+        throw new BadRequestException(
+          'Nao foi possivel confirmar o novo e-mail informado.',
+        );
       }
 
       const promoted = await usersService.promoteOwnedEmailToPrimary({
@@ -664,9 +695,9 @@ export class AuthEmailService {
       });
 
       if (!promoted) {
-        throw new BadRequestException({
-          message: 'Nao foi possivel confirmar o novo e-mail informado.',
-        });
+        throw new BadRequestException(
+          'Nao foi possivel confirmar o novo e-mail informado.',
+        );
       }
 
       return;

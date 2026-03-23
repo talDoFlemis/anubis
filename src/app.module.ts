@@ -15,7 +15,6 @@ import { CandidateModule } from './candidate/candidate.module';
 import { ProfessorsModule } from './professors/professors.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggingModule } from './common/logging.module';
-import { randomUUID } from 'crypto';
 import { SystemModule } from './system/system.module';
 
 @Module({

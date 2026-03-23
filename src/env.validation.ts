@@ -154,13 +154,6 @@ export class EnvironmentVariables {
   @IsEmail()
   MAIL_GOOGLE_USER: string = '';
 
-  // System
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  @Max(65535)
-  SYSTEM_PORT: number;
-
   @IsNotEmpty()
   @MinLength(32)
   SYSTEM_SECRET: string;

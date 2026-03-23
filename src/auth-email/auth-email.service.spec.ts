@@ -240,6 +240,11 @@ describe('AuthEmailService', () => {
       id: 'user-1',
       linkedProviders: [AuthProvidersEnum.google],
     });
+    usersService.promoteOwnedEmailToPrimary.mockResolvedValue({
+      ...baseUser,
+      email: 'alias@example.com',
+      linkedProviders: [AuthProvidersEnum.google, AuthProvidersEnum.email],
+    });
     jest.mocked(bcrypt.hash).mockResolvedValue('hashed' as never);
 
     await service.linkEmailProvider('user-1', 'sid-1', {
@@ -299,6 +304,11 @@ describe('AuthEmailService', () => {
       id: 'user-1',
       linkedProviders: [AuthProvidersEnum.google],
     });
+    usersService.promoteOwnedEmailToPrimary.mockResolvedValue({
+      ...baseUser,
+      email: 'alias@example.com',
+      linkedProviders: [AuthProvidersEnum.google, AuthProvidersEnum.email],
+    });
     jest.mocked(bcrypt.hash).mockResolvedValue('hashed' as never);
 
     await service.linkEmailProvider('user-1', 'sid-1', {
@@ -313,6 +323,10 @@ describe('AuthEmailService', () => {
       userId: 'user-1',
       provider: AuthProvidersEnum.email,
       socialId: null,
+    });
+    expect(usersService.promoteOwnedEmailToPrimary).toHaveBeenCalledWith({
+      userId: 'user-1',
+      accountId: 'owned-verified-id',
     });
   });
 

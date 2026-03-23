@@ -67,12 +67,6 @@ export abstract class UserRepository {
 
   abstract findByEmail(email: string): Promise<NullableUser>;
 
-  findUserByOwnedVerifiedEmail(email: string): Promise<NullableUser> {
-    throw new Error(
-      'findUserByOwnedVerifiedEmail must be implemented by a concrete repository',
-    );
-  }
-
   listUserEmails(userId: User['id']): Promise<UserOwnedEmail[]> {
     throw new Error(
       'listUserEmails must be implemented by a concrete repository',
