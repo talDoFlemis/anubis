@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { randomUUID } from 'crypto';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import { HttpLoggerMiddleware } from './middlewares/http-logger.middleware';
 
 @Module({
   imports: [
@@ -22,13 +23,18 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
               res.setHeader('X-Request-Id', id);
               return id;
             },
+            serializers: {
+              req: () => undefined,
+              res: () => undefined,
+            },
+            autoLogging: false,
             transport: isProduction ? undefined : { target: 'pino-pretty' },
           },
         };
       },
     }),
   ],
-  providers: [AllExceptionsFilter],
-  exports: [LoggerModule, AllExceptionsFilter],
+  providers: [AllExceptionsFilter, HttpLoggerMiddleware],
+  exports: [LoggerModule, AllExceptionsFilter, HttpLoggerMiddleware],
 })
 export class LoggingModule {}

@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { HttpLoggerMiddleware } from './common/middlewares/http-logger.middleware';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { validate } from './env.validation';
 import { DatabaseModule } from './database/database.module';
@@ -46,4 +47,8 @@ import { SystemModule } from './system/system.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpLoggerMiddleware).forRoutes('*');
+  }
+}
