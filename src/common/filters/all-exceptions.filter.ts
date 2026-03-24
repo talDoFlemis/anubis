@@ -25,7 +25,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message = this.resolveMessage(exception, status);
+    const message = this.resolveMessage(exception);
 
     if (status >= (HttpStatus.INTERNAL_SERVER_ERROR as number)) {
       this.logger.error(
@@ -34,48 +34,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
-    response.status(status).json({ message });
+    response.status(status).json(message);
   }
 
-  private resolveMessage(
-    exception: unknown,
-    status: number,
-  ): string | string[] {
-    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      return 'Internal server error';
-    }
-
+  private resolveMessage(exception: unknown): string | object {
     if (!(exception instanceof HttpException)) {
-      return 'An error occurred';
+      return { message: 'An error occurred' };
     }
 
-    return (
-      this.extractResponseMessage(exception.getResponse()) ??
-      exception.message ??
-      'An error occurred'
-    );
-  }
-
-  private extractResponseMessage(response: unknown): string | string[] | null {
-    if (typeof response === 'string') {
-      return response;
-    }
-
-    if (response && typeof response === 'object') {
-      const payload = response as Record<string, unknown>;
-
-      if ('message' in payload) {
-        const message = payload.message;
-        if (typeof message === 'string' || Array.isArray(message)) {
-          return message;
-        }
-      }
-
-      if ('error' in payload && typeof payload.error === 'string') {
-        return payload.error;
-      }
-    }
-
-    return null;
+    return exception.getResponse() ?? { message: exception.message };
   }
 }
