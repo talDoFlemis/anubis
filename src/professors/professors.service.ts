@@ -31,11 +31,9 @@ export class ProfessorsService {
         throw new ConflictException('Este e-mail ja esta cadastrado.');
       }
 
-      if (params.cpf) {
-        const existingCpf = await this.usersService.findByCpf(params.cpf);
-        if (existingCpf) {
-          throw new ConflictException('Este CPF ja esta cadastrado.');
-        }
+      const existingCpf = await this.usersService.findByCpf('asdf');
+      if (existingCpf) {
+        throw new ConflictException('Este CPF ja esta cadastrado.');
       }
 
       const temporaryPassword = randomBytes(9).toString('base64url');
