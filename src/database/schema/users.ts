@@ -16,9 +16,12 @@ export const roleEnum = pgEnum('role', [
 ]);
 
 export const statusEnum = pgEnum('status', ['active', 'inactive']);
+export const authProviderEnum = pgEnum('auth_provider', ['email', 'google']);
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
+  authProvider: authProviderEnum('auth_provider').notNull().default('email'),
+  providerSubject: varchar('provider_subject', { length: 255 }),
   email: varchar('email', { length: 255 }).unique(),
   cpf: varchar('cpf', { length: 11 }).unique(),
   password: varchar('password', { length: 255 }),
