@@ -1,5 +1,5 @@
 import { User } from '../users/domain/user';
-import { LoginResponseDto } from './dto/login-response.dto';
+import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
 
 export function buildLoginResponse(user: User): LoginResponseDto {
   return {
@@ -9,7 +9,6 @@ export function buildLoginResponse(user: User): LoginResponseDto {
     lastName: user.lastName,
     role: user.role,
     status: user.status,
-    linkedProviders: user.linkedProviders,
     onboardingCompleted: user.onboardingCompleted,
     mustChangePassword: user.mustChangePassword,
   };

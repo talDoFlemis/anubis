@@ -17,7 +17,7 @@ import type { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
 import { AuthGoogleService } from './auth-google.service';
 import { AuthGoogleLoginDto } from './dto/auth-google-login.dto';
-import { LoginResponseDto } from '../auth/dto/login-response.dto';
+import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';

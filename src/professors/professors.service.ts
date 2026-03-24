@@ -63,7 +63,7 @@ export class ProfessorsService {
       await this.usersService.linkProviderAccount({
         userId: user.id,
         provider: AuthProvidersEnum.email,
-        socialId: null,
+        providerId: null,
       });
 
       const body = this.composeProfessorInviteEmail({

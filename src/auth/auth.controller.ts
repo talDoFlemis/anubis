@@ -25,7 +25,7 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candidate-onboarding.dto';
-import { AuthUpdateDto } from './dto/auth-update.dto';
+import { AuthUpdateDto } from '../auth-email/dto/auth-update.dto';
 import { SessionAuthGuard } from './guards/session-auth.guard';
 import { User } from '../users/domain/user';
 import { AuthService } from './auth.service';

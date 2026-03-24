@@ -23,8 +23,8 @@ import { SocialInterface } from '../social/interfaces/social.interface';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
-import { LoginResponseDto } from './dto/login-response.dto';
-import { AuthUpdateDto } from './dto/auth-update.dto';
+import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
+import { AuthUpdateDto } from '../auth-email/dto/auth-update.dto';
 import { CandidateService } from '../candidate/candidate.service';
 import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candidate-onboarding.dto';
 import { buildLoginResponse } from './login-response.builder';
@@ -95,7 +95,7 @@ export class AuthService {
       await this.usersService.linkProviderAccount({
         userId: createdUser.id,
         provider: authProvider,
-        socialId: socialData.id,
+        providerId: socialData.id,
       });
 
       const user = await this.usersService.findById(createdUser.id);
@@ -404,7 +404,7 @@ export class AuthService {
     await this.usersService.linkProviderAccount({
       userId: user.id,
       provider,
-      socialId: socialData.id,
+      providerId: socialData.id,
     });
 
     const updated = await this.usersService.findById(user.id);

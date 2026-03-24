@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
-  AttachOwnedEmailData,
   CreateUserData,
-  DetachOwnedEmailData,
-  PromoteOwnedEmailData,
   UpdateUserData,
-  UserOwnedEmail,
   UserRepository,
 } from './infrastructure/persistence/user.repository';
 import { User } from './domain/user';
@@ -32,7 +28,7 @@ export class UsersService {
   }
 
   findByProviderAccount(params: {
-    socialId: string;
+    providerId: string;
     provider: AuthProvidersEnum;
   }): Promise<User | null> {
     return this.userRepository.findByProviderAccount(params);
@@ -41,7 +37,7 @@ export class UsersService {
   linkProviderAccount(params: {
     userId: string;
     provider: AuthProvidersEnum;
-    socialId?: string | null;
+    providerId?: string | null;
   }): Promise<void> {
     return this.userRepository.linkProviderAccount(params);
   }
@@ -51,24 +47,6 @@ export class UsersService {
     provider: AuthProvidersEnum;
   }): Promise<boolean> {
     return this.userRepository.hasProviderAccount(params);
-  }
-
-  listUserEmails(userId: string): Promise<UserOwnedEmail[]> {
-    return this.userRepository.listUserEmails(userId);
-  }
-
-  attachOwnedEmail(data: AttachOwnedEmailData): Promise<UserOwnedEmail> {
-    return this.userRepository.attachOwnedEmail(data);
-  }
-
-  detachOwnedEmail(data: DetachOwnedEmailData): Promise<void> {
-    return this.userRepository.detachOwnedEmail(data);
-  }
-
-  promoteOwnedEmailToPrimary(
-    params: PromoteOwnedEmailData,
-  ): Promise<User | null> {
-    return this.userRepository.promoteOwnedEmailToPrimary(params);
   }
 
   update(id: string, payload: UpdateUserData): Promise<User | null> {

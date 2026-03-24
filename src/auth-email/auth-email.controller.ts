@@ -22,19 +22,17 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import type { Session, SessionData } from 'express-session';
-import { AuthConfirmEmailDto } from '../auth/dto/auth-confirm-email.dto';
-import { AuthEmailLoginDto } from '../auth/dto/auth-email-login.dto';
-import { AuthForgotPasswordDto } from '../auth/dto/auth-forgot-password.dto';
-import { AuthLinkEmailProviderDto } from '../auth/dto/auth-link-email-provider.dto';
-import { AuthRegisterDto } from '../auth/dto/auth-register.dto';
-import { AuthResetPasswordDto } from '../auth/dto/auth-reset-password.dto';
-import { LoginResponseDto } from '../auth/dto/login-response.dto';
+import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
+import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
+import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
+import { AuthLinkEmailProviderDto } from './dto/auth-link-email-provider.dto';
+import { AuthRegisterDto } from './dto/auth-register.dto';
+import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
+import { LoginResponseDto } from './dto/login-response.dto';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { User } from '../users/domain/user';
 import { AuthEmailService } from './auth-email.service';
-import { AllowRestrictedSession } from '../auth/decorators/allow-restricted-session.decorator';
-import { RestrictedSessionReason } from '../auth/guards/session-lifecycle.guard';
 
 @ApiTags('Auth', 'Email Auth')
 @Controller({ path: 'auth/provider/email', version: '1' })
@@ -56,8 +54,7 @@ export class AuthEmailController {
     @Body() loginDto: AuthEmailLoginDto,
     @Req() req: Request,
   ): Promise<LoginResponseDto> {
-    const { user, loginResponse } =
-      await this.authEmailService.validateLogin(loginDto);
+    const { user, loginResponse } = await this.authEmailService.login(loginDto);
 
     await this.regenerateSession(req);
     this.persistSessionSnapshot(req.session, user);
@@ -92,18 +89,6 @@ export class AuthEmailController {
     await this.authEmailService.confirmEmail(dto);
   }
 
-  @Post('confirm/new')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Confirm new e-mail using hash from e-mail link' })
-  @ApiNoContentResponse({ description: 'New email confirmed successfully' })
-  @ApiBadRequestResponse({
-    description: 'Invalid or expired confirmation hash',
-  })
-  @ApiNotFoundResponse({ description: 'User associated with hash not found' })
-  async confirmNewEmail(@Body() dto: AuthConfirmEmailDto): Promise<void> {
-    await this.authEmailService.confirmNewEmail(dto);
-  }
-
   @Post('forgot/password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -124,9 +109,8 @@ export class AuthEmailController {
   }
 
   @UseGuards(SessionAuthGuard, SessionLifecycleGuard)
-  @AllowRestrictedSession(RestrictedSessionReason.onboardingIncomplete)
   @Post('link')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiCookieAuth()
   @ApiOperation({
     summary: 'Explicitly link email/password provider with provider proof',
@@ -136,12 +120,14 @@ export class AuthEmailController {
   async linkEmailProvider(
     @Req() req: Request,
     @Body() dto: AuthLinkEmailProviderDto,
-  ): Promise<User> {
-    return this.authEmailService.linkEmailProvider(
+  ): Promise<void> {
+    await this.authEmailService.linkEmailProvider(
       req.session.userId!,
       req.session.id,
       dto,
     );
+
+    return this.regenerateSession(req);
   }
 
   private async regenerateSession(req: Request): Promise<void> {

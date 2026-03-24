@@ -265,7 +265,7 @@ export class UserDrizzleRepository extends UserRepository {
   }
 
   async findByProviderAccount(params: {
-    socialId: string;
+    providerId: string;
     provider: AuthProvidersEnum;
   }): Promise<NullableUser> {
     const [row] = await this.db
@@ -275,7 +275,7 @@ export class UserDrizzleRepository extends UserRepository {
       .where(
         and(
           eq(accounts.provider, params.provider),
-          eq(accounts.socialId, params.socialId),
+          eq(accounts.providerId, params.providerId),
           isNull(users.deletedAt),
         ),
       )
@@ -288,12 +288,12 @@ export class UserDrizzleRepository extends UserRepository {
   async linkProviderAccount(params: {
     userId: string;
     provider: AuthProvidersEnum;
-    socialId?: string | null;
+    providerId?: string | null;
   }): Promise<void> {
     await this.db.insert(accounts).values({
       userId: params.userId,
       provider: params.provider,
-      socialId: params.socialId ?? null,
+      providerId: params.providerId ?? null,
     });
   }
 
