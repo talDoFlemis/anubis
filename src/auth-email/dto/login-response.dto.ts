@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { AuthProvidersEnum } from '../../auth/auth-providers.enum';
 
 export class LoginResponseDto {
   @ApiProperty()
@@ -24,4 +25,7 @@ export class LoginResponseDto {
 
   @ApiProperty()
   mustChangePassword: boolean;
+
+  @ApiProperty({ enum: AuthProvidersEnum })
+  authProvider: AuthProvidersEnum;
 }

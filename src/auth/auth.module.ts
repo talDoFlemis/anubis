@@ -8,6 +8,7 @@ import { UsersModule } from '../users/users.module';
 import { SessionModule } from '../session/session.module';
 import { MailModule } from '../mail/mail.module';
 import { CandidateModule } from '../candidate/candidate.module';
+import { SessionSerializer } from './session.serializer';
 
 @Module({
   imports: [
@@ -18,7 +19,12 @@ import { CandidateModule } from '../candidate/candidate.module';
     JwtModule.register({}),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SessionAuthGuard, SessionLifecycleGuard],
+  providers: [
+    AuthService,
+    SessionAuthGuard,
+    SessionLifecycleGuard,
+    SessionSerializer,
+  ],
   exports: [AuthService, SessionAuthGuard, SessionLifecycleGuard],
 })
 export class AuthModule {}

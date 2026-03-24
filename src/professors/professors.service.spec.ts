@@ -4,6 +4,7 @@ import { ConflictException } from '@nestjs/common';
 import { ProfessorsService } from './professors.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import * as bcrypt from 'bcrypt';
@@ -26,7 +27,6 @@ describe('ProfessorsService', () => {
             findByEmail: jest.fn(),
             findByCpf: jest.fn(),
             create: jest.fn(),
-            linkProviderAccount: jest.fn(),
           },
         },
         {
@@ -56,6 +56,8 @@ describe('ProfessorsService', () => {
     jest.mocked(bcrypt.hash).mockResolvedValue('hashed-temp-password' as never);
     usersService.create.mockResolvedValue({
       id: 'prof-1',
+      authProvider: AuthProvidersEnum.email,
+      providerSubject: 'prof@example.com',
       email: 'prof@example.com',
       firstName: 'Ada',
       lastName: 'Lovelace',
@@ -68,7 +70,6 @@ describe('ProfessorsService', () => {
       bootstrapPasswordExpiresAt: new Date('2030-01-01T00:00:00.000Z'),
       confirmEmailTokenVersion: 0,
       forgotPasswordTokenVersion: 0,
-      linkedProviders: [],
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
@@ -78,6 +79,7 @@ describe('ProfessorsService', () => {
       email: 'prof@example.com',
       firstName: 'Ada',
       lastName: 'Lovelace',
+      cpf: '12345678901',
     });
 
     expect(usersService.create).toHaveBeenCalled();
@@ -99,6 +101,7 @@ describe('ProfessorsService', () => {
         email: 'prof@example.com',
         firstName: 'Ada',
         lastName: 'Lovelace',
+        cpf: '12345678901',
       }),
     ).rejects.toThrow(ConflictException);
   });

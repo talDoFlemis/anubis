@@ -1,9 +1,12 @@
 import { Exclude } from 'class-transformer';
+import { AuthProvidersEnum } from '../../auth/auth-providers.enum';
 import { RoleEnum } from '../../roles/roles.enum';
 import { StatusEnum } from '../../statuses/statuses.enum';
 
 export class User {
   id: string;
+  authProvider: AuthProvidersEnum;
+  providerSubject: string | null;
   email: string | null;
   @Exclude()
   password?: string | null;

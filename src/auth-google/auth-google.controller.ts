@@ -8,72 +8,74 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiConflictResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import type { Session, SessionData } from 'express-session';
 import { AuthService } from '../auth/auth.service';
-import { AuthGoogleService } from './auth-google.service';
-import { AuthGoogleLoginDto } from './dto/auth-google-login.dto';
-import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
-import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
-import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
+import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { SocialInterface } from '../social/interfaces/social.interface';
 import { User } from '../users/domain/user';
+import { AuthGoogleLoginDto } from './dto/auth-google-login.dto';
 
 @ApiTags('Auth', 'Google Auth')
 @Controller({ path: 'auth/provider/google', version: '1' })
 export class AuthGoogleController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly authGoogleService: AuthGoogleService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @UseGuards(GoogleAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login or register using a Google ID token' })
   @ApiOkResponse({ type: LoginResponseDto, description: 'Login successful' })
+  @ApiConflictResponse({ description: 'Use your original provider' })
+  @ApiUnauthorizedResponse({ description: 'Google email must be verified' })
   @ApiUnprocessableEntityResponse({
-    description:
-      'Invalid Google ID token or unable to resolve a user from social data',
+    description: 'Invalid Google ID token or unable to resolve a user',
   })
   async login(
-    @Body() loginDto: AuthGoogleLoginDto,
-    @Req() req: Request,
+    @Body() _loginDto: AuthGoogleLoginDto,
+    @Req() req: Request & { user: SocialInterface },
   ): Promise<LoginResponseDto> {
-    const socialData = await this.authGoogleService.getProfileByToken(loginDto);
     const { user, loginResponse } = await this.authService.validateSocialLogin(
       AuthProvidersEnum.google,
-      socialData,
+      req.user,
     );
 
+    await this.regenerateSession(req);
+    this.persistSessionSnapshot(req.session, user);
+
+    return loginResponse;
+  }
+
+  private async regenerateSession(req: Request): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       req.session.regenerate((err) => {
         if (err) reject(err instanceof Error ? err : new Error(String(err)));
         else resolve();
       });
     });
-
-    req.session.userId = user.id;
-    req.session.userRole = user.role;
-
-    return loginResponse;
   }
 
-  @UseGuards(SessionAuthGuard, SessionLifecycleGuard)
-  @Post('link')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Explicitly link Google provider to current session',
-  })
-  @ApiOkResponse({ type: User, description: 'Google provider linked' })
-  async link(
-    @Body() loginDto: AuthGoogleLoginDto,
-    @Req() req: Request,
-  ): Promise<User> {
-    const socialData = await this.authGoogleService.getProfileByToken(loginDto);
-    return this.authService.linkGoogleProvider(req.session.userId!, socialData);
+  private persistSessionSnapshot(
+    session: Session & Partial<SessionData>,
+    user: Pick<
+      User,
+      'id' | 'role' | 'status' | 'onboardingCompleted' | 'mustChangePassword'
+    >,
+  ): void {
+    session.userId = user.id;
+    session.userRole = user.role;
+    session.role = user.role;
+    session.status = user.status;
+    session.onboardingCompleted = user.onboardingCompleted;
+    session.mustChangePassword = user.mustChangePassword;
   }
 }

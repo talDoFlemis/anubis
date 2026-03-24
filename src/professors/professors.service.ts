@@ -55,15 +55,11 @@ export class ProfessorsService {
         lastName: params.lastName,
         role: RoleEnum.professor,
         status: StatusEnum.active,
+        authProvider: AuthProvidersEnum.email,
+        providerSubject: email,
         onboardingCompleted: true,
         mustChangePassword: true,
         bootstrapPasswordExpiresAt,
-      });
-
-      await this.usersService.linkProviderAccount({
-        userId: user.id,
-        provider: AuthProvidersEnum.email,
-        providerId: null,
       });
 
       const body = this.composeProfessorInviteEmail({

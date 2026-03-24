@@ -1,4 +1,8 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { SocialInterface } from '../social/interfaces/social.interface';
@@ -28,6 +32,12 @@ export class AuthGoogleService {
     if (!data) {
       throw new UnprocessableEntityException(
         'Falha ao verificar o token do Google.',
+      );
+    }
+
+    if (!data.email_verified) {
+      throw new UnauthorizedException(
+        'E-mail do Google nao verificado. Verifique sua conta e tente novamente.',
       );
     }
 

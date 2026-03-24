@@ -53,163 +53,98 @@ export class AuthService {
     socialData: SocialInterface,
   ): Promise<{ user: User; loginResponse: LoginResponseDto }> {
     this.logger.debug(
-      { provider: authProvider, socialId: socialData.id },
+      { provider: authProvider, subject: socialData.id },
       'Social login attempt',
     );
 
-    try {
-      if (!socialData.id) {
-        throw new UnprocessableEntityException({
-          status: HttpStatus.UNPROCESSABLE_ENTITY,
-          message: 'Dados do provedor social invalidos.',
-        });
-      }
-
-      const existingByProvider = await this.usersService.findByProviderAccount({
-        socialId: socialData.id,
-        provider: authProvider,
-      });
-
-      if (existingByProvider) {
-        this.persistSnapshotAfterSessionRegeneration(existingByProvider);
-        this.logger.info(
-          { userId: existingByProvider.id, provider: authProvider },
-          'Social login authenticated existing linked account',
-        );
-        return {
-          user: existingByProvider,
-          loginResponse: buildLoginResponse(existingByProvider),
-        };
-      }
-
-      const createdUser = await this.usersService.create({
-        email: socialData.email ?? null,
-        firstName: socialData.firstName ?? null,
-        lastName: socialData.lastName ?? null,
-        role: RoleEnum.candidate,
-        status: StatusEnum.active,
-        onboardingCompleted: false,
-        mustChangePassword: false,
-      });
-
-      await this.usersService.linkProviderAccount({
-        userId: createdUser.id,
-        provider: authProvider,
-        providerId: socialData.id,
-      });
-
-      const user = await this.usersService.findById(createdUser.id);
-
-      if (!user) {
-        throw new UnprocessableEntityException({
-          status: HttpStatus.UNPROCESSABLE_ENTITY,
-          message:
-            'Nao foi possivel autenticar com os dados sociais fornecidos.',
-        });
-      }
-
-      this.logger.info(
-        { userId: user.id, provider: authProvider },
-        'Social login created new linked account',
-      );
-
-      this.persistSnapshotAfterSessionRegeneration(user);
-
-      return {
-        user,
-        loginResponse: buildLoginResponse(user),
-      };
-    } catch (error: unknown) {
-      this.logger.error(
-        {
-          error: error instanceof Error ? error.message : String(error),
-          provider: authProvider,
-          socialId: socialData.id,
-        },
-        'Social login failed',
-      );
-      throw error;
-    }
-  }
-
-  async completeCandidateOnboarding(
-    userId: string,
-    dto: CompleteCandidateOnboardingDto,
-  ): Promise<User> {
-    this.logger.debug({ userId }, 'Candidate onboarding flow requested');
-
-    try {
-      const previousUser = await this.usersService.findById(userId);
-
-      await this.candidateService.completeOnboarding(userId, dto);
-
-      const user = await this.usersService.findById(userId);
-      if (!user) {
-        throw new NotFoundException({
-          message: 'Usuario nao encontrado.',
-        });
-      }
-
-      if (previousUser) {
-        const sessionChange = this.sessionService.resolveSnapshotChange({
-          previousUser,
-          nextUser: user,
-        });
-
-        if (sessionChange.revokeAllSessions) {
-          await this.sessionService.deleteByUserId(user.id);
-        }
-
-        if (sessionChange.refreshCurrentSession) {
-          this.persistCurrentSessionSnapshot(user);
-        }
-      }
-
-      this.logger.info({ userId }, 'Candidate onboarding flow completed');
-      return user;
-    } catch (error: unknown) {
-      this.logger.error(
-        {
-          error: error instanceof Error ? error.message : String(error),
-          userId,
-        },
-        'Candidate onboarding flow failed',
-      );
-      throw error;
-    }
-  }
-
-  async linkGoogleProvider(
-    userId: string,
-    socialData: SocialInterface,
-  ): Promise<User> {
-    this.logger.debug(
-      { userId, socialId: socialData.id },
-      'Google link requested',
-    );
-
-    if (!socialData.id) {
-      this.logger.error(
-        { userId },
-        'Google link failed due to invalid provider data',
-      );
+    if (!socialData.id || !socialData.email || !socialData.verified_email) {
       throw new UnprocessableEntityException({
         status: HttpStatus.UNPROCESSABLE_ENTITY,
         message: 'Dados do provedor social invalidos.',
       });
     }
 
-    const updated = await this.linkProviderAccount(
-      userId,
-      AuthProvidersEnum.google,
-      socialData,
-    );
-    this.logger.info({ userId }, 'Google provider linked');
-    return updated;
+    const normalizedEmail = socialData.email.toLowerCase().trim();
+    const existingByProvider = await this.usersService.findByAuthProvider({
+      provider: authProvider,
+      providerSubject: socialData.id,
+    });
+
+    if (existingByProvider) {
+      this.persistSnapshotAfterSessionRegeneration(existingByProvider);
+      return {
+        user: existingByProvider,
+        loginResponse: buildLoginResponse(existingByProvider),
+      };
+    }
+
+    const existingByEmail =
+      await this.usersService.findByEmail(normalizedEmail);
+    if (existingByEmail) {
+      throw new ConflictException({
+        message: `Este e-mail ja pertence a uma conta criada com ${existingByEmail.authProvider}. Use seu provedor original.`,
+      });
+    }
+
+    const createdUser = await this.usersService.create({
+      email: normalizedEmail,
+      password: null,
+      firstName: socialData.firstName ?? null,
+      lastName: socialData.lastName ?? null,
+      role: RoleEnum.candidate,
+      status: StatusEnum.active,
+      authProvider,
+      providerSubject: socialData.id,
+      onboardingCompleted: false,
+      mustChangePassword: false,
+    });
+
+    const user = await this.usersService.findById(createdUser.id);
+    if (!user) {
+      throw new UnprocessableEntityException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        message: 'Nao foi possivel autenticar com os dados sociais fornecidos.',
+      });
+    }
+
+    this.persistSnapshotAfterSessionRegeneration(user);
+    return {
+      user,
+      loginResponse: buildLoginResponse(user),
+    };
+  }
+
+  async completeCandidateOnboarding(
+    userId: string,
+    dto: CompleteCandidateOnboardingDto,
+  ): Promise<User> {
+    const previousUser = await this.usersService.findById(userId);
+    await this.candidateService.completeOnboarding(userId, dto);
+
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException({ message: 'Usuario nao encontrado.' });
+    }
+
+    if (previousUser) {
+      const sessionChange = this.sessionService.resolveSnapshotChange({
+        previousUser,
+        nextUser: user,
+      });
+
+      if (sessionChange.revokeAllSessions) {
+        await this.sessionService.deleteByUserId(user.id);
+      }
+
+      if (sessionChange.refreshCurrentSession) {
+        this.persistCurrentSessionSnapshot(user);
+      }
+    }
+
+    return user;
   }
 
   async me(userId: string): Promise<User | null> {
-    this.logger.debug({ userId }, 'Fetching current user');
     return this.usersService.findById(userId);
   }
 
@@ -218,204 +153,123 @@ export class AuthService {
     sessionId: string,
     userDto: AuthUpdateDto,
   ): Promise<User | null> {
-    this.logger.debug({ userId }, 'User update requested');
-
-    try {
-      const currentUser = await this.usersService.findById(userId);
-
-      if (!currentUser) {
-        throw new NotFoundException({
-          message: 'Usuario nao encontrado.',
-        });
-      }
-
-      if (currentUser.mustChangePassword) {
-        const onlyPasswordChange =
-          userDto.password !== undefined &&
-          userDto.oldPassword !== undefined &&
-          userDto.firstName === undefined &&
-          userDto.lastName === undefined &&
-          userDto.email === undefined &&
-          userDto.cpf === undefined;
-
-        if (!onlyPasswordChange) {
-          throw new BadRequestException({
-            message:
-              'Usuario com troca obrigatoria de senha so pode alterar senha antes de acessar outras operacoes.',
-          });
-        }
-      }
-
-      const passwordUpdate = await this.preparePasswordUpdate(
-        userDto,
-        currentUser,
-      );
-
-      if (userDto.email && userDto.email !== currentUser.email) {
-        const userByEmail = await this.usersService.findByEmail(userDto.email);
-
-        if (userByEmail && userByEmail.id !== currentUser.id) {
-          throw new ConflictException({
-            message: 'Este e-mail ja esta em uso por outra conta.',
-          });
-        }
-
-        const nextConfirmEmailTokenVersion =
-          currentUser.confirmEmailTokenVersion + 1;
-        await this.usersService.update(currentUser.id, {
-          confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
-        });
-
-        const hash = await this.jwtService.signAsync(
-          {
-            confirmEmailUserId: currentUser.id,
-            newEmail: userDto.email,
-            confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
-          },
-          {
-            secret: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_SECRET'),
-            expiresIn: this.configService.getOrThrow(
-              'AUTH_CONFIRM_EMAIL_EXPIRES_IN',
-            ),
-          },
-        );
-
-        await this.mailService.send({
-          to: userDto.email,
-          title: 'Confirme seu novo email - Anubis',
-          body: this.composeConfirmNewEmailBody(hash),
-        });
-      }
-
-      if (userDto.cpf && userDto.cpf !== currentUser.cpf) {
-        const existingCpf = await this.usersService.findByCpf(userDto.cpf);
-        if (existingCpf && existingCpf.id !== currentUser.id) {
-          throw new ConflictException({
-            message: 'Este CPF ja esta em uso por outra conta.',
-          });
-        }
-      }
-
-      const updatePayload: Record<string, unknown> = {};
-      if (userDto.firstName !== undefined)
-        updatePayload.firstName = userDto.firstName;
-      if (userDto.lastName !== undefined)
-        updatePayload.lastName = userDto.lastName;
-      if (userDto.cpf !== undefined) updatePayload.cpf = userDto.cpf;
-      if (passwordUpdate) {
-        updatePayload.password = passwordUpdate.hashedPassword;
-        updatePayload.mustChangePassword = false;
-        updatePayload.bootstrapPasswordExpiresAt = null;
-      }
-
-      if (Object.keys(updatePayload).length > 0) {
-        await this.usersService.update(userId, updatePayload);
-      }
-
-      const updatedUser = await this.usersService.findById(userId);
-      if (updatedUser) {
-        const sessionChange = this.sessionService.resolveSnapshotChange({
-          previousUser: currentUser,
-          nextUser: updatedUser,
-          passwordChanged: Boolean(passwordUpdate),
-        });
-
-        if (sessionChange.revokeAllSessions) {
-          await this.sessionService.deleteByUserId(updatedUser.id);
-        } else if (sessionChange.revokeOtherSessions) {
-          await this.sessionService.deleteByUserIdWithExclude({
-            userId: currentUser.id,
-            excludeSessionId: sessionId,
-          });
-        }
-
-        if (sessionChange.refreshCurrentSession) {
-          this.persistCurrentSessionSnapshot(updatedUser);
-        }
-      }
-      this.logger.info({ userId }, 'User updated');
-      return updatedUser;
-    } catch (error: unknown) {
-      this.logger.error(
-        {
-          error: error instanceof Error ? error.message : String(error),
-          userId,
-        },
-        'User update failed',
-      );
-      throw error;
+    const currentUser = await this.usersService.findById(userId);
+    if (!currentUser) {
+      throw new NotFoundException({ message: 'Usuario nao encontrado.' });
     }
+
+    if (currentUser.mustChangePassword) {
+      const onlyPasswordChange =
+        userDto.password !== undefined &&
+        userDto.oldPassword !== undefined &&
+        userDto.firstName === undefined &&
+        userDto.lastName === undefined &&
+        userDto.email === undefined &&
+        userDto.cpf === undefined;
+
+      if (!onlyPasswordChange) {
+        throw new BadRequestException({
+          message:
+            'Usuario com troca obrigatoria de senha so pode alterar senha antes de acessar outras operacoes.',
+        });
+      }
+    }
+
+    const passwordUpdate = await this.preparePasswordUpdate(
+      userDto,
+      currentUser,
+    );
+
+    if (userDto.email && userDto.email !== currentUser.email) {
+      const normalizedEmail = userDto.email.toLowerCase().trim();
+      const userByEmail = await this.usersService.findByEmail(normalizedEmail);
+
+      if (userByEmail && userByEmail.id !== currentUser.id) {
+        throw new ConflictException({
+          message: 'Este e-mail ja esta em uso por outra conta.',
+        });
+      }
+
+      const nextConfirmEmailTokenVersion =
+        currentUser.confirmEmailTokenVersion + 1;
+      await this.usersService.update(currentUser.id, {
+        confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
+      });
+
+      const hash = await this.jwtService.signAsync(
+        {
+          confirmEmailUserId: currentUser.id,
+          newEmail: normalizedEmail,
+          confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
+        },
+        {
+          secret: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_SECRET'),
+          expiresIn: this.configService.getOrThrow(
+            'AUTH_CONFIRM_EMAIL_EXPIRES_IN',
+          ),
+        },
+      );
+
+      await this.mailService.send({
+        to: normalizedEmail,
+        title: 'Confirme seu novo email - Anubis',
+        body: this.composeConfirmNewEmailBody(hash),
+      });
+    }
+
+    if (userDto.cpf && userDto.cpf !== currentUser.cpf) {
+      const existingCpf = await this.usersService.findByCpf(userDto.cpf);
+      if (existingCpf && existingCpf.id !== currentUser.id) {
+        throw new ConflictException({
+          message: 'Este CPF ja esta em uso por outra conta.',
+        });
+      }
+    }
+
+    const updatePayload: Record<string, unknown> = {};
+    if (userDto.firstName !== undefined)
+      updatePayload.firstName = userDto.firstName;
+    if (userDto.lastName !== undefined)
+      updatePayload.lastName = userDto.lastName;
+    if (userDto.cpf !== undefined) updatePayload.cpf = userDto.cpf;
+    if (passwordUpdate) {
+      updatePayload.password = passwordUpdate.hashedPassword;
+      updatePayload.mustChangePassword = false;
+      updatePayload.bootstrapPasswordExpiresAt = null;
+    }
+
+    if (Object.keys(updatePayload).length > 0) {
+      await this.usersService.update(userId, updatePayload);
+    }
+
+    const updatedUser = await this.usersService.findById(userId);
+    if (updatedUser) {
+      const sessionChange = this.sessionService.resolveSnapshotChange({
+        previousUser: currentUser,
+        nextUser: updatedUser,
+        passwordChanged: Boolean(passwordUpdate),
+      });
+
+      if (sessionChange.revokeAllSessions) {
+        await this.sessionService.deleteByUserId(updatedUser.id);
+      } else if (sessionChange.revokeOtherSessions) {
+        await this.sessionService.deleteByUserIdWithExclude({
+          userId: currentUser.id,
+          excludeSessionId: sessionId,
+        });
+      }
+
+      if (sessionChange.refreshCurrentSession) {
+        this.persistCurrentSessionSnapshot(updatedUser);
+      }
+    }
+
+    return updatedUser;
   }
 
   async softDelete(userId: string): Promise<void> {
-    this.logger.debug({ userId }, 'User soft delete requested');
-
-    try {
-      await this.sessionService.deleteByUserId(userId);
-      await this.usersService.remove(userId);
-      this.logger.info({ userId }, 'User soft deleted');
-    } catch (error: unknown) {
-      this.logger.error(
-        {
-          error: error instanceof Error ? error.message : String(error),
-          userId,
-        },
-        'User soft delete failed',
-      );
-      throw error;
-    }
-  }
-
-  private async linkProviderAccount(
-    userId: string,
-    provider: AuthProvidersEnum,
-    socialData: SocialInterface,
-  ): Promise<User> {
-    const user = await this.usersService.findById(userId);
-
-    if (!user) {
-      throw new NotFoundException({
-        message: 'Usuario nao encontrado.',
-      });
-    }
-
-    const hasProvider = await this.usersService.hasProviderAccount({
-      userId: user.id,
-      provider,
-    });
-
-    if (hasProvider) {
-      throw new ConflictException({
-        message: `Conta ${provider} ja vinculada.`,
-      });
-    }
-
-    const existingProviderUser = await this.usersService.findByProviderAccount({
-      provider,
-      socialId: socialData.id,
-    });
-
-    if (existingProviderUser && existingProviderUser.id !== user.id) {
-      throw new ConflictException({
-        message: `Esta conta ${provider} ja esta vinculada a outro usuario.`,
-      });
-    }
-
-    await this.usersService.linkProviderAccount({
-      userId: user.id,
-      provider,
-      providerId: socialData.id,
-    });
-
-    const updated = await this.usersService.findById(user.id);
-
-    if (!updated) {
-      throw new NotFoundException({
-        message: 'Usuario nao encontrado.',
-      });
-    }
-
-    return updated;
+    await this.sessionService.deleteByUserId(userId);
+    await this.usersService.remove(userId);
   }
 
   private async preparePasswordUpdate(
@@ -424,6 +278,13 @@ export class AuthService {
   ): Promise<{ hashedPassword: string } | null> {
     if (!userDto.password) return null;
 
+    if (currentUser.authProvider !== AuthProvidersEnum.email) {
+      throw new BadRequestException({
+        message:
+          'Conta cadastrada com outro provedor. Use seu provedor original.',
+      });
+    }
+
     if (!userDto.oldPassword) {
       throw new BadRequestException({
         message: 'E necessario informar a senha atual para altera-la.',
@@ -431,9 +292,7 @@ export class AuthService {
     }
 
     if (!currentUser.password) {
-      throw new BadRequestException({
-        message: 'Senha atual incorreta.',
-      });
+      throw new BadRequestException({ message: 'Senha atual incorreta.' });
     }
 
     const isValidOldPassword = await bcrypt.compare(
@@ -442,9 +301,7 @@ export class AuthService {
     );
 
     if (!isValidOldPassword) {
-      throw new BadRequestException({
-        message: 'Senha atual incorreta.',
-      });
+      throw new BadRequestException({ message: 'Senha atual incorreta.' });
     }
 
     return {
@@ -466,11 +323,7 @@ export class AuthService {
     >,
   ): void {
     const session = this.getCurrentSession();
-
-    if (!session) {
-      return;
-    }
-
+    if (!session) return;
     this.assignSessionSnapshot(session, user);
   }
 
@@ -481,10 +334,7 @@ export class AuthService {
     >,
   ): void {
     const session = this.getCurrentSession();
-
-    if (!session) {
-      return;
-    }
+    if (!session) return;
 
     const originalRegenerate = session.regenerate.bind(session);
     session.regenerate = ((callback) => {

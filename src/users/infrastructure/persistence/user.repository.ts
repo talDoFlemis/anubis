@@ -3,33 +3,6 @@ import { AuthProvidersEnum } from '../../../auth/auth-providers.enum';
 
 export type NullableUser = User | null;
 
-export interface UserOwnedEmail {
-  accountId: string | null;
-  email: string;
-  normalizedEmail: string | null;
-  verifiedAt: Date | null;
-  verificationTokenVersion: number | null;
-  isPrimary: boolean;
-}
-
-export interface AttachOwnedEmailData {
-  userId: User['id'];
-  email: string;
-  normalizedEmail: string;
-  verificationTokenVersion?: number;
-  verifiedAt?: Date | null;
-}
-
-export interface DetachOwnedEmailData {
-  userId: User['id'];
-  accountId: string;
-}
-
-export interface PromoteOwnedEmailData {
-  userId: User['id'];
-  accountId: string;
-}
-
 export interface CreateUserData {
   email: string | null;
   password?: string | null;
@@ -38,6 +11,8 @@ export interface CreateUserData {
   lastName: string | null;
   role: User['role'];
   status: User['status'];
+  authProvider: AuthProvidersEnum;
+  providerSubject: string | null;
   onboardingCompleted?: boolean;
   mustChangePassword?: boolean;
   bootstrapPasswordExpiresAt?: Date | null;
@@ -53,6 +28,8 @@ export interface UpdateUserData {
   lastName?: string | null;
   role?: User['role'];
   status?: User['status'];
+  authProvider?: AuthProvidersEnum;
+  providerSubject?: string | null;
   onboardingCompleted?: boolean;
   mustChangePassword?: boolean;
   bootstrapPasswordExpiresAt?: Date | null;
@@ -69,21 +46,10 @@ export abstract class UserRepository {
 
   abstract findByCpf(cpf: string): Promise<NullableUser>;
 
-  abstract findByProviderAccount(params: {
-    providerId: string;
+  abstract findByAuthProvider(params: {
     provider: AuthProvidersEnum;
+    providerSubject: string;
   }): Promise<NullableUser>;
-
-  abstract linkProviderAccount(params: {
-    userId: string;
-    provider: AuthProvidersEnum;
-    providerId?: string | null;
-  }): Promise<void>;
-
-  abstract hasProviderAccount(params: {
-    userId: string;
-    provider: AuthProvidersEnum;
-  }): Promise<boolean>;
 
   abstract update(
     id: User['id'],

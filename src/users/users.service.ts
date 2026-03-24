@@ -27,26 +27,11 @@ export class UsersService {
     return this.userRepository.findByCpf(cpf);
   }
 
-  findByProviderAccount(params: {
-    providerId: string;
+  findByAuthProvider(params: {
     provider: AuthProvidersEnum;
+    providerSubject: string;
   }): Promise<User | null> {
-    return this.userRepository.findByProviderAccount(params);
-  }
-
-  linkProviderAccount(params: {
-    userId: string;
-    provider: AuthProvidersEnum;
-    providerId?: string | null;
-  }): Promise<void> {
-    return this.userRepository.linkProviderAccount(params);
-  }
-
-  hasProviderAccount(params: {
-    userId: string;
-    provider: AuthProvidersEnum;
-  }): Promise<boolean> {
-    return this.userRepository.hasProviderAccount(params);
+    return this.userRepository.findByAuthProvider(params);
   }
 
   update(id: string, payload: UpdateUserData): Promise<User | null> {

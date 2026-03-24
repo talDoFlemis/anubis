@@ -15,10 +15,7 @@ import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
 
-jest.mock('bcrypt', () => ({
-  compare: jest.fn(),
-  hash: jest.fn(),
-}));
+jest.mock('bcrypt', () => ({ compare: jest.fn(), hash: jest.fn() }));
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -28,6 +25,8 @@ describe('AuthService', () => {
 
   const baseUser: User = {
     id: 'user-1',
+    authProvider: AuthProvidersEnum.email,
+    providerSubject: 'user@example.com',
     email: 'user@example.com',
     password: 'hash',
     cpf: '12345678901',
@@ -40,7 +39,6 @@ describe('AuthService', () => {
     bootstrapPasswordExpiresAt: null,
     confirmEmailTokenVersion: 0,
     forgotPasswordTokenVersion: 0,
-    linkedProviders: [AuthProvidersEnum.email],
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -55,14 +53,11 @@ describe('AuthService', () => {
           useValue: {
             findById: jest.fn(),
             findByEmail: jest.fn(),
-            findUserByOwnedVerifiedEmail: jest.fn(),
             findByCpf: jest.fn(),
-            findByProviderAccount: jest.fn(),
+            findByAuthProvider: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
             remove: jest.fn(),
-            linkProviderAccount: jest.fn(),
-            hasProviderAccount: jest.fn(),
           },
         },
         {
@@ -81,22 +76,14 @@ describe('AuthService', () => {
         },
         {
           provide: CandidateService,
-          useValue: {
-            completeOnboarding: jest.fn(),
-          },
+          useValue: { completeOnboarding: jest.fn() },
         },
-        {
-          provide: JwtService,
-          useValue: { signAsync: jest.fn() },
-        },
+        { provide: JwtService, useValue: { signAsync: jest.fn() } },
         {
           provide: ConfigService,
           useValue: { getOrThrow: jest.fn(() => 'secret') },
         },
-        {
-          provide: MailService,
-          useValue: { send: jest.fn() },
-        },
+        { provide: MailService, useValue: { send: jest.fn() } },
         {
           provide: getLoggerToken(AuthService.name),
           useValue: {
@@ -115,141 +102,92 @@ describe('AuthService', () => {
     candidateService = module.get(CandidateService);
   });
 
-  it('uses provider-agnostic collision message on social login collision', async () => {
-    usersService.findByProviderAccount.mockResolvedValue(null);
-    usersService.findUserByOwnedVerifiedEmail.mockResolvedValue({
+  it('rejects social login when email belongs to another provider', async () => {
+    usersService.findByAuthProvider.mockResolvedValue(null);
+    usersService.findByEmail.mockResolvedValue({
       ...baseUser,
-      linkedProviders: [AuthProvidersEnum.email, AuthProvidersEnum.google],
+      authProvider: AuthProvidersEnum.email,
     });
 
     await expect(
       service.validateSocialLogin(AuthProvidersEnum.google, {
         id: 'google-1',
         email: 'user@example.com',
+        verified_email: true,
       }),
     ).rejects.toThrow(ConflictException);
-
-    expect(usersService.findUserByOwnedVerifiedEmail).toHaveBeenCalledWith(
-      'user@example.com',
-    );
-  });
-
-  it('requires explicit linking when social email matches an owned verified email', async () => {
-    usersService.findByProviderAccount.mockResolvedValue(null);
-    usersService.findUserByOwnedVerifiedEmail.mockResolvedValue({
-      ...baseUser,
-      linkedProviders: [AuthProvidersEnum.email],
-    });
-
-    await expect(
-      service.validateSocialLogin(AuthProvidersEnum.google, {
-        id: 'google-1',
-        email: 'user@example.com',
-      }),
-    ).rejects.toMatchObject({
-      response: {
-        message:
-          'Este e-mail ja possui conta existente. Entre com email e vincule google explicitamente.',
-      },
-    });
   });
 
   it('creates onboarding-incomplete candidate on first social signup', async () => {
-    usersService.findByProviderAccount.mockResolvedValue(null);
-    usersService.findUserByOwnedVerifiedEmail.mockResolvedValue(null);
+    usersService.findByAuthProvider.mockResolvedValue(null);
+    usersService.findByEmail.mockResolvedValue(null);
     usersService.create.mockResolvedValue({
       ...baseUser,
       id: 'new-user',
+      authProvider: AuthProvidersEnum.google,
+      providerSubject: 'google-1',
+      password: null,
       onboardingCompleted: false,
-      linkedProviders: [],
     });
     usersService.findById.mockResolvedValue({
       ...baseUser,
       id: 'new-user',
+      authProvider: AuthProvidersEnum.google,
+      providerSubject: 'google-1',
+      password: null,
       onboardingCompleted: false,
-      linkedProviders: [AuthProvidersEnum.google],
     });
 
     const result = await service.validateSocialLogin(AuthProvidersEnum.google, {
       id: 'google-1',
       email: 'new@example.com',
+      verified_email: true,
     });
 
     expect(usersService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ onboardingCompleted: false }),
+      expect.objectContaining({
+        authProvider: AuthProvidersEnum.google,
+        providerSubject: 'google-1',
+        onboardingCompleted: false,
+      }),
     );
-    expect(result.loginResponse.onboardingCompleted).toBe(false);
+    expect(result.loginResponse.authProvider).toBe(AuthProvidersEnum.google);
   });
 
-  it('links google when provider email is an owned verified email on the current user', async () => {
-    usersService.findById
-      .mockResolvedValueOnce(baseUser)
-      .mockResolvedValueOnce({
-        ...baseUser,
-        linkedProviders: [AuthProvidersEnum.email, AuthProvidersEnum.google],
-      });
-    usersService.hasProviderAccount.mockResolvedValue(false);
-    usersService.findByProviderAccount.mockResolvedValue(null);
-    usersService.findUserByOwnedVerifiedEmail.mockResolvedValue(baseUser);
-    usersService.linkProviderAccount.mockResolvedValue(undefined as never);
+  it('returns existing social user when provider subject matches', async () => {
+    usersService.findByAuthProvider.mockResolvedValue({
+      ...baseUser,
+      authProvider: AuthProvidersEnum.google,
+      providerSubject: 'google-1',
+      password: null,
+    });
 
-    const result = await service.linkGoogleProvider('user-1', {
+    const result = await service.validateSocialLogin(AuthProvidersEnum.google, {
       id: 'google-1',
       email: 'user@example.com',
+      verified_email: true,
     });
 
-    expect(usersService.findUserByOwnedVerifiedEmail).toHaveBeenCalledWith(
-      'user@example.com',
-    );
-    expect(usersService.linkProviderAccount).toHaveBeenCalledWith({
-      userId: 'user-1',
-      provider: AuthProvidersEnum.google,
-      socialId: 'google-1',
-    });
-    expect(result.linkedProviders).toEqual([
-      AuthProvidersEnum.email,
-      AuthProvidersEnum.google,
-    ]);
+    expect(result.user.authProvider).toBe(AuthProvidersEnum.google);
   });
 
-  it('rejects google linking when provider email belongs to a different owned verified user', async () => {
-    usersService.findById.mockResolvedValue(baseUser);
-    usersService.hasProviderAccount.mockResolvedValue(false);
-    usersService.findByProviderAccount.mockResolvedValue(null);
-    usersService.findUserByOwnedVerifiedEmail.mockResolvedValue({
-      ...baseUser,
-      id: 'user-2',
-      email: 'owned-by-other@example.com',
-    });
-
-    await expect(
-      service.linkGoogleProvider('user-1', {
-        id: 'google-1',
-        email: 'owned-by-other@example.com',
-      }),
-    ).rejects.toMatchObject({
-      response: {
-        message: 'Este e-mail do provedor google ja pertence a outro usuario.',
-      },
-    });
-
-    expect(usersService.linkProviderAccount).not.toHaveBeenCalled();
-  });
-
-  it('restricts mustChangePassword user to password-only profile update', async () => {
+  it('rejects password change for non-email accounts', async () => {
     usersService.findById.mockResolvedValue({
       ...baseUser,
-      mustChangePassword: true,
+      authProvider: AuthProvidersEnum.google,
+      providerSubject: 'google-1',
+      password: null,
     });
 
     await expect(
       service.update('user-1', 'sid-1', {
-        firstName: 'Changed',
+        oldPassword: 'old',
+        password: 'new-password',
       }),
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('allows password update and clears bootstrap restrictions', async () => {
+  it('allows password update for email accounts and revokes other sessions', async () => {
     usersService.findById
       .mockResolvedValueOnce({
         ...baseUser,
@@ -271,30 +209,8 @@ describe('AuthService', () => {
       expect.objectContaining({
         password: 'new-hash',
         mustChangePassword: false,
-        bootstrapPasswordExpiresAt: null,
       }),
     );
-  });
-
-  it('does not invalidate other sessions when profile validation fails', async () => {
-    usersService.findById.mockResolvedValue(baseUser);
-    usersService.findByEmail.mockResolvedValue({
-      ...baseUser,
-      id: 'user-2',
-      email: 'taken@example.com',
-    });
-    jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
-
-    await expect(
-      service.update('user-1', 'sid-1', {
-        oldPassword: 'old',
-        password: 'new-password',
-        email: 'taken@example.com',
-      }),
-    ).rejects.toThrow(ConflictException);
-
-    expect(sessionService.deleteByUserIdWithExclude).not.toHaveBeenCalled();
-    expect(usersService.update).not.toHaveBeenCalled();
   });
 
   it('delegates candidate onboarding to CandidateService', async () => {
