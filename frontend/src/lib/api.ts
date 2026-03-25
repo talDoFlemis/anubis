@@ -129,7 +129,6 @@ export interface User {
   ownedEmails?: UserOwnedEmail[];
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null;
 }
 
 export interface UserOwnedEmail {

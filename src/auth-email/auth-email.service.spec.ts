@@ -48,7 +48,6 @@ describe('AuthEmailService', () => {
     forgotPasswordTokenVersion: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
-    deletedAt: null,
   };
 
   beforeEach(async () => {

@@ -1,8 +1,9 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HttpLoggerMiddleware } from './common/middlewares/http-logger.middleware';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { validate } from './env.validation';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './users/users.module';
@@ -13,7 +14,6 @@ import { SessionModule } from './session/session.module';
 import { MailModule } from './mail/mail.module';
 import { HealthModule } from './health/health.module';
 import { CandidateModule } from './candidate/candidate.module';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggingModule } from './common/logging.module';
 import { SystemModule } from './system/system.module';
 import { AuthGithubModule } from './auth-github/auth-github.module';

@@ -2,18 +2,12 @@ import {
   BadRequestException,
   ConflictException,
   HttpStatus,
-  Inject,
-  Injectable,
   NotFoundException,
-  Optional,
-  Scope,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import type { Request } from 'express';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { UsersService } from '../users/users.service';
 import { SessionService } from '../session/session.service';
@@ -252,7 +246,7 @@ export class AuthService {
     return updatedUser;
   }
 
-  async softDelete(userId: string): Promise<void> {
+  async deleteUser(userId: string): Promise<void> {
     await this.sessionService.deleteByUserId(userId);
     await this.usersService.remove(userId);
   }

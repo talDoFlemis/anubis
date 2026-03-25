@@ -27,7 +27,6 @@ import type { Request } from 'express';
 import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candidate-onboarding.dto';
 import { AuthUpdateDto } from '../auth-email/dto/auth-update.dto';
 import { SessionAuthGuard } from './guards/session-auth.guard';
-import { User } from '../users/domain/user';
 import { AuthService } from './auth.service';
 import {
   RestrictedSessionReason,
@@ -35,6 +34,7 @@ import {
 } from './guards/session-lifecycle.guard';
 import { AllowRestrictedSession } from './decorators/allow-restricted-session.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from '../users/domain/user';
 
 @ApiTags('Auth')
 @UseGuards(SessionAuthGuard, SessionLifecycleGuard)
@@ -68,7 +68,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get the current authenticated user' })
   @ApiOkResponse({ type: User, description: 'Current user profile' })
   @ApiUnauthorizedResponse({ description: 'No active session' })
-  async me(@CurrentUser() user: User | null): Promise<User | null> {
+  me(@CurrentUser() user: User | null): User | null {
     return user;
   }
 
@@ -94,12 +94,12 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiCookieAuth()
   @ApiOperation({
-    summary: 'Soft-delete the current account and destroy the session',
+    summary: 'Delete the current account and destroy the session',
   })
   @ApiNoContentResponse({ description: 'Account deleted successfully' })
   @ApiUnauthorizedResponse({ description: 'No active session' })
   async delete(@Req() req: Request): Promise<void> {
-    await this.authService.softDelete(req.user!.id);
+    await this.authService.deleteUser(req.user!.id);
     await new Promise<void>((resolve, reject) => {
       req.session.destroy((err) => {
         if (err) reject(err instanceof Error ? err : new Error(String(err)));

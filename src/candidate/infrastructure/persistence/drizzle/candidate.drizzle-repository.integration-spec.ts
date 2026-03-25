@@ -7,6 +7,7 @@ import {
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import { CandidateDrizzleRepository } from './candidate.drizzle-repository';
 import { UserDrizzleRepository } from '../../../../users/infrastructure/persistence/drizzle/user.drizzle-repository';
+import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
 
@@ -36,6 +37,8 @@ describe('CandidateDrizzleRepository (integration)', () => {
 
   it('upserts candidate profile by user id', async () => {
     const user = await userRepository.create({
+      authProvider: AuthProvidersEnum.email,
+      providerSubject: 'candidate@example.com',
       email: 'candidate@example.com',
       password: 'hash',
       cpf: '12345678901',

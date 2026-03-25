@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { DRIZZLE_TX } from '../../../../database/drizzle.constants';
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import { users } from '../../../../database/schema/users';
@@ -51,7 +51,7 @@ export class UserDrizzleRepository extends UserRepository {
     const [row] = await this.db
       .select()
       .from(users)
-      .where(and(eq(users.id, id), isNull(users.deletedAt)))
+      .where(eq(users.id, id))
       .limit(1);
 
     if (!row) return null;
@@ -63,7 +63,7 @@ export class UserDrizzleRepository extends UserRepository {
     const [row] = await this.db
       .select()
       .from(users)
-      .where(and(eq(users.email, normalizedEmail), isNull(users.deletedAt)))
+      .where(eq(users.email, normalizedEmail))
       .limit(1);
 
     if (!row) return null;
@@ -74,7 +74,7 @@ export class UserDrizzleRepository extends UserRepository {
     const [row] = await this.db
       .select()
       .from(users)
-      .where(and(eq(users.cpf, cpf), isNull(users.deletedAt)))
+      .where(eq(users.cpf, cpf))
       .limit(1);
 
     if (!row) return null;
@@ -92,7 +92,6 @@ export class UserDrizzleRepository extends UserRepository {
         and(
           eq(users.authProvider, params.provider),
           eq(users.providerSubject, params.providerSubject),
-          isNull(users.deletedAt),
         ),
       )
       .limit(1);
@@ -140,7 +139,7 @@ export class UserDrizzleRepository extends UserRepository {
     const [row] = await this.db
       .update(users)
       .set(updateData)
-      .where(and(eq(users.id, id), isNull(users.deletedAt)))
+      .where(eq(users.id, id))
       .returning();
 
     if (!row) return null;
@@ -148,10 +147,7 @@ export class UserDrizzleRepository extends UserRepository {
   }
 
   async remove(id: string): Promise<void> {
-    await this.db
-      .update(users)
-      .set({ deletedAt: new Date() })
-      .where(eq(users.id, id));
+    await this.db.delete(users).where(eq(users.id, id));
   }
 
   private toDomain(row: UserRow): User {
@@ -173,7 +169,6 @@ export class UserDrizzleRepository extends UserRepository {
       forgotPasswordTokenVersion: row.forgotPasswordTokenVersion,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      deletedAt: row.deletedAt,
     });
   }
 }

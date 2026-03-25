@@ -81,7 +81,7 @@ describe('UserDrizzleRepository (integration)', () => {
     expect(found!.authProvider).toBe(AuthProvidersEnum.google);
   });
 
-  it('updates lifecycle fields and soft deletes users', async () => {
+  it('updates lifecycle fields and deletes users', async () => {
     const created = await repository.create(baseUserData);
 
     const updated = await repository.update(created.id, {
@@ -99,8 +99,7 @@ describe('UserDrizzleRepository (integration)', () => {
     expect(found).toBeNull();
 
     const [row] = await db.select().from(users).where(eq(users.id, created.id));
-    expect(row).toBeDefined();
-    expect(row.deletedAt).toBeInstanceOf(Date);
+    expect(row).toBeUndefined();
   });
 
   it('enforces unique auth provider and subject', async () => {

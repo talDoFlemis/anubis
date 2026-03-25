@@ -1,4 +1,4 @@
-import { ConflictException, INestApplication } from '@nestjs/common';
+import { ExecutionContext, INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -8,6 +8,8 @@ import { AuthEmailController } from '../src/auth-email/auth-email.controller';
 import { AuthService } from '../src/auth/auth.service';
 import { AuthGoogleService } from '../src/auth-google/auth-google.service';
 import { AuthEmailService } from '../src/auth-email/auth-email.service';
+import { AuthEmailGuard } from '../src/auth-email/auth-email.guard';
+import { GoogleAuthGuard } from '../src/auth-google/guards/google-auth.guard';
 import { SessionAuthGuard } from '../src/auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../src/auth/guards/session-lifecycle.guard';
 import { RoleEnum } from '../src/roles/roles.enum';
@@ -19,15 +21,25 @@ import { Reflector } from '@nestjs/core';
 
 type LoginResponseBody = {
   onboardingCompleted: boolean;
-  linkedProviders: string[];
+  authProvider: string;
 };
 
 type OnboardingResponseBody = {
   onboardingCompleted: boolean;
 };
 
-type LinkProviderResponseBody = {
-  linkedProviders: string[];
+type SessionRequest = {
+  body: {
+    email?: string;
+    password?: string;
+    idToken?: string;
+  };
+  user?: unknown;
+  isAuthenticated(): boolean;
+  session: {
+    id: string;
+    destroy(callback: (err?: unknown) => void): void;
+  };
 };
 
 describe('Auth journeys (e2e)', () => {
@@ -35,7 +47,6 @@ describe('Auth journeys (e2e)', () => {
   const authService = {
     validateSocialLogin: jest.fn(),
     completeCandidateOnboarding: jest.fn(),
-    linkGoogleProvider: jest.fn(),
   };
   const authEmailService = {
     validateLogin: jest.fn(),
@@ -44,7 +55,6 @@ describe('Auth journeys (e2e)', () => {
     confirmNewEmail: jest.fn(),
     forgotPassword: jest.fn(),
     resetPassword: jest.fn(),
-    linkEmailProvider: jest.fn(),
   };
   const authGoogleService = {
     getProfileByToken: jest.fn(),
@@ -57,8 +67,6 @@ describe('Auth journeys (e2e)', () => {
         { provide: AuthService, useValue: authService },
         { provide: AuthEmailService, useValue: authEmailService },
         { provide: AuthGoogleService, useValue: authGoogleService },
-        SessionAuthGuard,
-        SessionLifecycleGuard,
         {
           provide: getLoggerToken(SessionAuthGuard.name),
           useValue: { warn: jest.fn(), debug: jest.fn() },
@@ -86,26 +94,71 @@ describe('Auth journeys (e2e)', () => {
           useValue: { getAllAndOverride: jest.fn().mockReturnValue([]) },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthEmailGuard)
+      .useValue({
+        canActivate: async (context: ExecutionContext): Promise<boolean> => {
+          const req = context.switchToHttp().getRequest<SessionRequest>();
+          const result = (await authEmailService.validateLogin({
+            email: req.body.email,
+            password: req.body.password,
+          })) as {
+            user: unknown;
+          };
+          req.user = result.user;
+          return true;
+        },
+      })
+      .overrideGuard(GoogleAuthGuard)
+      .useValue({
+        canActivate: async (context: ExecutionContext): Promise<boolean> => {
+          const req = context.switchToHttp().getRequest<SessionRequest>();
+          const socialProfile = (await authGoogleService.getProfileByToken({
+            idToken: req.body.idToken ?? '',
+          })) as Record<string, unknown>;
+          const result = (await authService.validateSocialLogin(
+            AuthProvidersEnum.google,
+            socialProfile,
+          )) as {
+            user: unknown;
+          };
+          req.user = result.user;
+          return true;
+        },
+      })
+      .overrideGuard(SessionAuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .overrideGuard(SessionLifecycleGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.use(
       (
-        req: { session?: Record<string, unknown> },
+        req: {
+          session?: SessionRequest['session'];
+          user?: unknown;
+          isAuthenticated?: () => boolean;
+        },
         _res: unknown,
         next: () => void,
       ) => {
         req.session = {
           id: 'session-1',
-          userId: 'user-1',
-          userRole: RoleEnum.candidate,
+          destroy: (cb: (err?: unknown) => void) => cb(),
+        };
+        req.user = {
+          id: 'user-1',
+          email: 'candidate@example.com',
+          firstName: 'Jane',
+          lastName: 'Doe',
           role: RoleEnum.candidate,
           status: StatusEnum.active,
           onboardingCompleted: true,
           mustChangePassword: false,
-          regenerate: (cb: (err?: unknown) => void) => cb(),
-          destroy: (cb: (err?: unknown) => void) => cb(),
+          authProvider: AuthProvidersEnum.email,
         };
+        req.isAuthenticated = () => true;
         next();
       },
     );
@@ -149,18 +202,14 @@ describe('Auth journeys (e2e)', () => {
     authEmailService.validateLogin.mockResolvedValue({
       user: {
         id: 'user-1',
-        role: RoleEnum.candidate,
-      },
-      loginResponse: {
-        userId: 'user-1',
         email: 'primary@example.com',
         firstName: 'Jane',
         lastName: 'Doe',
         role: RoleEnum.candidate,
         status: StatusEnum.active,
-        linkedProviders: [AuthProvidersEnum.email, AuthProvidersEnum.google],
         onboardingCompleted: true,
         mustChangePassword: false,
+        authProvider: AuthProvidersEnum.email,
       },
     });
 
@@ -179,7 +228,7 @@ describe('Auth journeys (e2e)', () => {
       password: 'password123',
     });
     expect(body.onboardingCompleted).toBe(true);
-    expect(body.linkedProviders).toEqual(['email', 'google']);
+    expect(body.authProvider).toBe('email');
   });
 
   it('confirms a new e-mail via the regrouped email provider route', async () => {
@@ -209,18 +258,6 @@ describe('Auth journeys (e2e)', () => {
   });
 
   it('logs in with google and returns lifecycle flags', async () => {
-    const loginResponse = {
-      userId: 'user-1',
-      email: 'candidate@example.com',
-      firstName: 'Jane',
-      lastName: 'Doe',
-      role: RoleEnum.candidate,
-      status: StatusEnum.active,
-      linkedProviders: [AuthProvidersEnum.google],
-      onboardingCompleted: false,
-      mustChangePassword: false,
-    };
-
     authGoogleService.getProfileByToken.mockResolvedValue({
       id: 'google-sub',
       email: 'candidate@example.com',
@@ -230,71 +267,30 @@ describe('Auth journeys (e2e)', () => {
     authService.validateSocialLogin.mockResolvedValue({
       user: {
         id: 'user-1',
+        email: 'candidate@example.com',
+        firstName: 'Jane',
+        lastName: 'Doe',
         role: RoleEnum.candidate,
+        status: StatusEnum.active,
+        onboardingCompleted: false,
+        mustChangePassword: false,
+        authProvider: AuthProvidersEnum.google,
       },
-      loginResponse,
     });
 
     const response = await request(app.getHttpServer())
-      .post('/auth/provider/google/login')
+      .post('/auth/provider/google')
       .send({ idToken: 'google-token' })
       .expect(200);
 
     const body = response.body as LoginResponseBody;
 
+    expect(authService.validateSocialLogin).toHaveBeenCalledWith(
+      AuthProvidersEnum.google,
+      expect.objectContaining({ id: 'google-sub' }),
+    );
     expect(body.onboardingCompleted).toBe(false);
-    expect(body.linkedProviders).toEqual(['google']);
-  });
-
-  it('links google provider when the provider email is owned by the authenticated user', async () => {
-    authGoogleService.getProfileByToken.mockResolvedValue({
-      id: 'google-sub',
-      email: 'candidate@example.com',
-      firstName: 'Jane',
-      lastName: 'Doe',
-    });
-    authService.linkGoogleProvider.mockResolvedValue({
-      id: 'user-1',
-      linkedProviders: [AuthProvidersEnum.email, AuthProvidersEnum.google],
-    });
-
-    const response = await request(app.getHttpServer())
-      .post('/auth/provider/google/link')
-      .send({ idToken: 'google-token' })
-      .expect(200);
-
-    const body = response.body as LinkProviderResponseBody;
-
-    expect(authService.linkGoogleProvider).toHaveBeenCalledWith('user-1', {
-      id: 'google-sub',
-      email: 'candidate@example.com',
-      firstName: 'Jane',
-      lastName: 'Doe',
-    });
-    expect(body.linkedProviders).toEqual(['email', 'google']);
-  });
-
-  it('rejects google provider linking when the provider email belongs to another user', async () => {
-    authGoogleService.getProfileByToken.mockResolvedValue({
-      id: 'google-sub',
-      email: 'owned-by-other@example.com',
-      firstName: 'Jane',
-      lastName: 'Doe',
-    });
-    authService.linkGoogleProvider.mockRejectedValue(
-      new ConflictException({
-        message: 'Este e-mail do provedor google ja pertence a outro usuario.',
-      }),
-    );
-
-    const response = await request(app.getHttpServer())
-      .post('/auth/provider/google/link')
-      .send({ idToken: 'google-token' })
-      .expect(409);
-
-    expect(response.body.message).toBe(
-      'Este e-mail do provedor google ja pertence a outro usuario.',
-    );
+    expect(body.authProvider).toBe('google');
   });
 
   it('completes candidate onboarding from an authenticated session', async () => {
@@ -321,56 +317,5 @@ describe('Auth journeys (e2e)', () => {
       expect.objectContaining({ cpf: '12345678901' }),
     );
     expect(body.onboardingCompleted).toBe(true);
-  });
-
-  it('links email provider with proof from authenticated session', async () => {
-    authEmailService.linkEmailProvider.mockResolvedValue({
-      id: 'user-1',
-      linkedProviders: [AuthProvidersEnum.google, AuthProvidersEnum.email],
-    });
-
-    const response = await request(app.getHttpServer())
-      .post('/auth/provider/email/link')
-      .send({
-        password: 'password123',
-        provider: AuthProvidersEnum.google,
-        providerToken: 'google-id-token',
-      })
-      .expect(200);
-
-    const body = response.body as LinkProviderResponseBody;
-
-    expect(authEmailService.linkEmailProvider).toHaveBeenCalledWith(
-      'user-1',
-      'session-1',
-      expect.objectContaining({ provider: 'google' }),
-    );
-    expect(body.linkedProviders).toEqual(['google', 'email']);
-  });
-
-  it('forwards ownedEmailAccountId on email-provider link requests', async () => {
-    authEmailService.linkEmailProvider.mockResolvedValue({
-      id: 'user-1',
-      linkedProviders: [AuthProvidersEnum.google, AuthProvidersEnum.email],
-    });
-
-    await request(app.getHttpServer())
-      .post('/auth/provider/email/link')
-      .send({
-        password: 'password123',
-        provider: AuthProvidersEnum.google,
-        providerToken: 'google-id-token',
-        ownedEmailAccountId: 'b7c2f7c0-7b5f-4b61-9b74-2fc5f47a8f8e',
-      })
-      .expect(200);
-
-    expect(authEmailService.linkEmailProvider).toHaveBeenCalledWith(
-      'user-1',
-      'session-1',
-      expect.objectContaining({
-        provider: 'google',
-        ownedEmailAccountId: 'b7c2f7c0-7b5f-4b61-9b74-2fc5f47a8f8e',
-      }),
-    );
   });
 });

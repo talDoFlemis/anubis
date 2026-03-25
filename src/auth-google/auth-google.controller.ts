@@ -4,7 +4,6 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -15,7 +14,6 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { AuthService } from '../auth/auth.service';
 import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { User } from '../users/domain/user';
@@ -26,8 +24,6 @@ import { buildLoginResponse } from 'src/auth/login-response.builder';
 @ApiTags('Auth', 'Google Auth')
 @Controller({ path: 'auth/provider/google', version: '1' })
 export class AuthGoogleController {
-  constructor(private readonly authService: AuthService) {}
-
   @Post()
   @UseGuards(GoogleAuthGuard)
   @HttpCode(HttpStatus.OK)

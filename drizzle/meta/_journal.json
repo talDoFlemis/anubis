@@ -64,6 +64,13 @@
       "when": 1774445927698,
       "tag": "0008_add-vice-coordinator-role",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774452268172,
+      "tag": "0009_quiet_slipstream",
+      "breakpoints": true
     }
   ]
 }

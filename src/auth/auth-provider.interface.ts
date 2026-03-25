@@ -1,3 +1,3 @@
 export interface AuthProviderInterface {
-  isValid(data: any): Promise<boolean>;
+  isValid(data: unknown): Promise<boolean>;
 }

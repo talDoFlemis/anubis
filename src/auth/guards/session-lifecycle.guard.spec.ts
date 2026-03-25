@@ -18,7 +18,7 @@ describe('SessionLifecycleGuard', () => {
   const context = (session?: Record<string, unknown>): ExecutionContext =>
     ({
       switchToHttp: () => ({
-        getRequest: () => ({ session }),
+        getRequest: () => ({ user: session }),
       }),
       getHandler: () => ({}),
       getClass: () => class TestClass {},
@@ -42,7 +42,7 @@ describe('SessionLifecycleGuard', () => {
     expect(
       guard.canActivate(
         context({
-          userId: 'user-1',
+          id: 'user-1',
           onboardingCompleted: true,
           mustChangePassword: false,
         }),
@@ -56,7 +56,7 @@ describe('SessionLifecycleGuard', () => {
     expect(() =>
       guard.canActivate(
         context({
-          userId: 'user-1',
+          id: 'user-1',
           onboardingCompleted: false,
           mustChangePassword: false,
         }),
@@ -72,7 +72,7 @@ describe('SessionLifecycleGuard', () => {
     expect(
       guard.canActivate(
         context({
-          userId: 'user-1',
+          id: 'user-1',
           onboardingCompleted: false,
           mustChangePassword: false,
         }),
@@ -88,7 +88,7 @@ describe('SessionLifecycleGuard', () => {
     expect(() =>
       guard.canActivate(
         context({
-          userId: 'user-1',
+          id: 'user-1',
           onboardingCompleted: false,
           mustChangePassword: true,
         }),
@@ -104,7 +104,7 @@ describe('SessionLifecycleGuard', () => {
     expect(
       guard.canActivate(
         context({
-          userId: 'user-1',
+          id: 'user-1',
           onboardingCompleted: false,
           mustChangePassword: true,
         }),

@@ -22,5 +22,4 @@ export class User {
   forgotPasswordTokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null;
 }
