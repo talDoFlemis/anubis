@@ -13,7 +13,6 @@ import { SessionModule } from './session/session.module';
 import { MailModule } from './mail/mail.module';
 import { HealthModule } from './health/health.module';
 import { CandidateModule } from './candidate/candidate.module';
-import { ProfessorsModule } from './professors/professors.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggingModule } from './common/logging.module';
 import { SystemModule } from './system/system.module';
@@ -36,7 +35,6 @@ import { AuthGithubModule } from './auth-github/auth-github.module';
     DatabaseModule,
     UsersModule,
     CandidateModule,
-    ProfessorsModule,
     AuthModule,
     AuthEmailModule,
     AuthGoogleModule,
