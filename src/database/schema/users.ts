@@ -13,6 +13,7 @@ export const roleEnum = pgEnum('role', [
   'candidate',
   'mdcc-secretary',
   'post-graduate-coordinator',
+  'post-graduate-vice-coordinator',
 ]);
 
 export const statusEnum = pgEnum('status', ['active', 'inactive']);

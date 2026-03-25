@@ -57,6 +57,13 @@
       "when": 1774361858245,
       "tag": "0007_make_simple_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774445927698,
+      "tag": "0008_add-vice-coordinator-role",
+      "breakpoints": true
     }
   ]
 }
