@@ -3,9 +3,10 @@ import { UsersService } from './users.service';
 import { UserDrizzlePersistenceModule } from './infrastructure/persistence/drizzle/drizzle-persistence.module';
 import { UserInfoMiddleware } from './user-info.middleware';
 import { UsersController } from './users.controller';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
-  imports: [UserDrizzlePersistenceModule],
+  imports: [UserDrizzlePersistenceModule, MailModule],
   providers: [UsersService],
   exports: [UsersService],
   controllers: [UsersController],

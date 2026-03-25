@@ -14,7 +14,6 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import type { Request } from 'express';
-import type { Session, SessionData } from 'express-session';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { UsersService } from '../users/users.service';
 import { SessionService } from '../session/session.service';
@@ -32,7 +31,6 @@ import { MailService } from '../mail/mail.service';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
-@Injectable({ scope: Scope.REQUEST })
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
@@ -43,9 +41,6 @@ export class AuthService {
     private readonly mailService: MailService,
     @InjectPinoLogger(AuthService.name)
     private readonly logger: PinoLogger,
-    @Optional()
-    @Inject(REQUEST)
-    private readonly request?: Request,
   ) {}
 
   async validateSocialLogin(
@@ -71,7 +66,6 @@ export class AuthService {
     });
 
     if (existingByProvider) {
-      this.persistSnapshotAfterSessionRegeneration(existingByProvider);
       return {
         user: existingByProvider,
         loginResponse: buildLoginResponse(existingByProvider),
@@ -107,7 +101,6 @@ export class AuthService {
       });
     }
 
-    this.persistSnapshotAfterSessionRegeneration(user);
     return {
       user,
       loginResponse: buildLoginResponse(user),
@@ -134,10 +127,6 @@ export class AuthService {
 
       if (sessionChange.revokeAllSessions) {
         await this.sessionService.deleteByUserId(user.id);
-      }
-
-      if (sessionChange.refreshCurrentSession) {
-        this.persistCurrentSessionSnapshot(user);
       }
     }
 
@@ -258,10 +247,6 @@ export class AuthService {
           excludeSessionId: sessionId,
         });
       }
-
-      if (sessionChange.refreshCurrentSession) {
-        this.persistCurrentSessionSnapshot(updatedUser);
-      }
     }
 
     return updatedUser;
@@ -314,59 +299,5 @@ export class AuthService {
     const confirmUrl = `${frontendUrl}/auth/confirm-new-email?hash=${hash}`;
 
     return `<p>Voce solicitou alteracao do seu e-mail. Clique no link abaixo para confirmar:</p><p><a href="${confirmUrl}">Confirmar novo e-mail</a></p>`;
-  }
-
-  private persistCurrentSessionSnapshot(
-    user: Pick<
-      User,
-      'id' | 'role' | 'status' | 'onboardingCompleted' | 'mustChangePassword'
-    >,
-  ): void {
-    const session = this.getCurrentSession();
-    if (!session) return;
-    this.assignSessionSnapshot(session, user);
-  }
-
-  private persistSnapshotAfterSessionRegeneration(
-    user: Pick<
-      User,
-      'id' | 'role' | 'status' | 'onboardingCompleted' | 'mustChangePassword'
-    >,
-  ): void {
-    const session = this.getCurrentSession();
-    if (!session) return;
-
-    const originalRegenerate = session.regenerate.bind(session);
-    session.regenerate = ((callback) => {
-      originalRegenerate((err) => {
-        if (!err) {
-          const refreshedSession = this.getCurrentSession();
-          if (refreshedSession) {
-            this.assignSessionSnapshot(refreshedSession, user);
-          }
-        }
-
-        callback?.(err);
-      });
-    }) as typeof session.regenerate;
-  }
-
-  private getCurrentSession(): (Session & Partial<SessionData>) | null {
-    return this.request?.session ?? null;
-  }
-
-  private assignSessionSnapshot(
-    session: Session & Partial<SessionData>,
-    user: Pick<
-      User,
-      'id' | 'role' | 'status' | 'onboardingCompleted' | 'mustChangePassword'
-    >,
-  ): void {
-    session.userId = user.id;
-    session.userRole = user.role;
-    session.role = user.role;
-    session.status = user.status;
-    session.onboardingCompleted = user.onboardingCompleted;
-    session.mustChangePassword = user.mustChangePassword;
   }
 }

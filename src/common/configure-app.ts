@@ -11,6 +11,7 @@ import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import helmet from 'helmet';
 import type { Request, Response, NextFunction } from 'express';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import passport from 'passport';
 
 const helmetWithCsp = helmet();
 const helmetWithoutCsp = helmet({ contentSecurityPolicy: false });
@@ -75,6 +76,9 @@ export function configureApp(app: INestApplication): void {
       },
     }),
   );
+
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   app.useGlobalPipes(
     new ValidationPipe({

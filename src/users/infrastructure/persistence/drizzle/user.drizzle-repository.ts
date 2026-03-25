@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { and, eq, isNull } from 'drizzle-orm';
 import { DRIZZLE_TX } from '../../../../database/drizzle.constants';
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
@@ -154,7 +155,7 @@ export class UserDrizzleRepository extends UserRepository {
   }
 
   private toDomain(row: UserRow): User {
-    return {
+    return plainToInstance(User, {
       id: row.id,
       authProvider: row.authProvider as AuthProvidersEnum,
       providerSubject: row.providerSubject,
@@ -173,6 +174,6 @@ export class UserDrizzleRepository extends UserRepository {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       deletedAt: row.deletedAt,
-    };
+    });
   }
 }

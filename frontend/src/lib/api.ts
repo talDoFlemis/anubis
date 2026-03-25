@@ -202,7 +202,7 @@ export const api = {
       }),
 
     googleLogin: (data: { idToken: string }) =>
-      request<LoginResponse>('/auth/provider/google/login', {
+      request<LoginResponse>('/auth/provider/google', {
         method: 'POST',
         body: data,
       }),

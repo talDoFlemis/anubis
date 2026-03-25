@@ -21,7 +21,6 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
-import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthRegisterDto } from './dto/auth-register.dto';
 import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
@@ -29,6 +28,8 @@ import { LoginResponseDto } from './dto/login-response.dto';
 import { AuthEmailService } from './auth-email.service';
 import { User } from '../users/domain/user';
 import { AuthEmailGuard } from './auth-email.guard';
+import { buildLoginResponse } from 'src/auth/login-response.builder';
+import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 
 @ApiTags('Auth', 'Email Auth')
 @Controller({ path: 'auth/provider/email', version: '1' })
@@ -45,10 +46,12 @@ export class AuthEmailController {
     description: 'Invalid email, password, or provider',
   })
   @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  async login(
-    @Body() _loginDto: AuthEmailLoginDto,
+  login(
+    @Body() _dto: AuthEmailLoginDto,
     @Req() req: Request & { user: User },
-  ): Promise<LoginResponseDto> {}
+  ): LoginResponseDto {
+    return buildLoginResponse(req.user);
+  }
 
   @Post('register')
   @Throttle({ default: { ttl: 60000, limit: 10 } })

@@ -29,7 +29,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const userRole = request.session?.userRole;
+    const userRole = request.user?.role;
 
     if (!userRole || !requiredRoles.includes(userRole)) {
       this.logger.warn(
@@ -45,7 +45,7 @@ export class RolesGuard implements CanActivate {
     }
 
     this.logger.debug(
-      { userId: request.session?.userId, userRole, requiredRoles },
+      { userId: request.user?.id, userRole, requiredRoles },
       'Role check passed',
     );
     return true;

@@ -26,8 +26,8 @@ export class SessionLifecycleGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
-    const session = request.session;
-    const userId = session?.userId;
+    const session = request.user;
+    const userId = session?.id;
 
     if (!userId) {
       this.logger.error(

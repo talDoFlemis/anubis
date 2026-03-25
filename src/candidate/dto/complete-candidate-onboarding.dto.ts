@@ -1,21 +1,13 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  Matches,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsNotEmpty, Matches } from 'class-validator';
 
 export class CompleteCandidateOnboardingDto {
-  @ApiProperty({ example: 'John' })
+  @ApiProperty({ example: 'Jonathan' })
   @IsNotEmpty()
   firstName: string;
 
-  @ApiProperty({ example: 'Doe' })
+  @ApiProperty({ example: 'Galindo' })
   @IsNotEmpty()
   lastName: string;
 
@@ -27,17 +19,4 @@ export class CompleteCandidateOnboardingDto {
   @ApiProperty({ example: 'UFRN' })
   @IsNotEmpty()
   universityOfOrigin: string;
-
-  @ApiPropertyOptional({ example: '8.75', maxLength: 5 })
-  @IsOptional()
-  @MaxLength(5)
-  @Matches(/^\d{1,2}(\.\d{1,2})?$/)
-  ira?: string;
-
-  @ApiPropertyOptional({ example: 780, minimum: 0, maximum: 1000 })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(1000)
-  poscomp?: number;
 }

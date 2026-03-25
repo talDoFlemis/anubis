@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
-import { AuthEmailService } from '../../auth-email/auth-email.service';
+import { AuthEmailService } from './auth-email.service';
 
 @Injectable()
-export class LocalStrategy extends PassportStrategy(Strategy) {
+export class AuthEmailStrategy extends PassportStrategy(
+  Strategy,
+  'auth-email',
+) {
   constructor(private readonly authEmailService: AuthEmailService) {
-    super();
+    super({ usernameField: 'email', passwordField: 'password' });
   }
 
   async validate(email: string, password: string) {

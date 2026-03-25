@@ -9,6 +9,7 @@ import { SessionModule } from '../session/session.module';
 import { MailModule } from '../mail/mail.module';
 import { CandidateModule } from '../candidate/candidate.module';
 import { SessionSerializer } from './session.serializer';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SessionSerializer } from './session.serializer';
     SessionModule,
     MailModule,
     JwtModule.register({}),
+    PassportModule.register({ session: true }),
   ],
   controllers: [AuthController],
   providers: [

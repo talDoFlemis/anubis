@@ -34,6 +34,7 @@ import {
   SessionLifecycleGuard,
 } from './guards/session-lifecycle.guard';
 import { AllowRestrictedSession } from './decorators/allow-restricted-session.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @ApiTags('Auth')
 @UseGuards(SessionAuthGuard, SessionLifecycleGuard)
@@ -53,10 +54,7 @@ export class AuthController {
     @Req() req: Request,
     @Body() dto: CompleteCandidateOnboardingDto,
   ): Promise<User> {
-    return this.authService.completeCandidateOnboarding(
-      req.session.userId!,
-      dto,
-    );
+    return this.authService.completeCandidateOnboarding(req.user!.id, dto);
   }
 
   @AllowRestrictedSession(
@@ -70,8 +68,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Get the current authenticated user' })
   @ApiOkResponse({ type: User, description: 'Current user profile' })
   @ApiUnauthorizedResponse({ description: 'No active session' })
-  async me(@Req() req: Request): Promise<User | null> {
-    return this.authService.me(req.session.userId!);
+  async me(@CurrentUser() user: User | null): Promise<User | null> {
+    return user;
   }
 
   @AllowRestrictedSession(RestrictedSessionReason.mustChangePassword)
@@ -89,11 +87,7 @@ export class AuthController {
     @Req() req: Request,
     @Body() userDto: AuthUpdateDto,
   ): Promise<User | null> {
-    return this.authService.update(
-      req.session.userId!,
-      req.session.id,
-      userDto,
-    );
+    return this.authService.update(req.user!.id, req.session.id, userDto);
   }
 
   @Delete('me')
@@ -105,7 +99,7 @@ export class AuthController {
   @ApiNoContentResponse({ description: 'Account deleted successfully' })
   @ApiUnauthorizedResponse({ description: 'No active session' })
   async delete(@Req() req: Request): Promise<void> {
-    await this.authService.softDelete(req.session.userId!);
+    await this.authService.softDelete(req.user!.id);
     await new Promise<void>((resolve, reject) => {
       req.session.destroy((err) => {
         if (err) reject(err instanceof Error ? err : new Error(String(err)));
