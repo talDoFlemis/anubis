@@ -9,13 +9,13 @@ import {
   Shield,
   Sparkles,
 } from 'lucide-react';
-import { AccountAccessCard } from '@/components/account-access-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
+import type { User } from '@/lib/api';
 import { mockCandidateHome } from '@/lib/mock-candidate-home';
 
 export const Route = createFileRoute('/_app/')({
@@ -66,6 +66,11 @@ function HomePage() {
     [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
   const initials = getInitials(user.firstName, user.lastName);
   const profile = mockCandidateHome.profile;
+  const iraValue =
+    (user as User & { ira?: string | null }).ira?.trim() || 'Not set';
+  const poscompValue =
+    (user as User & { poscomp?: string | number | null }).poscomp?.toString() ||
+    'Not set';
 
   return (
     <div className="anubis-page-shell min-h-svh px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
@@ -142,7 +147,7 @@ function HomePage() {
                 <ProfileLine
                   icon={<Sparkles className="h-4 w-4" />}
                   label="IRA / POSCOMP"
-                  value={`${profile.ira} / ${profile.poscomp}`}
+                  value={`${iraValue} / ${poscompValue}`}
                 />
                 <ProfileLine
                   icon={<CalendarDays className="h-4 w-4" />}
@@ -188,13 +193,6 @@ function HomePage() {
                 ))}
               </CardContent>
             </Card>
-
-            <div className="space-y-3">
-              <p className="font-label px-2 text-primary">
-                Acesso e provedores
-              </p>
-              <AccountAccessCard user={user} />
-            </div>
           </div>
 
           <div className="space-y-6">
@@ -328,8 +326,6 @@ function FallbackHome() {
             <p>Papel: {ROLE_LABELS[user.role] ?? user.role}</p>
           </CardContent>
         </Card>
-
-        <AccountAccessCard user={user} />
       </div>
     </div>
   );
