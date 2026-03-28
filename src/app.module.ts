@@ -16,7 +16,6 @@ import { HealthModule } from './health/health.module';
 import { CandidateModule } from './candidate/candidate.module';
 import { LoggingModule } from './common/logging.module';
 import { SystemModule } from './system/system.module';
-import { AuthGithubModule } from './auth-github/auth-github.module';
 
 @Module({
   imports: [
@@ -42,7 +41,6 @@ import { AuthGithubModule } from './auth-github/auth-github.module';
     MailModule,
     HealthModule,
     SystemModule,
-    AuthGithubModule,
   ],
   controllers: [AppController],
   providers: [AppService],
