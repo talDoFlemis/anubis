@@ -5,7 +5,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { api, type User } from '@/lib/api';
+import { api, type CandidateProfile, type User } from '@/lib/api';
 import { getPostAuthPath } from '@/lib/auth-flow';
 
 export const authQueryOptions = queryOptions({
@@ -17,6 +17,20 @@ export const authQueryOptions = queryOptions({
 
 export function useAuth() {
   return useQuery(authQueryOptions);
+}
+
+export const myCandidateProfileQueryOptions = queryOptions({
+  queryKey: ['candidates', 'me'],
+  queryFn: api.candidates.me,
+  retry: false,
+  staleTime: 5 * 60 * 1000,
+});
+
+export function useMyCandidateProfile(enabled = true) {
+  return useQuery({
+    ...myCandidateProfileQueryOptions,
+    enabled,
+  });
 }
 
 async function refreshCurrentUser(
@@ -34,6 +48,7 @@ export function useEmailLogin() {
     mutationFn: api.auth.emailLogin,
     onSuccess: async (data) => {
       await refreshCurrentUser(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
       navigate({ to: getPostAuthPath(data) });
     },
   });
@@ -47,6 +62,7 @@ export function useGoogleLogin() {
     mutationFn: api.auth.googleLogin,
     onSuccess: async (data) => {
       await refreshCurrentUser(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
       navigate({ to: getPostAuthPath(data) });
     },
   });
@@ -66,6 +82,7 @@ export function useCompleteCandidateOnboarding() {
     onSuccess: async (user) => {
       queryClient.setQueryData(['auth', 'me'], user);
       await refreshCurrentUser(queryClient);
+      await queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
     },
   });
 }
@@ -78,6 +95,7 @@ export function useUpdateProfile() {
     onSuccess: async (user) => {
       queryClient.setQueryData(['auth', 'me'], user as User | null);
       await refreshCurrentUser(queryClient);
+      await queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
     },
   });
 }
@@ -114,7 +132,12 @@ export function useLogout() {
     mutationFn: api.auth.logout,
     onSuccess: () => {
       queryClient.setQueryData(['auth', 'me'], null);
+      queryClient.setQueryData(
+        ['candidates', 'me'],
+        null as CandidateProfile | null,
+      );
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
       navigate({ to: '/auth/sign-in' });
     },
   });

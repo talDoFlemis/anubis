@@ -122,6 +122,22 @@ export interface LoginResponse {
   mustChangePassword: boolean;
 }
 
+export interface CandidateProfile {
+  userId: string;
+  email: string | null;
+  cpf: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  role: string;
+  status: string;
+  onboardingCompleted: boolean;
+  universityOfOrigin: string;
+  ira: string | null;
+  poscomp: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 function normalizeUser(data: unknown): User {
   const user = data as Record<string, unknown>;
 
@@ -152,6 +168,31 @@ function normalizeLoginResponse(data: unknown): LoginResponse {
     status: String(login.status ?? ''),
     onboardingCompleted: Boolean(login.onboardingCompleted),
     mustChangePassword: Boolean(login.mustChangePassword),
+  };
+}
+
+function normalizeCandidateProfile(data: unknown): CandidateProfile {
+  const candidate = data as Record<string, unknown>;
+
+  return {
+    userId: String(candidate.userId ?? ''),
+    email: (candidate.email as string | null | undefined) ?? null,
+    cpf: (candidate.cpf as string | null | undefined) ?? null,
+    firstName: (candidate.firstName as string | null | undefined) ?? null,
+    lastName: (candidate.lastName as string | null | undefined) ?? null,
+    role: String(candidate.role ?? ''),
+    status: String(candidate.status ?? ''),
+    onboardingCompleted: Boolean(candidate.onboardingCompleted),
+    universityOfOrigin: String(candidate.universityOfOrigin ?? ''),
+    ira: (candidate.ira as string | null | undefined) ?? null,
+    poscomp:
+      typeof candidate.poscomp === 'number'
+        ? candidate.poscomp
+        : candidate.poscomp == null
+          ? null
+          : Number(candidate.poscomp),
+    createdAt: String(candidate.createdAt ?? ''),
+    updatedAt: String(candidate.updatedAt ?? ''),
   };
 }
 
@@ -240,5 +281,8 @@ export const api = {
     logout: () => request<void>('/auth/logout', { method: 'POST' }),
 
     deleteAccount: () => request<void>('/auth/me', { method: 'DELETE' }),
+  },
+  candidates: {
+    me: async () => normalizeCandidateProfile(await request('/candidates/me')),
   },
 };

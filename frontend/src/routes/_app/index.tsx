@@ -14,8 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/hooks/use-auth';
-import type { User } from '@/lib/api';
+import { useAuth, useMyCandidateProfile } from '@/hooks/use-auth';
 import { mockCandidateHome } from '@/lib/mock-candidate-home';
 
 export const Route = createFileRoute('/_app/')({
@@ -49,8 +48,11 @@ function formatDate(dateStr: string): string {
 
 function HomePage() {
   const { data: user, isLoading } = useAuth();
+  const isCandidate = user?.role === 'candidate';
+  const { data: candidateProfile, isLoading: isCandidateProfileLoading } =
+    useMyCandidateProfile(isCandidate);
 
-  if (isLoading) {
+  if (isLoading || (isCandidate && isCandidateProfileLoading)) {
     return <CandidateHomeSkeleton />;
   }
 
@@ -65,12 +67,14 @@ function HomePage() {
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
   const initials = getInitials(user.firstName, user.lastName);
-  const profile = mockCandidateHome.profile;
-  const iraValue =
-    (user as User & { ira?: string | null }).ira?.trim() || 'Not set';
+  const universityOfOrigin =
+    candidateProfile?.universityOfOrigin ||
+    mockCandidateHome.profile.universityOfOrigin;
+  const iraValue = candidateProfile?.ira?.trim() || 'Not set';
   const poscompValue =
-    (user as User & { poscomp?: string | number | null }).poscomp?.toString() ||
-    'Not set';
+    candidateProfile?.poscomp != null
+      ? String(candidateProfile.poscomp)
+      : 'Not set';
 
   return (
     <div className="anubis-page-shell min-h-svh px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
@@ -111,7 +115,7 @@ function HomePage() {
                 />
                 <MetricCard
                   label="Perfil academico"
-                  value={profile.universityOfOrigin}
+                  value={universityOfOrigin}
                 />
               </div>
             </div>
@@ -142,7 +146,7 @@ function HomePage() {
                 <ProfileLine
                   icon={<Mail className="h-4 w-4" />}
                   label="Universidade"
-                  value={profile.universityOfOrigin}
+                  value={universityOfOrigin}
                 />
                 <ProfileLine
                   icon={<Sparkles className="h-4 w-4" />}
