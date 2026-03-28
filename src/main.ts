@@ -1,11 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
-import { AdminModule } from './admin/admin.module';
 import { configureApp } from './common/configure-app';
 
 async function bootstrap() {
@@ -38,20 +36,6 @@ async function bootstrap() {
     port: port,
   });
 
-  const adminApp = await NestFactory.create(AdminModule, { bufferLogs: true });
-  const adminConfigService = adminApp.get(ConfigService);
-  const adminPort = adminConfigService.getOrThrow<string>('ADMIN_PORT');
-  adminApp.useLogger(logger);
-  adminApp.enableShutdownHooks();
-  adminApp.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-
   await app.listen(port);
-  await adminApp.listen(adminPort);
 }
 void bootstrap();

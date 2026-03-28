@@ -8,8 +8,13 @@ import type { ExtractTablesWithRelations } from 'drizzle-orm';
 import { DRIZZLE } from './drizzle.constants';
 import * as usersSchema from './schema/users';
 import * as sessionsSchema from './schema/sessions';
+import * as candidatesSchema from './schema/candidates';
 
-const schema = { ...usersSchema, ...sessionsSchema };
+const schema = {
+  ...usersSchema,
+  ...sessionsSchema,
+  ...candidatesSchema,
+};
 
 export type DrizzleSchema = typeof schema;
 

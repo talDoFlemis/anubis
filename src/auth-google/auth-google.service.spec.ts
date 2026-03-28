@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnprocessableEntityException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGoogleService } from './auth-google.service';
 
@@ -48,6 +51,7 @@ describe('AuthGoogleService', () => {
           email: 'john@gmail.com',
           given_name: 'John',
           family_name: 'Doe',
+          email_verified: true,
         }),
       });
 
@@ -60,6 +64,7 @@ describe('AuthGoogleService', () => {
         email: 'john@gmail.com',
         firstName: 'John',
         lastName: 'Doe',
+        verified_email: true,
       });
       expect(mockVerifyIdToken).toHaveBeenCalledWith({
         idToken: 'valid-google-id-token',
@@ -74,6 +79,7 @@ describe('AuthGoogleService', () => {
           email: 'minimal@gmail.com',
           given_name: undefined,
           family_name: undefined,
+          email_verified: true,
         }),
       });
 
@@ -86,7 +92,22 @@ describe('AuthGoogleService', () => {
         email: 'minimal@gmail.com',
         firstName: undefined,
         lastName: undefined,
+        verified_email: true,
       });
+    });
+
+    it('should reject token when google email is unverified', async () => {
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => ({
+          sub: 'google-user-456',
+          email: 'minimal@gmail.com',
+          email_verified: false,
+        }),
+      });
+
+      await expect(
+        service.getProfileByToken({ idToken: 'minimal-token' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw when payload is null (invalid token)', async () => {

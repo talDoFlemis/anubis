@@ -1,16 +1,9 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { CheckCircle, LoaderCircle, XCircle } from 'lucide-react';
 import { useEffect } from 'react';
-import { useConfirmNewEmail } from '@/hooks/use-auth';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { AuthCallout, AuthPageLayout } from '@/components/auth/auth-layout';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { useConfirmNewEmail } from '@/hooks/use-auth';
 
 interface ConfirmNewEmailSearch {
   hash: string;
@@ -36,73 +29,103 @@ function ConfirmNewEmailPage() {
 
   if (!hash) {
     return (
-      <Card>
-        <CardHeader className="text-center">
-          <XCircle className="mx-auto h-12 w-12 text-destructive" />
-          <CardTitle className="text-2xl">Link invalido</CardTitle>
-          <CardDescription>
-            O link de confirmacao nao e valido ou expirou.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center">
+      <AuthPageLayout
+        eyebrow="Atualizacao de email"
+        title="O link de confirmacao nao pode ser lido."
+        description="Abra novamente a mensagem mais recente enviada para o novo endereco e tente outra vez."
+        compact
+        status={
+          <AuthCallout
+            title="Link invalido"
+            description="A confirmacao do novo email precisa de um link completo e ainda valido."
+            className="bg-[rgba(186,26,26,0.08)]"
+          >
+            <XCircle className="h-5 w-5 text-destructive" />
+          </AuthCallout>
+        }
+        footer={
           <Button
             variant="outline"
             onClick={() => navigate({ to: '/auth/sign-in' })}
           >
             Ir para o login
           </Button>
-        </CardContent>
-      </Card>
+        }
+      >
+        <div />
+      </AuthPageLayout>
     );
   }
 
   if (confirmNewEmail.isPending) {
     return (
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Confirmando novo email...</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4 mx-auto" />
-        </CardContent>
-      </Card>
+      <AuthPageLayout
+        eyebrow="Atualizacao de email"
+        title="Confirmando o novo endereco da sua conta."
+        description="Estamos validando a alteracao para concluir a atualizacao do seu acesso principal."
+        compact
+        status={
+          <AuthCallout
+            title="Validando o novo email"
+            description="Aguarde alguns instantes enquanto a alteracao e registrada."
+          >
+            <LoaderCircle className="h-5 w-5 animate-spin text-primary" />
+          </AuthCallout>
+        }
+      >
+        <div />
+      </AuthPageLayout>
     );
   }
 
   if (confirmNewEmail.isError) {
     return (
-      <Card>
-        <CardHeader className="text-center">
-          <XCircle className="mx-auto h-12 w-12 text-destructive" />
-          <CardTitle className="text-2xl">Erro na confirmacao</CardTitle>
-          <CardDescription>
-            Nao foi possivel confirmar seu novo email. O link pode ter expirado.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center">
+      <AuthPageLayout
+        eyebrow="Atualizacao de email"
+        title="Nao foi possivel confirmar o novo endereco."
+        description="Revise o link recebido ou retorne ao inicio para repetir o fluxo de atualizacao quando necessario."
+        compact
+        status={
+          <AuthCallout
+            title="Erro na confirmacao"
+            description={confirmNewEmail.error.message}
+            className="bg-[rgba(186,26,26,0.08)]"
+          >
+            <XCircle className="h-5 w-5 text-destructive" />
+          </AuthCallout>
+        }
+        footer={
           <Button variant="outline" onClick={() => navigate({ to: '/' })}>
             Voltar ao inicio
           </Button>
-        </CardContent>
-      </Card>
+        }
+      >
+        <div />
+      </AuthPageLayout>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-        <CardTitle className="text-2xl">Email atualizado!</CardTitle>
-        <CardDescription>
-          Seu novo email foi confirmado com sucesso.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex justify-center">
-        <Link to="/">
-          <Button>Voltar ao inicio</Button>
-        </Link>
-      </CardContent>
-    </Card>
+    <AuthPageLayout
+      eyebrow="Email atualizado"
+      title="Seu novo email foi confirmado."
+      description="A alteracao de contato ja esta registrada e pronta para ser usada nos proximos acessos."
+      compact
+      status={
+        <AuthCallout
+          title="Atualizacao concluida"
+          description="Volte ao ambiente principal para seguir usando o Anubis com o novo endereco."
+        >
+          <CheckCircle className="h-5 w-5 text-primary" />
+        </AuthCallout>
+      }
+      footer={
+        <Button asChild>
+          <Link to="/">Voltar ao inicio</Link>
+        </Button>
+      }
+    >
+      <div />
+    </AuthPageLayout>
   );
 }

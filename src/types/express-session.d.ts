@@ -1,8 +1,8 @@
 import 'express-session';
+import type { User as AppUser } from '../users/domain/user';
 
-declare module 'express-session' {
-  interface SessionData {
-    userId: string;
-    userRole: string;
+declare global {
+  namespace Express {
+    class User extends AppUser {}
   }
 }

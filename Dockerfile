@@ -8,7 +8,7 @@ USER node
 WORKDIR /app
 
 COPY --chown=node:node package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/home/node/.local/share/pnpm/store pnpm install --frozen-lockfile
 
 # Stage 2: Build
 FROM cgr.dev/chainguard/node:latest-dev AS build
@@ -35,7 +35,7 @@ USER node
 WORKDIR /app
 
 COPY --chown=node:node package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
+RUN --mount=type=cache,target=/home/node/.local/share/pnpm/store pnpm install --frozen-lockfile --prod
 
 # Stage 4: Runtime
 FROM cgr.dev/chainguard/node:latest AS runtime
@@ -46,7 +46,6 @@ WORKDIR /app
 
 COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
-COPY --from=build --chown=node:node /app/src/mail/*.html ./dist/mail
 COPY --chown=node:node package.json ./
 COPY --chown=node:node drizzle ./drizzle
 

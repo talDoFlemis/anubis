@@ -4,49 +4,40 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiConflictResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import type { Request } from 'express';
-import { AuthService } from '../auth/auth.service';
-import { AuthGoogleService } from './auth-google.service';
+import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { User } from '../users/domain/user';
 import { AuthGoogleLoginDto } from './dto/auth-google-login.dto';
-import { LoginResponseDto } from '../auth/dto/login-response.dto';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { buildLoginResponse } from 'src/auth/login-response.builder';
 
-@ApiTags('Auth')
-@Controller({ path: 'auth/google', version: '1' })
+@ApiTags('Auth', 'Google Auth')
+@Controller({ path: 'auth/provider/google', version: '1' })
 export class AuthGoogleController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly authGoogleService: AuthGoogleService,
-  ) {}
-
-  @Post('login')
+  @Post()
+  @UseGuards(GoogleAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login or register using a Google ID token' })
   @ApiOkResponse({ type: LoginResponseDto, description: 'Login successful' })
+  @ApiConflictResponse({ description: 'Use your original provider' })
+  @ApiUnauthorizedResponse({ description: 'Google email must be verified' })
   @ApiUnprocessableEntityResponse({
-    description:
-      'Invalid Google ID token or unable to resolve a user from social data',
+    description: 'Invalid Google ID token or unable to resolve a user',
   })
-  async login(
-    @Body() loginDto: AuthGoogleLoginDto,
-    @Req() req: Request,
-  ): Promise<LoginResponseDto> {
-    const socialData = await this.authGoogleService.getProfileByToken(loginDto);
-    const { user, loginResponse } = await this.authService.validateSocialLogin(
-      'google',
-      socialData,
-    );
-
-    req.session.userId = user.id;
-    req.session.userRole = user.role;
-
-    return loginResponse;
+  login(
+    @Body() _loginDto: AuthGoogleLoginDto,
+    @CurrentUser() user: User,
+  ): LoginResponseDto {
+    return buildLoginResponse(user);
   }
 }

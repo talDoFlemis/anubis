@@ -1,17 +1,16 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
 import type { DrizzleDB } from './drizzle.provider';
 import { DRIZZLE } from './drizzle.constants';
 import { sql } from 'drizzle-orm';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class DrizzleDBHealthIndicator {
+  private readonly logger = new Logger(DrizzleDBHealthIndicator.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly healthIndicatorService: HealthIndicatorService,
-    @InjectPinoLogger(DrizzleDBHealthIndicator.name)
-    private readonly logger: PinoLogger,
   ) {}
 
   async isHealthy(key: string) {

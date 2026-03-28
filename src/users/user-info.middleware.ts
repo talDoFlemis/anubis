@@ -10,14 +10,19 @@ export class UserInfoMiddleware implements NestMiddleware {
   ) {}
 
   use(req: Request, res: Response, next: NextFunction) {
+    void res;
     const userInfo: Record<string, string> = {};
-    if (req.session?.userId) userInfo.id = req.session.userId;
-    if (req.session?.userRole) userInfo.role = req.session.userRole;
-
-    if (Object.keys(userInfo).length > 0) {
-      this.logger.assign({ userInfo });
-      this.logger.debug('Attached user info with success');
+    if (!req.user) {
+      return next();
     }
+
+    userInfo.id = req.user.id;
+    if (typeof req.user.email === 'string' && req.user.email.length > 0) {
+      userInfo.email = req.user.email;
+    }
+    userInfo.role = req.user.role;
+    this.logger.assign({ userInfo });
+    this.logger.debug('Attached user info with success');
 
     next();
   }

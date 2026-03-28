@@ -3,8 +3,13 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import * as usersSchema from '../schema/users';
 import * as sessionsSchema from '../schema/sessions';
+import * as candidatesSchema from '../schema/candidates';
 
-const schema = { ...usersSchema, ...sessionsSchema };
+const schema = {
+  ...usersSchema,
+  ...sessionsSchema,
+  ...candidatesSchema,
+};
 
 export type TestDrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -34,5 +39,7 @@ export function createTestDrizzle(): { db: TestDrizzleDB; pool: Pool } {
  * Truncates all application tables, resetting data between tests.
  */
 export async function truncateAllTables(db: TestDrizzleDB): Promise<void> {
-  await db.execute(sql`TRUNCATE TABLE users, session RESTART IDENTITY CASCADE`);
+  await db.execute(
+    sql`TRUNCATE TABLE candidates, users, session RESTART IDENTITY CASCADE`,
+  );
 }

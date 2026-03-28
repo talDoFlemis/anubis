@@ -1,34 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, isNull } from 'drizzle-orm';
+import { plainToInstance } from 'class-transformer';
+import { and, eq } from 'drizzle-orm';
 import { DRIZZLE_TX } from '../../../../database/drizzle.constants';
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import { users } from '../../../../database/schema/users';
-import { User } from '../../../domain/user';
-import { NullableUser, UserRepository } from '../user.repository';
+import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
+import { User } from '../../../domain/user';
+import {
+  CreateUserData,
+  NullableUser,
+  UpdateUserData,
+  UserRepository,
+} from '../user.repository';
 
 type UserRow = typeof users.$inferSelect;
-type ProviderType = UserRow['provider'];
-type RoleType = UserRow['role'];
-type StatusType = UserRow['status'];
-
-function toDomain(row: UserRow): User {
-  return {
-    id: row.id,
-    email: row.email,
-    password: row.password,
-    provider: row.provider,
-    socialId: row.socialId,
-    firstName: row.firstName,
-    lastName: row.lastName,
-    role: row.role as RoleEnum,
-    status: row.status as StatusEnum,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    deletedAt: row.deletedAt,
-  };
-}
 
 @Injectable()
 export class UserDrizzleRepository extends UserRepository {
@@ -36,94 +23,152 @@ export class UserDrizzleRepository extends UserRepository {
     super();
   }
 
-  async create(
-    data: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>,
-  ): Promise<User> {
+  async create(data: CreateUserData): Promise<User> {
     const [row] = await this.db
       .insert(users)
       .values({
+        authProvider: data.authProvider,
+        providerSubject: data.providerSubject,
         email: data.email,
         password: data.password ?? null,
-        provider: data.provider as ProviderType,
-        socialId: data.socialId ?? null,
+        cpf: data.cpf ?? null,
         firstName: data.firstName,
         lastName: data.lastName,
-        role: data.role as RoleType,
-        status: data.status as StatusType,
+        role: data.role,
+        status: data.status,
+        onboardingCompleted: data.onboardingCompleted ?? true,
+        mustChangePassword: data.mustChangePassword ?? false,
+        bootstrapPasswordExpiresAt: data.bootstrapPasswordExpiresAt ?? null,
+        confirmEmailTokenVersion: data.confirmEmailTokenVersion ?? 0,
+        forgotPasswordTokenVersion: data.forgotPasswordTokenVersion ?? 0,
       })
       .returning();
 
-    return toDomain(row);
+    return this.toDomain(row);
   }
 
   async findById(id: string): Promise<NullableUser> {
     const [row] = await this.db
       .select()
       .from(users)
-      .where(and(eq(users.id, id), isNull(users.deletedAt)))
+      .where(eq(users.id, id))
       .limit(1);
 
-    return row ? toDomain(row) : null;
+    if (!row) return null;
+    return this.toDomain(row);
   }
 
   async findByEmail(email: string): Promise<NullableUser> {
+    const normalizedEmail = email.toLowerCase().trim();
     const [row] = await this.db
       .select()
       .from(users)
-      .where(and(eq(users.email, email.toLowerCase()), isNull(users.deletedAt)))
+      .where(eq(users.email, normalizedEmail))
       .limit(1);
 
-    return row ? toDomain(row) : null;
+    if (!row) return null;
+    return this.toDomain(row);
   }
 
-  async findBySocialIdAndProvider(params: {
-    socialId: string;
-    provider: string;
+  async findByCpf(cpf: string): Promise<NullableUser> {
+    const [row] = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.cpf, cpf))
+      .limit(1);
+
+    if (!row) return null;
+    return this.toDomain(row);
+  }
+
+  async findByAuthProvider(params: {
+    provider: AuthProvidersEnum;
+    providerSubject: string;
   }): Promise<NullableUser> {
     const [row] = await this.db
       .select()
       .from(users)
       .where(
         and(
-          eq(users.socialId, params.socialId),
-          eq(users.provider, params.provider as ProviderType),
-          isNull(users.deletedAt),
+          eq(users.authProvider, params.provider),
+          eq(users.providerSubject, params.providerSubject),
         ),
       )
       .limit(1);
 
-    return row ? toDomain(row) : null;
+    if (!row) return null;
+    return this.toDomain(row);
   }
 
-  async update(
-    id: string,
-    payload: Partial<Omit<User, 'id' | 'createdAt' | 'deletedAt'>>,
-  ): Promise<NullableUser> {
+  async update(id: string, payload: UpdateUserData): Promise<NullableUser> {
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
+    if (payload.authProvider !== undefined) {
+      updateData.authProvider = payload.authProvider;
+    }
+    if (payload.providerSubject !== undefined) {
+      updateData.providerSubject = payload.providerSubject;
+    }
     if (payload.email !== undefined) updateData.email = payload.email;
     if (payload.password !== undefined) updateData.password = payload.password;
-    if (payload.provider !== undefined) updateData.provider = payload.provider;
-    if (payload.socialId !== undefined) updateData.socialId = payload.socialId;
-    if (payload.firstName !== undefined)
+    if (payload.cpf !== undefined) updateData.cpf = payload.cpf;
+    if (payload.firstName !== undefined) {
       updateData.firstName = payload.firstName;
+    }
     if (payload.lastName !== undefined) updateData.lastName = payload.lastName;
     if (payload.role !== undefined) updateData.role = payload.role;
     if (payload.status !== undefined) updateData.status = payload.status;
+    if (payload.onboardingCompleted !== undefined) {
+      updateData.onboardingCompleted = payload.onboardingCompleted;
+    }
+    if (payload.mustChangePassword !== undefined) {
+      updateData.mustChangePassword = payload.mustChangePassword;
+    }
+    if (payload.bootstrapPasswordExpiresAt !== undefined) {
+      updateData.bootstrapPasswordExpiresAt =
+        payload.bootstrapPasswordExpiresAt;
+    }
+    if (payload.confirmEmailTokenVersion !== undefined) {
+      updateData.confirmEmailTokenVersion = payload.confirmEmailTokenVersion;
+    }
+    if (payload.forgotPasswordTokenVersion !== undefined) {
+      updateData.forgotPasswordTokenVersion =
+        payload.forgotPasswordTokenVersion;
+    }
 
     const [row] = await this.db
       .update(users)
       .set(updateData)
-      .where(and(eq(users.id, id), isNull(users.deletedAt)))
+      .where(eq(users.id, id))
       .returning();
 
-    return row ? toDomain(row) : null;
+    if (!row) return null;
+    return this.toDomain(row);
   }
 
   async remove(id: string): Promise<void> {
-    await this.db
-      .update(users)
-      .set({ deletedAt: new Date() })
-      .where(eq(users.id, id));
+    await this.db.delete(users).where(eq(users.id, id));
+  }
+
+  private toDomain(row: UserRow): User {
+    return plainToInstance(User, {
+      id: row.id,
+      authProvider: row.authProvider as AuthProvidersEnum,
+      providerSubject: row.providerSubject,
+      email: row.email,
+      password: row.password,
+      cpf: row.cpf,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      role: row.role as RoleEnum,
+      status: row.status as StatusEnum,
+      onboardingCompleted: row.onboardingCompleted,
+      mustChangePassword: row.mustChangePassword,
+      bootstrapPasswordExpiresAt: row.bootstrapPasswordExpiresAt,
+      confirmEmailTokenVersion: row.confirmEmailTokenVersion,
+      forgotPasswordTokenVersion: row.forgotPasswordTokenVersion,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    });
   }
 }

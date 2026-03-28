@@ -17,15 +17,12 @@ export class SessionAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
 
-    if (!request.session?.userId) {
+    if (!request.isAuthenticated()) {
       this.logger.warn('Unauthenticated request: no active session');
       throw new UnauthorizedException();
     }
 
-    this.logger.debug(
-      { userId: request.session.userId },
-      'Session authenticated',
-    );
+    this.logger.debug({ userId: request.user.id }, 'Session authenticated');
     return true;
   }
 }

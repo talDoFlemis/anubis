@@ -1,6 +1,6 @@
 import {
-  HttpStatus,
   Injectable,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -30,10 +30,15 @@ export class AuthGoogleService {
     const data = ticket.getPayload();
 
     if (!data) {
-      throw new UnprocessableEntityException({
-        status: HttpStatus.UNPROCESSABLE_ENTITY,
-        errors: { user: 'wrongToken' },
-      });
+      throw new UnprocessableEntityException(
+        'Falha ao verificar o token do Google.',
+      );
+    }
+
+    if (!data.email_verified) {
+      throw new UnauthorizedException(
+        'E-mail do Google nao verificado. Verifique sua conta e tente novamente.',
+      );
     }
 
     return {
@@ -41,6 +46,7 @@ export class AuthGoogleService {
       email: data.email,
       firstName: data.given_name,
       lastName: data.family_name,
+      verified_email: data.email_verified ?? false,
     };
   }
 }

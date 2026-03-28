@@ -5,7 +5,8 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { api, type User } from '@/lib/api';
+import { api, type CandidateProfile, type User } from '@/lib/api';
+import { getPostAuthPath } from '@/lib/auth-flow';
 
 export const authQueryOptions = queryOptions({
   queryKey: ['auth', 'me'],
@@ -18,23 +19,37 @@ export function useAuth() {
   return useQuery(authQueryOptions);
 }
 
+export const myCandidateProfileQueryOptions = queryOptions({
+  queryKey: ['candidates', 'me'],
+  queryFn: api.candidates.me,
+  retry: false,
+  staleTime: 5 * 60 * 1000,
+});
+
+export function useMyCandidateProfile(enabled = true) {
+  return useQuery({
+    ...myCandidateProfileQueryOptions,
+    enabled,
+  });
+}
+
+async function refreshCurrentUser(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+  return queryClient.fetchQuery({ ...authQueryOptions, staleTime: 0 });
+}
+
 export function useEmailLogin() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   return useMutation({
     mutationFn: api.auth.emailLogin,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['auth', 'me'], {
-        id: data.userId,
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: data.role,
-        status: data.status,
-      } as User);
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      navigate({ to: '/' });
+    onSuccess: async (data) => {
+      await refreshCurrentUser(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
+      navigate({ to: getPostAuthPath(data) });
     },
   });
 }
@@ -45,17 +60,10 @@ export function useGoogleLogin() {
 
   return useMutation({
     mutationFn: api.auth.googleLogin,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['auth', 'me'], {
-        id: data.userId,
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: data.role,
-        status: data.status,
-      } as User);
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      navigate({ to: '/' });
+    onSuccess: async (data) => {
+      await refreshCurrentUser(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
+      navigate({ to: getPostAuthPath(data) });
     },
   });
 }
@@ -63,6 +71,32 @@ export function useGoogleLogin() {
 export function useEmailRegister() {
   return useMutation({
     mutationFn: api.auth.emailRegister,
+  });
+}
+
+export function useCompleteCandidateOnboarding() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.auth.completeCandidateOnboarding,
+    onSuccess: async (user) => {
+      queryClient.setQueryData(['auth', 'me'], user);
+      await refreshCurrentUser(queryClient);
+      await queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
+    },
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.auth.update,
+    onSuccess: async (user) => {
+      queryClient.setQueryData(['auth', 'me'], user as User | null);
+      await refreshCurrentUser(queryClient);
+      await queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
+    },
   });
 }
 
@@ -98,7 +132,12 @@ export function useLogout() {
     mutationFn: api.auth.logout,
     onSuccess: () => {
       queryClient.setQueryData(['auth', 'me'], null);
+      queryClient.setQueryData(
+        ['candidates', 'me'],
+        null as CandidateProfile | null,
+      );
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
       navigate({ to: '/auth/sign-in' });
     },
   });
