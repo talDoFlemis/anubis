@@ -150,7 +150,11 @@ describe('AuthService', () => {
         onboardingCompleted: false,
       }),
     );
-    expect(result.loginResponse.authProvider).toBe(AuthProvidersEnum.google);
+    expect(result.loginResponse).toMatchObject({
+      userId: 'new-user',
+      onboardingCompleted: false,
+      mustChangePassword: false,
+    });
   });
 
   it('returns existing social user when provider subject matches', async () => {

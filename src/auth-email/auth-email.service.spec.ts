@@ -114,7 +114,12 @@ describe('AuthEmailService', () => {
     });
 
     expect(result.user).toEqual(baseUser);
-    expect(result.loginResponse.authProvider).toBe(AuthProvidersEnum.email);
+    expect(result.loginResponse).toMatchObject({
+      userId: 'user-1',
+      email: 'user@example.com',
+      onboardingCompleted: true,
+      mustChangePassword: false,
+    });
   });
 
   it('rejects email login for google-backed user', async () => {

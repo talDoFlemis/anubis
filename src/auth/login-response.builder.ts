@@ -11,6 +11,5 @@ export function buildLoginResponse(user: User): LoginResponseDto {
     status: user.status,
     onboardingCompleted: user.onboardingCompleted,
     mustChangePassword: user.mustChangePassword,
-    authProvider: user.authProvider,
   };
 }

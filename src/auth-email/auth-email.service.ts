@@ -50,7 +50,11 @@ export class AuthEmailService {
       const normalizedEmail = loginDto.email.toLowerCase().trim();
       const user = await this.usersService.findByEmail(normalizedEmail);
 
-      if (!user || user.authProvider !== AuthProvidersEnum.email) {
+      if (!user) {
+        throw new UnauthorizedException('E-mail ou senha invalidos.');
+      }
+
+      if (user.authProvider !== AuthProvidersEnum.email) {
         throw new UnauthorizedException(
           'Conta cadastrada com outro provedor. Use seu provedor original.',
         );
