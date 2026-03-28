@@ -20,24 +20,6 @@ export class ApiError extends Error {
   }
 }
 
-export type AuthProvider = 'email' | 'google' | (string & {});
-
-function normalizeProviderName(provider: string): string {
-  if (provider === 'google') {
-    return 'Google';
-  }
-
-  if (provider === 'email') {
-    return 'email e senha';
-  }
-
-  return provider;
-}
-
-export function formatProviderLabel(provider: string): string {
-  return normalizeProviderName(provider);
-}
-
 function normalizeMessage(value: unknown): string | null {
   if (!value) {
     return null;
@@ -123,19 +105,10 @@ export interface User {
   lastName: string | null;
   role: string;
   status: string;
-  linkedProviders: AuthProvider[];
   onboardingCompleted: boolean;
   mustChangePassword: boolean;
-  ownedEmails?: UserOwnedEmail[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface UserOwnedEmail {
-  accountId: string | null;
-  email: string;
-  isPrimary: boolean;
-  verifiedAt?: string | null;
 }
 
 export interface LoginResponse {
@@ -145,9 +118,41 @@ export interface LoginResponse {
   lastName: string | null;
   role: string;
   status: string;
-  linkedProviders: AuthProvider[];
   onboardingCompleted: boolean;
   mustChangePassword: boolean;
+}
+
+function normalizeUser(data: unknown): User {
+  const user = data as Record<string, unknown>;
+
+  return {
+    id: String(user.id ?? ''),
+    email: (user.email as string | null | undefined) ?? null,
+    cpf: (user.cpf as string | null | undefined) ?? null,
+    firstName: (user.firstName as string | null | undefined) ?? null,
+    lastName: (user.lastName as string | null | undefined) ?? null,
+    role: String(user.role ?? ''),
+    status: String(user.status ?? ''),
+    onboardingCompleted: Boolean(user.onboardingCompleted),
+    mustChangePassword: Boolean(user.mustChangePassword),
+    createdAt: String(user.createdAt ?? ''),
+    updatedAt: String(user.updatedAt ?? ''),
+  };
+}
+
+function normalizeLoginResponse(data: unknown): LoginResponse {
+  const login = data as Record<string, unknown>;
+
+  return {
+    userId: String(login.userId ?? ''),
+    email: (login.email as string | null | undefined) ?? null,
+    firstName: (login.firstName as string | null | undefined) ?? null,
+    lastName: (login.lastName as string | null | undefined) ?? null,
+    role: String(login.role ?? ''),
+    status: String(login.status ?? ''),
+    onboardingCompleted: Boolean(login.onboardingCompleted),
+    mustChangePassword: Boolean(login.mustChangePassword),
+  };
 }
 
 export interface EmailRegisterData {
@@ -177,22 +182,15 @@ export interface UpdateUserData {
   oldPassword?: string;
 }
 
-export interface LinkEmailProviderData {
-  password: string;
-  provider: AuthProvider;
-  providerToken?: string;
-  ownedEmailAccountId?: string;
-}
-
 export const api = {
   auth: {
-    me: () => request<User>('/auth/me'),
+    me: async () => normalizeUser(await request('/auth/me')),
 
     emailLogin: (data: { email: string; password: string }) =>
-      request<LoginResponse>('/auth/provider/email/login', {
+      request('/auth/provider/email/login', {
         method: 'POST',
         body: data,
-      }),
+      }).then(normalizeLoginResponse),
 
     emailRegister: (data: EmailRegisterData) =>
       request<void>('/auth/provider/email/register', {
@@ -201,28 +199,16 @@ export const api = {
       }),
 
     googleLogin: (data: { idToken: string }) =>
-      request<LoginResponse>('/auth/provider/google', {
+      request('/auth/provider/google', {
         method: 'POST',
         body: data,
-      }),
-
-    linkGoogleProvider: (data: { idToken: string }) =>
-      request<User>('/auth/provider/google/link', {
-        method: 'POST',
-        body: data,
-      }),
+      }).then(normalizeLoginResponse),
 
     completeCandidateOnboarding: (data: CandidateOnboardingData) =>
-      request<User>('/auth/onboarding/candidate', {
+      request('/auth/onboarding/candidate', {
         method: 'POST',
         body: data,
-      }),
-
-    linkEmailProvider: (data: LinkEmailProviderData) =>
-      request<User>('/auth/provider/email/link', {
-        method: 'POST',
-        body: data,
-      }),
+      }).then(normalizeUser),
 
     confirmEmail: (data: { hash: string }) =>
       request<void>('/auth/provider/email/confirm', {
@@ -249,7 +235,7 @@ export const api = {
       }),
 
     update: (data: UpdateUserData) =>
-      request<User>('/auth/me', { method: 'PATCH', body: data }),
+      request('/auth/me', { method: 'PATCH', body: data }).then(normalizeUser),
 
     logout: () => request<void>('/auth/logout', { method: 'POST' }),
 

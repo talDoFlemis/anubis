@@ -1,12 +1,22 @@
+import type { ReactNode } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { useAuth } from '@/hooks/use-auth';
+import {
+  Bell,
+  CalendarDays,
+  CircleCheckBig,
+  Clock3,
+  Mail,
+  Shield,
+  Sparkles,
+} from 'lucide-react';
 import { AccountAccessCard } from '@/components/account-access-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, Mail, Shield, User } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { mockCandidateHome } from '@/lib/mock-candidate-home';
 
 export const Route = createFileRoute('/_app/')({
   component: HomePage,
@@ -25,6 +35,7 @@ function getInitials(
 ): string {
   const first = firstName?.charAt(0)?.toUpperCase() ?? '';
   const last = lastName?.charAt(0)?.toUpperCase() ?? '';
+
   return first + last || '?';
 }
 
@@ -40,97 +51,299 @@ function HomePage() {
   const { data: user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="p-6">
-        <div className="mx-auto max-w-2xl space-y-6">
-          <Skeleton className="h-8 w-48" />
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-20 w-20 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-40" />
-                  <Skeleton className="h-4 w-28" />
-                </div>
-              </div>
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    return <CandidateHomeSkeleton />;
   }
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
+
+  if (user.role !== 'candidate') {
+    return <FallbackHome />;
+  }
 
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
   const initials = getInitials(user.firstName, user.lastName);
-  const roleLabel = ROLE_LABELS[user.role] ?? user.role;
+  const profile = mockCandidateHome.profile;
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <h1 className="text-2xl font-bold">Meu Perfil</h1>
-
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <CardTitle className="text-xl">{displayName}</CardTitle>
-                <Badge variant="secondary" className="mt-1">
-                  {roleLabel}
+    <div className="anubis-page-shell min-h-svh px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+      <div className="relative z-10 mx-auto max-w-7xl space-y-6">
+        <Card className="overflow-hidden rounded-[2rem]">
+          <CardContent className="grid gap-6 p-7 sm:p-9 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)] lg:items-end">
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge variant="outline">{mockCandidateHome.cycleName}</Badge>
+                <Badge variant="secondary">
+                  {mockCandidateHome.summary.statusLabel}
                 </Badge>
               </div>
+
+              <div className="space-y-4">
+                <p className="font-label text-primary">Home do candidato</p>
+                <div className="space-y-4">
+                  <h1 className="font-serif text-4xl leading-tight tracking-[-0.03em] text-foreground sm:text-5xl">
+                    {displayName}, sua candidatura segue em uma mesa de leitura
+                    clara e orientada por prazos.
+                  </h1>
+                  <p className="max-w-3xl text-base leading-8 text-muted-foreground">
+                    Esta visao inicial usa dados simulados para a experiencia do
+                    candidato e organiza o que vem a seguir: notificacoes,
+                    progresso, documentos e marcos do processo seletivo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <MetricCard
+                  label="Progresso"
+                  value={mockCandidateHome.summary.progressLabel}
+                />
+                <MetricCard
+                  label="Marco seguinte"
+                  value={mockCandidateHome.summary.nextMilestone}
+                />
+                <MetricCard
+                  label="Perfil academico"
+                  value={profile.universityOfOrigin}
+                />
+              </div>
             </div>
-          </CardHeader>
 
-          <Separator />
-
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <User className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Nome completo</p>
-                  <p className="font-medium">{displayName}</p>
+            <div className="anubis-glass anubis-ghost-border space-y-5 rounded-[1.75rem] p-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-[4.5rem] w-[4.5rem] border-0 bg-primary/8">
+                  <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="space-y-2">
+                  <p className="font-serif text-2xl text-foreground">
+                    {displayName}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {user.email ?? 'Email nao informado'}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{user.email ?? 'Nao informado'}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Papel</p>
-                  <p className="font-medium">{roleLabel}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <CalendarDays className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Membro desde</p>
-                  <p className="font-medium">{formatDate(user.createdAt)}</p>
-                </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <ProfileLine
+                  icon={<Shield className="h-4 w-4" />}
+                  label="Perfil"
+                  value={ROLE_LABELS[user.role] ?? user.role}
+                />
+                <ProfileLine
+                  icon={<Mail className="h-4 w-4" />}
+                  label="Universidade"
+                  value={profile.universityOfOrigin}
+                />
+                <ProfileLine
+                  icon={<Sparkles className="h-4 w-4" />}
+                  label="IRA / POSCOMP"
+                  value={`${profile.ira} / ${profile.poscomp}`}
+                />
+                <ProfileLine
+                  icon={<CalendarDays className="h-4 w-4" />}
+                  label="Conta criada"
+                  value={formatDate(user.createdAt)}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)]">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="space-y-3">
+                <p className="font-label text-primary">Linha do tempo</p>
+                <CardTitle>Etapas em destaque</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {mockCandidateHome.timeline.map((item) => (
+                  <div
+                    key={item.title}
+                    className="anubis-surface-muted rounded-[1.5rem] p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="space-y-2">
+                        <p className="font-serif text-xl text-foreground">
+                          {item.title}
+                        </p>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {item.description}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          item.status === 'current' ? 'default' : 'outline'
+                        }
+                      >
+                        {item.date}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-3">
+              <p className="font-label px-2 text-primary">
+                Acesso e provedores
+              </p>
+              <AccountAccessCard user={user} />
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="space-y-3">
+                <p className="font-label text-primary">
+                  Alertas e leitura rapida
+                </p>
+                <CardTitle>O que merece atencao agora</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {mockCandidateHome.notices.map((notice) => (
+                  <div
+                    key={notice.title}
+                    className="anubis-surface-muted rounded-[1.5rem] p-5"
+                  >
+                    <div className="mb-3 flex items-center gap-3 text-primary">
+                      <Bell className="h-4 w-4" />
+                      <span className="font-label text-primary">
+                        {notice.tag}
+                      </span>
+                    </div>
+                    <p className="font-serif text-xl text-foreground">
+                      {notice.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {notice.description}
+                    </p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="space-y-3">
+                <p className="font-label text-primary">Proximas acoes</p>
+                <CardTitle>Checklist curado para esta semana</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {mockCandidateHome.tasks.map((task) => (
+                  <div
+                    key={task.title}
+                    className="anubis-surface-stack rounded-[1.5rem] p-5"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary">
+                        <CircleCheckBig className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-serif text-lg text-foreground">
+                            {task.title}
+                          </p>
+                          <Badge variant="outline">{task.emphasis}</Badge>
+                        </div>
+                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock3 className="h-4 w-4" />
+                          {task.due}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <Button className="w-full">Preparar documentacao</Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="anubis-glass anubis-ghost-border rounded-[1.5rem] p-5">
+      <p className="font-label text-muted-foreground">{label}</p>
+      <p className="mt-3 font-serif text-2xl leading-tight text-foreground">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function ProfileLine({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="anubis-surface-stack rounded-[1.2rem] p-4">
+      <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+        {icon}
+        <span className="font-label text-muted-foreground">{label}</span>
+      </div>
+      <p className="text-sm leading-6 text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function FallbackHome() {
+  const { data: user } = useAuth();
+
+  if (!user) {
+    return null;
+  }
+
+  const displayName =
+    [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
+
+  return (
+    <div className="min-h-svh px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <Card className="rounded-[2rem]">
+          <CardHeader className="space-y-3">
+            <p className="font-label text-primary">Perfil</p>
+            <CardTitle>{displayName}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
+            <p>
+              A nova home editorial foi implementada apenas para candidatos
+              nesta fase. Seu acesso continua disponivel com uma visao segura
+              enquanto os demais perfis aguardam a proxima iteracao.
+            </p>
+            <p>Email: {user.email ?? 'Nao informado'}</p>
+            <p>Papel: {ROLE_LABELS[user.role] ?? user.role}</p>
+          </CardContent>
+        </Card>
+
         <AccountAccessCard user={user} />
+      </div>
+    </div>
+  );
+}
+
+function CandidateHomeSkeleton() {
+  return (
+    <div className="min-h-svh px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <Skeleton className="h-80 w-full rounded-[2rem]" />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-96 w-full rounded-[2rem]" />
+          <Skeleton className="h-96 w-full rounded-[2rem]" />
+        </div>
       </div>
     </div>
   );

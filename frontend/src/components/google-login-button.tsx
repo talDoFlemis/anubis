@@ -18,7 +18,7 @@ export function GoogleLoginButton({
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-center">
+      <div className="flex justify-center overflow-hidden rounded-2xl">
         <GoogleLogin
           onSuccess={(credentialResponse) => {
             const idToken = credentialResponse.credential;
@@ -49,9 +49,7 @@ export function GoogleLoginButton({
         />
       </div>
       {helperText ? (
-        <p className="text-center text-xs text-muted-foreground">
-          {helperText}
-        </p>
+        <p className="text-sm leading-6 text-muted-foreground">{helperText}</p>
       ) : null}
     </div>
   );

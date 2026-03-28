@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { authQueryOptions } from '@/hooks/use-auth';
-import { AppSidebar } from '@/components/app-sidebar';
 import { getRestrictedSessionPath, isRedirectLikeError } from '@/lib/auth-flow';
 
 export const Route = createFileRoute('/_app')({
@@ -25,8 +24,8 @@ export const Route = createFileRoute('/_app')({
 
 function AppLayout() {
   return (
-    <AppSidebar>
+    <div className="min-h-svh">
       <Outlet />
-    </AppSidebar>
+    </div>
   );
 }

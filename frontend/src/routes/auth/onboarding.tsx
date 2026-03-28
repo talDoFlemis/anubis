@@ -1,13 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  AuthCallout,
+  AuthErrorMessage,
+  AuthPageLayout,
+} from '@/components/auth/auth-layout';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,7 +15,6 @@ import {
   useLogout,
 } from '@/hooks/use-auth';
 import { getPostAuthPath } from '@/lib/auth-flow';
-import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/onboarding')({
   component: CandidateOnboardingPage,
@@ -60,110 +58,120 @@ function CandidateOnboardingPage() {
   };
 
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Complete seu cadastro</CardTitle>
-        <CardDescription>
-          Precisamos confirmar seus dados de candidato antes de liberar o
-          acesso.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">Nome</Label>
-              <Input
-                id="firstName"
-                value={resolvedFirstName}
-                onChange={(event) => setFirstName(event.target.value)}
-                placeholder="Seu nome"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Sobrenome</Label>
-              <Input
-                id="lastName"
-                value={resolvedLastName}
-                onChange={(event) => setLastName(event.target.value)}
-                placeholder="Seu sobrenome"
-                required
-              />
-            </div>
-          </div>
-
+    <AuthPageLayout
+      eyebrow="Concluir cadastro"
+      title="Feche seu perfil academico antes de entrar na area do candidato."
+      description="Precisamos registrar os dados complementares do candidato para liberar o acompanhamento do processo e personalizar as proximas etapas."
+      asideTitle="Concluir agora evita ruído depois."
+      asideDescription="Este e o fechamento do seu cadastro inicial. Ao confirmar as informacoes, o sistema libera a experiencia completa da area do candidato."
+      metrics={[
+        { label: 'Etapa', value: 'Perfil' },
+        { label: 'Campos', value: 'Basicos + opcionais' },
+        { label: 'Saida', value: 'Home do candidato' },
+      ]}
+      notes={[
+        'IRA e POSCOMP sao opcionais nesta etapa, mas ajudam a consolidar seu perfil academico desde o inicio.',
+        'Se voce entrou com uma conta incorreta, saia agora e reinicie a autenticacao antes de concluir este formulario.',
+      ]}
+      compact
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="cpf">CPF</Label>
+            <Label htmlFor="firstName">Nome</Label>
             <Input
-              id="cpf"
+              id="firstName"
+              value={resolvedFirstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              placeholder="Seu nome"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Sobrenome</Label>
+            <Input
+              id="lastName"
+              value={resolvedLastName}
+              onChange={(event) => setLastName(event.target.value)}
+              placeholder="Seu sobrenome"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="cpf">CPF</Label>
+          <Input
+            id="cpf"
+            inputMode="numeric"
+            value={resolvedCpf}
+            onChange={(event) => setCpf(event.target.value)}
+            placeholder="Somente numeros"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="universityOfOrigin">Universidade de origem</Label>
+          <Input
+            id="universityOfOrigin"
+            value={universityOfOrigin}
+            onChange={(event) => setUniversityOfOrigin(event.target.value)}
+            placeholder="Ex.: UFRN"
+            required
+          />
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="ira">IRA (opcional)</Label>
+            <Input
+              id="ira"
+              inputMode="decimal"
+              value={ira}
+              onChange={(event) => setIra(event.target.value)}
+              placeholder="Ex.: 8.75"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="poscomp">POSCOMP (opcional)</Label>
+            <Input
+              id="poscomp"
               inputMode="numeric"
-              value={resolvedCpf}
-              onChange={(event) => setCpf(event.target.value)}
-              placeholder="Somente numeros"
-              required
+              value={poscomp}
+              onChange={(event) => setPoscomp(event.target.value)}
+              placeholder="Ex.: 780"
             />
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="universityOfOrigin">Universidade de origem</Label>
-            <Input
-              id="universityOfOrigin"
-              value={universityOfOrigin}
-              onChange={(event) => setUniversityOfOrigin(event.target.value)}
-              placeholder="Ex.: UFRN"
-              required
-            />
-          </div>
+        <AuthErrorMessage
+          message={onboarding.isError ? onboarding.error.message : null}
+        />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="ira">IRA (opcional)</Label>
-              <Input
-                id="ira"
-                inputMode="decimal"
-                value={ira}
-                onChange={(event) => setIra(event.target.value)}
-                placeholder="Ex.: 8.75"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="poscomp">POSCOMP (opcional)</Label>
-              <Input
-                id="poscomp"
-                inputMode="numeric"
-                value={poscomp}
-                onChange={(event) => setPoscomp(event.target.value)}
-                placeholder="Ex.: 780"
-              />
-            </div>
-          </div>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={onboarding.isPending}
+        >
+          {onboarding.isPending ? 'Salvando...' : 'Concluir cadastro'}
+        </Button>
+      </form>
 
-          {onboarding.isError ? (
-            <p className="text-sm text-destructive">
-              {onboarding.error.message}
-            </p>
-          ) : null}
-
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={onboarding.isPending}
-          >
-            {onboarding.isPending ? 'Salvando...' : 'Concluir cadastro'}
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => logout.mutate()}
-            disabled={logout.isPending}
-          >
-            {logout.isPending ? 'Saindo...' : 'Sair desta conta'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <AuthCallout
+        title="Precisa trocar de conta?"
+        description="Saia agora para reiniciar a autenticacao com outro perfil antes de gravar os dados de candidato."
+      >
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => logout.mutate()}
+          disabled={logout.isPending}
+        >
+          {logout.isPending ? 'Saindo...' : 'Sair desta conta'}
+        </Button>
+      </AuthCallout>
+    </AuthPageLayout>
   );
 }

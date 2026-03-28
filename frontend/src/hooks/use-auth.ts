@@ -82,30 +82,6 @@ export function useUpdateProfile() {
   });
 }
 
-export function useLinkEmailProvider() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: api.auth.linkEmailProvider,
-    onSuccess: async (user) => {
-      queryClient.setQueryData(['auth', 'me'], user);
-      await refreshCurrentUser(queryClient);
-    },
-  });
-}
-
-export function useLinkGoogleProvider() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: api.auth.linkGoogleProvider,
-    onSuccess: async (user) => {
-      queryClient.setQueryData(['auth', 'me'], user);
-      await refreshCurrentUser(queryClient);
-    },
-  });
-}
-
 export function useConfirmEmail() {
   return useMutation({
     mutationFn: api.auth.confirmEmail,
