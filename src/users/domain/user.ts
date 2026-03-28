@@ -8,7 +8,7 @@ export class User {
   authProvider: AuthProvidersEnum;
   providerSubject: string | null;
   email: string | null;
-  @Exclude()
+  @Exclude({ toPlainOnly: true })
   password?: string | null;
   cpf: string | null;
   firstName: string | null;
