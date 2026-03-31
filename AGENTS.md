@@ -1,209 +1,194 @@
 # AGENTS Guide
 
-This file is for coding agents working in `/home/flemis/codes/anubis`.
+This file is for coding agents working in this NestJS backend repository.
+
+## About the Project
+
+**Anubis** is an application and selection system for MDCC (Mestrado e Doutorado em Ciência da Computação) - a graduate program in Computer Science. The system handles candidate registration, document submission, and the selection process for master's and doctoral programs.
+
+## Directory Structure
+
+```
+anubis/
+├── src/                  # Backend source (NestJS modules)
+│   ├── auth/             # Core auth guards, decorators
+│   ├── auth-email/       # Email/password authentication
+│   ├── auth-google/      # Google OAuth
+│   ├── auth-github/      # GitHub OAuth
+│   ├── users/            # User management + repository pattern
+│   ├── candidate/        # Candidate-specific features
+│   ├── session/          # Session management
+│   ├── mail/             # Email service
+│   ├── database/         # Drizzle ORM setup, schema, testing
+│   └── common/           # Filters, validators, middlewares
+├── test/                 # E2E tests
+├── drizzle/              # SQL migration files
+├── scripts/              # Utility scripts
+└── frontend/             # Frontend application (separate codebase)
+```
 
 ## Project Snapshot
 
-- Backend: NestJS 11 + TypeScript + PostgreSQL + Drizzle ORM
-- Auth: session-based auth with Passport strategies
-- Tests: Jest unit tests, Jest integration tests with Testcontainers, Jest e2e
-- Frontend exists in `frontend/`, but backend repo commands live at the workspace root
+- **Stack**: NestJS 11 + TypeScript + PostgreSQL + Drizzle ORM
+- **Auth**: Session-based with Passport (local, Google strategies)
+- **Tests**: Jest unit, integration (Testcontainers), e2e
+- **Package Manager**: pnpm
 
 ## Agent Rule Sources
 
-- No repository-local Cursor rules were found in `.cursor/rules/`
-- No `.cursorrules` file was found
-- No Copilot instructions were found in `.github/copilot-instructions.md`
-- Follow this file plus the existing codebase conventions
-
-## Package Manager
-
-- Use `npm` for commands in this repository because `package.json` scripts are defined for npm
-- Do not assume `pnpm` even though `README.md` mentions it
+- No `.cursor/rules/`, `.cursorrules`, or `.github/copilot-instructions.md` found
 
 ## Core Commands
 
-### Install
-
 ```bash
+# Install & Start
 pnpm install
+pnpm run start:dev          # Development with watch
+
+# Build & Typecheck
+pnpm run build              # nest build
+npx tsc -p tsconfig.build.json --noEmit --pretty false  # Backend-only typecheck
+
+# Lint & Format
+pnpm run lint               # ESLint with autofix
+pnpm run lint:check         # ESLint without fix
+pnpm run format             # Prettier with write
+pnpm run format:check       # Prettier check only
+
+# Tests
+pnpm test                   # Unit tests
+pnpm run test:cov           # Unit with coverage
+pnpm run test:e2e           # E2E tests
+pnpm run test:integration   # Integration tests (Testcontainers)
+
+# Database
+pnpm run db:generate        # Generate migrations
+pnpm run db:migrate         # Run migrations
+pnpm run db:studio          # Drizzle Studio
 ```
 
-### Start the backend
+## Running Single Tests
 
 ```bash
-pnpm run start
-pnpm run start:dev
-pnpm run start:debug
-pnpm run start:prod
-```
-
-### Build
-
-```bash
-pnpm run build
-npx tsc -p tsconfig.build.json --noEmit --pretty false
-```
-
-Notes:
-
-- `pnpm run build` runs `nest build`
-- `npx tsc -p tsconfig.build.json --noEmit --pretty false` is the safest backend-only typecheck because it excludes `frontend/` and spec files
-
-### Lint and format
-
-```bash
-pnpm run lint
-pnpm run lint:check
-pnpm run format
-pnpm run format:check
-```
-
-### Tests
-
-```bash
-pnpm test
-pnpm run test:watch
-pnpm run test:cov
-pnpm run test:e2e
-pnpm run test:integration
-```
-
-## Running a Single Test
-
-### Single unit test file
-
-```bash
+# Unit test file
 npx jest src/auth/auth.service.spec.ts --runInBand
-```
 
-### Single test file from a script-compatible pattern
+# Unit test by name
+npx jest src/auth/auth.service.spec.ts -t "test description" --runInBand
 
-```bash
-pnpm test -- --runInBand src/auth/auth.service.spec.ts
-```
-
-### Single test by name
-
-```bash
-npx jest src/auth/auth.service.spec.ts -t "creates onboarding-incomplete candidate on first social signup" --runInBand
-```
-
-### Single integration test file
-
-```bash
+# Integration test file
 npx jest --config jest.integration.config.ts src/users/infrastructure/persistence/drizzle/user.drizzle-repository.integration-spec.ts
-```
 
-### Single e2e test file
-
-```bash
+# E2E test file
 npx jest --config ./test/jest-e2e.json test/<file>.e2e-spec.ts --runInBand
 ```
 
-## Database Commands
+## Validation Workflow
+
+When changing backend code:
 
 ```bash
-pnpm run db:generate
-pnpm run db:migrate
-pnpm run db:studio
+npx tsc -p tsconfig.build.json --noEmit --pretty false  # Typecheck
+pnpm run lint:check                                      # Lint
+npx jest <changed-specs> --runInBand                     # Run affected tests
 ```
 
-## High-Confidence Validation Workflow
+For schema/repository changes, also run relevant integration tests.
 
-When changing backend code, prefer this order:
+## Architecture (Critical)
 
-```bash
-npx tsc -p tsconfig.build.json --noEmit --pretty false
-pnpm run lint:check
-npx jest <changed-specs> --runInBand
-```
+- **Feature modules** over horizontal layers - enables 3-5x faster onboarding
+- **Thin controllers** - business logic in services, orchestration in controllers
+- **Repository pattern** - persistence in `infrastructure/persistence/`
+- **Single responsibility** - avoid "god services" with multiple concerns
+- **Avoid circular dependencies** - extract shared logic or use events
+- **Module exports** - encapsulate services in modules, export explicitly
 
-If schema or repository code changes, also run the relevant integration test.
+## Code Style
 
-## Architecture Expectations
+### Imports
 
-- Prefer feature modules over horizontal layers when adding new code
-- Keep controllers thin; business logic belongs in services
-- Keep persistence logic in repository classes under `src/users/infrastructure/persistence/` or similar feature-specific persistence folders
-- Keep DTOs in `dto/` folders and use them at module boundaries
-- Reuse shared auth/session helpers instead of duplicating session mutation logic
+- ES module `import` syntax
+- Group: (1) Nest/external, (2) type imports, (3) local modules
+- Use `import type` for type-only imports
+- Prefer relative imports inside `src/`
 
-## Imports
+### Formatting
 
-- Use ES module `import` syntax
-- Group imports roughly as: (1) Nest / external packages, (2) `type` imports from external packages, (3) local DTOs/services/entities, (4) sibling and parent feature imports
-- Use `import type` for type-only imports when practical
-- Prefer relative imports inside `src/`; backend code does not consistently use path aliases
-- Keep import ordering readable and stable rather than aggressively optimized
+- Prettier enforced via ESLint
+- Single quotes, trailing commas
+- 2-space indentation
 
-## Formatting
+### TypeScript
 
-- Prettier is enforced through ESLint
-- Use 2-space indentation
-- Keep trailing commas where Prettier inserts them
-- Favor multiline formatting once argument lists or decorators stop being easy to scan
-- Do not hand-format against Prettier; run formatter if needed
+- `strictNullChecks: true` - handle nullable values explicitly
+- `noImplicitAny: false` - but avoid introducing new `any`
+- Prefer explicit return types for public methods
+- Use `Record<string, unknown>` over `any` for flexible objects
 
-## TypeScript Rules
-
-- `strictNullChecks` is enabled; handle nullable values explicitly
-- `noImplicitAny` is not enabled, but do not introduce new `any` unless unavoidable
-- Prefer explicit return types for public service/controller methods
-- Use narrow DTO and method parameter types instead of broad records
-- Use `Record<string, unknown>` instead of `any` for flexible object payloads
-- Prefer union literals and enums already present in the codebase over ad hoc strings
-
-## Naming Conventions
+### Naming
 
 - Classes: `PascalCase`
-- Injectable services/controllers/guards/strategies: suffix with role, e.g. `AuthService`, `LocalAuthGuard`, `GoogleIdTokenStrategy`
+- Services/Guards: suffix with role (`AuthService`, `SessionAuthGuard`)
 - DTOs: `PascalCase` ending in `Dto`
-- Methods/variables/functions: `camelCase`
+- Methods/variables: `camelCase`
 - Constants: `UPPER_SNAKE_CASE`
-- Test descriptions: present tense, behavior-focused, e.g. `it('rejects email login for google-backed user', ...)`
+- Tests: present tense, behavior-focused (`it('rejects invalid token', ...)`)
 
 ## NestJS Conventions
 
-- Use decorators consistently for controllers, DTO validation, and DI
-- Prefer constructor injection with `private readonly` fields
-- Keep module provider lists explicit
-- Use guards for auth entrypoints rather than manual auth checks in controllers
-- Put request validation in DTOs with `class-validator`
+- **Constructor injection** with `private readonly` - never property injection
+- **Guards** for auth instead of manual checks in controllers
+- **DTOs** with `class-validator` decorators for all input validation
+- **Explicit module** provider lists - avoid `@Global()` except for config/logging
+- **Provider scopes** - use singleton (default) unless request context needed
 
 ## Error Handling
 
-- Throw Nest HTTP exceptions (`BadRequestException`, `ConflictException`, `UnauthorizedException`, `NotFoundException`, `UnprocessableEntityException`) instead of generic errors for user-facing failures
-- Keep error messages user-oriented and consistent with existing Portuguese copy
-- Log operational failures with structured fields via `nestjs-pino`
-- Do not swallow exceptions silently unless the flow is intentionally non-enumerating, such as forgot-password
-- For token validation, convert verification failures into stable client-facing exceptions
+- **Throw HTTP exceptions** from services: `BadRequestException`, `ConflictException`, `UnauthorizedException`, `NotFoundException`, `UnprocessableEntityException`
+- **Use exception filters** for centralized error handling
+- **Handle async errors** - catch fire-and-forget promises, wrap event handlers
+- Keep error messages in **Portuguese** (existing convention)
+- Log operational failures via `nestjs-pino`
+- Non-enumerating flows (forgot-password) don't reveal user existence
 
-## Validation and Security
+## Auth & Security
 
-- Normalize emails with `.toLowerCase().trim()` before lookup or persistence
-- Regenerate the session after successful login or other auth-boundary changes
-- Do not trust provider payloads unless validated by the provider service/strategy
-- Reject cross-provider login attempts with the existing “use your original provider” behavior
-- Keep password hashing with `bcrypt` and existing salt-round constants
+- Normalize emails: `.toLowerCase().trim()`
+- Regenerate session after login/auth changes
+- Reject cross-provider login attempts
+- Password hashing: bcrypt with 12 salt rounds
+- Session revocation on role/status/password changes
+- Validate all input with DTOs and pipes
 
-## Persistence and Migrations
+## Persistence
 
-- Update Drizzle schema files and SQL migrations together
-- If you change schema shape, also update repository implementation, repository integration tests, and test database helpers if table names change
-- Avoid hidden persistence behavior in services; make repository contracts explicit
+- Update Drizzle schema and SQL migrations together
+- Schema changes require: repository updates, integration tests, test helpers
+- Make repository contracts explicit
+- Use transactions for multi-step operations
 
-## Testing Guidelines
+## Testing
 
-- Unit tests live in `src/**/*.spec.ts`
-- Integration tests live in `src/**/*.integration-spec.ts`
-- Integration tests rely on `jest.integration.config.ts` and Testcontainers global setup
-- Prefer focused unit tests for controller/service behavior and integration tests for repository constraints and migrations
-- When changing auth flows, add tests for both success and provider-conflict paths
+- **Unit**: `src/**/*.spec.ts` - use `Test.createTestingModule()`
+- **Integration**: `src/**/*.integration-spec.ts` (Testcontainers)
+- **E2E**: `test/**/*.e2e-spec.ts` - use supertest
+- Mock external services in tests
+- Test auth flows for both success and provider-conflict paths
 
-## Practical Agent Advice
+## Frontend
 
-- Check `package.json`, `eslint.config.mjs`, `tsconfig.json`, and `tsconfig.build.json` before assuming tool behavior
-- If `pnpm exec tsc --noEmit` accidentally pulls in frontend errors, use `npx tsc -p tsconfig.build.json --noEmit --pretty false` instead
-- Do not reintroduce removed multi-provider linking patterns unless explicitly requested
-- Preserve existing Portuguese user-facing messages unless the task requires revising them
+When creating or modifying frontend screens or components:
+
+- **Always reference `DESIGN.md`** for design system guidelines
+- Follow the "Alexandria" design language: high-end editorial with serif authority
+- Use the defined color palette, typography hierarchy, and component patterns
+- Apply the "No-Line Rule" - define boundaries through surface color shifts, not borders
+- Maintain whitespace as structure and one primary action per view
+
+## Agent Tips
+
+- Use `tsconfig.build.json` for typecheck to exclude frontend
+- Check `package.json`, `eslint.config.mjs` before assuming behavior
+- Preserve Portuguese user-facing messages
+- Don't reintroduce removed multi-provider linking
