@@ -54,6 +54,8 @@ services:
       MAIL_GOOGLE_REFRESH_TOKEN:
       MAIL_GOOGLE_USER: tubias@gmail.com
 
+      SYSTEM_SECRET: supersecrethereasdfasasdfasdasdfasdfjhlkasdsdlfkjhasdfsdflkjashflldasdfasdflf
+
     depends_on:
       postgres:
         condition: service_healthy
