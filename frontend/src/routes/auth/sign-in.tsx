@@ -4,15 +4,16 @@ import {
   AuthCallout,
   AuthErrorMessage,
   AuthPageLayout,
-} from '@/components/auth/auth-layout';
+  EmailField,
+  OAuthDivider,
+  PasswordField,
+  SubmitButton,
+} from '@/components/auth';
 import { GoogleLoginButton } from '@/components/google-login-button';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useEmailLogin } from '@/hooks/use-auth';
+import { AUTH_SIGN_IN_ROUTE } from '@/lib/auth-flow';
 
-export const Route = createFileRoute('/auth/sign-in')({
+export const Route = createFileRoute(AUTH_SIGN_IN_ROUTE)({
   component: SignInPage,
 });
 
@@ -21,7 +22,7 @@ function SignInPage() {
   const [password, setPassword] = useState('');
   const emailLogin = useEmailLogin();
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.SubmitEvent) => {
     event.preventDefault();
     emailLogin.mutate({ email, password });
   };
@@ -46,7 +47,7 @@ function SignInPage() {
         <>
           Candidatos ainda nao cadastrados podem{' '}
           <Link
-            to="/auth/sign-up"
+            to={AUTH_SIGN_IN_ROUTE}
             className="text-primary underline-offset-4 hover:underline"
           >
             criar a conta aqui
@@ -56,57 +57,28 @@ function SignInPage() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="seu@email.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
+        <EmailField value={email} onChange={setEmail} />
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="password">Senha</Label>
-            <Link
-              to="/auth/forgot-password"
-              className="text-sm text-primary underline-offset-4 hover:underline"
-            >
-              Recuperar acesso
-            </Link>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Sua senha"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="password"
+          label="Senha"
+          value={password}
+          onChange={setPassword}
+          forgotPasswordLink
+        />
 
         <AuthErrorMessage
           message={emailLogin.isError ? emailLogin.error.message : null}
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={emailLogin.isPending}
-        >
-          {emailLogin.isPending ? 'Entrando...' : 'Entrar'}
-        </Button>
+        <SubmitButton
+          isPending={emailLogin.isPending}
+          label="Entrar"
+          pendingLabel="Entrando..."
+        />
       </form>
 
-      <div className="relative py-1">
-        <Separator />
-        <span className="anubis-surface-stack absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-4 py-1 text-[0.68rem] text-muted-foreground font-label">
-          alternativa de acesso
-        </span>
-      </div>
+      <OAuthDivider />
 
       <AuthCallout
         title="Continuar com Google"

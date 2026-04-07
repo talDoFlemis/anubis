@@ -1,7 +1,14 @@
+import { toast } from 'sonner';
 import type { LoginResponse, User } from '@/lib/api';
 
+export const AUTH_SIGN_IN_ROUTE = '/auth/sign-in';
+export const AUTH_SIGN_UP_ROUTE = '/auth/sign-up';
 export const AUTH_ONBOARDING_ROUTE = '/auth/onboarding';
+export const AUTH_CONFIRM_NEW_EMAIL_ROUTE = '/auth/confirm-new-email';
+export const AUTH_CONFIRM_EMAIL_ROUTE = '/auth/confirm-email';
+export const AUTH_FORGOT_PASSWORD_ROUTE = '/auth/forgot-password';
 export const AUTH_CHANGE_PASSWORD_ROUTE = '/auth/change-password';
+export const AUTH_RESET_PASSWORD_ROUTE = '/auth/reset-password';
 export const AUTH_HOME_ROUTE = '/';
 
 export type AuthLifecycleRoute =
@@ -52,4 +59,22 @@ export function isRedirectLikeError(error: unknown): boolean {
   }
 
   return Boolean(error && typeof error === 'object' && 'to' in error);
+}
+
+export function validatePasswordMatch(
+  password: string,
+  confirmPassword: string,
+): boolean {
+  if (password !== confirmPassword) {
+    toast.error('As senhas nao coincidem.');
+    return false;
+  }
+
+  return true;
+}
+
+export function validateHashSearch(search: Record<string, unknown>): {
+  hash: string;
+} {
+  return { hash: (search.hash as string) || '' };
 }

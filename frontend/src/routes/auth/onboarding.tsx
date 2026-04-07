@@ -5,7 +5,8 @@ import {
   AuthCallout,
   AuthErrorMessage,
   AuthPageLayout,
-} from '@/components/auth/auth-layout';
+  SubmitButton,
+} from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,9 +15,9 @@ import {
   useCompleteCandidateOnboarding,
   useLogout,
 } from '@/hooks/use-auth';
-import { getPostAuthPath } from '@/lib/auth-flow';
+import { AUTH_ONBOARDING_ROUTE, getPostAuthPath } from '@/lib/auth-flow';
 
-export const Route = createFileRoute('/auth/onboarding')({
+export const Route = createFileRoute(AUTH_ONBOARDING_ROUTE)({
   component: CandidateOnboardingPage,
 });
 
@@ -149,13 +150,11 @@ function CandidateOnboardingPage() {
           message={onboarding.isError ? onboarding.error.message : null}
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={onboarding.isPending}
-        >
-          {onboarding.isPending ? 'Salvando...' : 'Concluir cadastro'}
-        </Button>
+        <SubmitButton
+          isPending={onboarding.isPending}
+          label="Concluir cadastro"
+          pendingLabel="Salvando..."
+        />
       </form>
 
       <AuthCallout

@@ -4,13 +4,13 @@ import { toast } from 'sonner';
 import {
   AuthErrorMessage,
   AuthPageLayout,
-} from '@/components/auth/auth-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+  EmailField,
+  SubmitButton,
+} from '@/components/auth';
 import { useForgotPassword } from '@/hooks/use-auth';
+import { AUTH_FORGOT_PASSWORD_ROUTE, AUTH_HOME_ROUTE } from '@/lib/auth-flow';
 
-export const Route = createFileRoute('/auth/forgot-password')({
+export const Route = createFileRoute(AUTH_FORGOT_PASSWORD_ROUTE)({
   component: ForgotPasswordPage,
 });
 
@@ -18,7 +18,7 @@ function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const forgotPassword = useForgotPassword();
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.SubmitEvent) => {
     event.preventDefault();
 
     forgotPassword.mutate(
@@ -51,7 +51,7 @@ function ForgotPasswordPage() {
       compact
       footer={
         <Link
-          to="/auth/sign-in"
+          to={AUTH_HOME_ROUTE}
           className="text-primary underline-offset-4 hover:underline"
         >
           Voltar para o login
@@ -59,31 +59,17 @@ function ForgotPasswordPage() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="seu@email.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
+        <EmailField value={email} onChange={setEmail} />
 
         <AuthErrorMessage
           message={forgotPassword.isError ? forgotPassword.error.message : null}
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={forgotPassword.isPending}
-        >
-          {forgotPassword.isPending
-            ? 'Enviando...'
-            : 'Enviar link de recuperacao'}
-        </Button>
+        <SubmitButton
+          isPending={forgotPassword.isPending}
+          label="Enviar link de recuperacao"
+          pendingLabel="Enviando..."
+        />
       </form>
     </AuthPageLayout>
   );

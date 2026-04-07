@@ -1,25 +1,24 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { KeyRound, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import {
   AuthCallout,
   AuthErrorMessage,
   AuthPageLayout,
-} from '@/components/auth/auth-layout';
+  PasswordField,
+  SubmitButton,
+} from '@/components/auth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useResetPassword } from '@/hooks/use-auth';
+import {
+  AUTH_RESET_PASSWORD_ROUTE,
+  AUTH_SIGN_IN_ROUTE,
+  validateHashSearch,
+  validatePasswordMatch,
+} from '@/lib/auth-flow';
 
-interface ResetPasswordSearch {
-  hash: string;
-}
-
-export const Route = createFileRoute('/auth/reset-password')({
-  validateSearch: (search: Record<string, unknown>): ResetPasswordSearch => ({
-    hash: (search.hash as string) || '',
-  }),
+export const Route = createFileRoute(AUTH_RESET_PASSWORD_ROUTE)({
+  validateSearch: validateHashSearch,
   component: ResetPasswordPage,
 });
 
@@ -49,7 +48,7 @@ function ResetPasswordPage() {
         footer={
           <Button
             variant="outline"
-            onClick={() => navigate({ to: '/auth/sign-in' })}
+            onClick={() => navigate({ to: AUTH_SIGN_IN_ROUTE })}
           >
             Ir para o login
           </Button>
@@ -60,11 +59,10 @@ function ResetPasswordPage() {
     );
   }
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.SubmitEvent) => {
     event.preventDefault();
 
-    if (password !== confirmPassword) {
-      toast.error('As senhas nao coincidem.');
+    if (!validatePasswordMatch(password, confirmPassword)) {
       return;
     }
 
@@ -72,8 +70,7 @@ function ResetPasswordPage() {
       { hash, password },
       {
         onSuccess: () => {
-          toast.success('Senha redefinida com sucesso!');
-          navigate({ to: '/auth/sign-in' });
+          navigate({ to: AUTH_SIGN_IN_ROUTE });
         },
       },
     );
@@ -103,7 +100,7 @@ function ResetPasswordPage() {
       }
       footer={
         <Link
-          to="/auth/sign-in"
+          to={AUTH_SIGN_IN_ROUTE}
           className="text-primary underline-offset-4 hover:underline"
         >
           Cancelar e voltar ao login
@@ -111,43 +108,33 @@ function ResetPasswordPage() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="password">Nova senha</Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Minimo 6 caracteres"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength={6}
-            required
-          />
-        </div>
+        <PasswordField
+          id="password"
+          label="Nova senha"
+          value={password}
+          onChange={setPassword}
+          placeholder="Minimo 6 caracteres"
+          minLength={6}
+        />
 
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirmar senha</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            placeholder="Repita a nova senha"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            minLength={6}
-            required
-          />
-        </div>
+        <PasswordField
+          id="confirmPassword"
+          label="Confirmar senha"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          placeholder="Repita a nova senha"
+          minLength={6}
+        />
 
         <AuthErrorMessage
           message={resetPassword.isError ? resetPassword.error.message : null}
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={resetPassword.isPending}
-        >
-          {resetPassword.isPending ? 'Redefinindo...' : 'Redefinir senha'}
-        </Button>
+        <SubmitButton
+          isPending={resetPassword.isPending}
+          label="Redefinir senha"
+          pendingLabel="Redefinindo..."
+        />
       </form>
     </AuthPageLayout>
   );

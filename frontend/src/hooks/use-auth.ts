@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { api, type CandidateProfile, type User } from '@/lib/api';
-import { getPostAuthPath } from '@/lib/auth-flow';
+import { AUTH_SIGN_IN_ROUTE, getPostAuthPath } from '@/lib/auth-flow';
 
 export const authQueryOptions = queryOptions({
   queryKey: ['auth', 'me'],
@@ -138,7 +138,7 @@ export function useLogout() {
       );
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
-      navigate({ to: '/auth/sign-in' });
+      navigate({ to: AUTH_SIGN_IN_ROUTE });
     },
   });
 }
