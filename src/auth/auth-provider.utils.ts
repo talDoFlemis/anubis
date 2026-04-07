@@ -1,11 +1,7 @@
 import { AuthProvidersEnum } from './auth-providers.enum';
 
-export function getFirstNonEmailProvider(
-  providers: AuthProvidersEnum[],
-): AuthProvidersEnum | null {
-  return (
-    providers.find((provider) => provider !== AuthProvidersEnum.email) ?? null
-  );
+export function getFirstNonEmailProvider(providers: AuthProvidersEnum[]): AuthProvidersEnum | null {
+  return providers.find(provider => provider !== AuthProvidersEnum.email) ?? null;
 }
 
 export function getPreferredLoginProvider(

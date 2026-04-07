@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import {
-  MAIL_TRANSPORT,
-  type MailTransport,
-} from './interfaces/mail-transport.interface';
+import { MAIL_TRANSPORT, type MailTransport } from './interfaces/mail-transport.interface';
 
 @Injectable()
 export class MailService {
@@ -13,11 +10,7 @@ export class MailService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async send(params: {
-    to: string;
-    title: string;
-    body: string;
-  }): Promise<void> {
+  async send(params: { to: string; title: string; body: string }): Promise<void> {
     this.logger.debug({ to: params.to, title: params.title }, 'Sending e-mail');
 
     try {

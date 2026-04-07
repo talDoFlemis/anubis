@@ -1,5 +1,5 @@
-import { RoleEnum } from '../../roles/roles.enum';
-import { StatusEnum } from '../../statuses/statuses.enum';
+import type { RoleEnum } from '../../roles/roles.enum';
+import type { StatusEnum } from '../../statuses/statuses.enum';
 
 export class CandidateProfile {
   userId: string;

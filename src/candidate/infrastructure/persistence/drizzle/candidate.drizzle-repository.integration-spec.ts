@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import {
   createTestDrizzle,
   truncateAllTables,
@@ -21,9 +21,7 @@ describe('CandidateDrizzleRepository (integration)', () => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-    candidateRepository = new CandidateDrizzleRepository(
-      db as unknown as DrizzleDB,
-    );
+    candidateRepository = new CandidateDrizzleRepository(db as unknown as DrizzleDB);
     userRepository = new UserDrizzleRepository(db as unknown as DrizzleDB);
   });
 

@@ -1,7 +1,8 @@
-import { ExecutionContext, INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { ExecutionContext, INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { App } from 'supertest/types';
+import type { App } from 'supertest/types';
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthGoogleController } from '../src/auth-google/auth-google.controller';
 import { AuthEmailController } from '../src/auth-email/auth-email.controller';

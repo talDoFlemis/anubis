@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -46,10 +38,7 @@ export class AuthEmailController {
     description: 'Invalid email, password, or provider',
   })
   @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  login(
-    @Body() _dto: AuthEmailLoginDto,
-    @Req() req: Request & { user: User },
-  ): LoginResponseDto {
+  login(@Body() _dto: AuthEmailLoginDto, @Req() req: Request & { user: User }): LoginResponseDto {
     return buildLoginResponse(req.user);
   }
 

@@ -22,10 +22,7 @@ export class SessionDrizzleRepository extends SessionRepository {
     await this.db
       .delete(sessions)
       .where(
-        and(
-          eq(sql`sess->>'userId'`, params.userId),
-          ne(sessions.sid, params.excludeSessionId),
-        ),
+        and(eq(sql`sess->>'userId'`, params.userId), ne(sessions.sid, params.excludeSessionId)),
       );
   }
 

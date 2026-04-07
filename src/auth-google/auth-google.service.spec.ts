@@ -1,8 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  UnauthorizedException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGoogleService } from './auth-google.service';
 
@@ -105,9 +103,9 @@ describe('AuthGoogleService', () => {
         }),
       });
 
-      await expect(
-        service.getProfileByToken({ idToken: 'minimal-token' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.getProfileByToken({ idToken: 'minimal-token' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw when payload is null (invalid token)', async () => {
@@ -115,19 +113,17 @@ describe('AuthGoogleService', () => {
         getPayload: () => null,
       });
 
-      await expect(
-        service.getProfileByToken({ idToken: 'invalid-token' }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      await expect(service.getProfileByToken({ idToken: 'invalid-token' })).rejects.toThrow(
+        UnprocessableEntityException,
+      );
     });
 
     it('should propagate error when verifyIdToken fails', async () => {
-      mockVerifyIdToken.mockRejectedValue(
-        new Error('Token verification failed'),
-      );
+      mockVerifyIdToken.mockRejectedValue(new Error('Token verification failed'));
 
-      await expect(
-        service.getProfileByToken({ idToken: 'expired-token' }),
-      ).rejects.toThrow('Token verification failed');
+      await expect(service.getProfileByToken({ idToken: 'expired-token' })).rejects.toThrow(
+        'Token verification failed',
+      );
     });
   });
 });

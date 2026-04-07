@@ -12,8 +12,7 @@ export class SmtpTransport implements MailTransport {
       host: this.configService.getOrThrow('MAIL_HOST'),
       port: this.configService.getOrThrow<number>('MAIL_PORT'),
       auth:
-        this.configService.get('MAIL_USER') &&
-        this.configService.get('MAIL_PASSWORD')
+        this.configService.get('MAIL_USER') && this.configService.get('MAIL_PASSWORD')
           ? {
               user: this.configService.get('MAIL_USER'),
               pass: this.configService.get('MAIL_PASSWORD'),
@@ -25,11 +24,7 @@ export class SmtpTransport implements MailTransport {
     return this.transporter.verify();
   }
 
-  async sendMail(options: {
-    to: string;
-    subject: string;
-    html: string;
-  }): Promise<void> {
+  async sendMail(options: { to: string; subject: string; html: string }): Promise<void> {
     await this.transporter.sendMail({
       from: this.configService.getOrThrow('MAIL_DEFAULT_FROM'),
       to: options.to,

@@ -1,17 +1,14 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CandidateService } from './candidate.service';
 import { UsersService } from '../users/users.service';
 import { CandidateRepository } from './infrastructure/persistence/candidate.repository';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { getLoggerToken } from 'nestjs-pino';
-import { CandidateProfile } from './domain/candidate-profile';
+import type { CandidateProfile } from './domain/candidate-profile';
 import { buildPaginatedResult } from '../common/dto/paginated-response.dto';
 
 describe('CandidateService', () => {
@@ -99,17 +96,13 @@ describe('CandidateService', () => {
   it('finds candidate profile by id', async () => {
     candidateRepository.findProfileByUserId.mockResolvedValue(candidateProfile);
 
-    await expect(service.findOneById('user-1')).resolves.toEqual(
-      candidateProfile,
-    );
+    await expect(service.findOneById('user-1')).resolves.toEqual(candidateProfile);
   });
 
   it('throws when candidate profile is not found by id', async () => {
     candidateRepository.findProfileByUserId.mockResolvedValue(null);
 
-    await expect(service.findOneById('user-1')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(service.findOneById('user-1')).rejects.toThrow(NotFoundException);
   });
 
   it('finds current candidate profile for candidate user', async () => {
@@ -128,9 +121,7 @@ describe('CandidateService', () => {
       role: RoleEnum.professor,
     } as never);
 
-    await expect(service.findMine('user-1')).rejects.toThrow(
-      ForbiddenException,
-    );
+    await expect(service.findMine('user-1')).rejects.toThrow(ForbiddenException);
   });
 
   it('lists candidates using repository filters', async () => {
@@ -143,9 +134,7 @@ describe('CandidateService', () => {
       }),
     );
 
-    await expect(
-      service.findAll({ universityOfOrigin: 'UFRN' }),
-    ).resolves.toEqual(
+    await expect(service.findAll({ universityOfOrigin: 'UFRN' })).resolves.toEqual(
       buildPaginatedResult({
         data: [candidateProfile],
         page: 1,
@@ -156,14 +145,12 @@ describe('CandidateService', () => {
   });
 
   it('rejects invalid ira range filters', async () => {
-    await expect(service.findAll({ iraMin: 9, iraMax: 8 })).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(service.findAll({ iraMin: 9, iraMax: 8 })).rejects.toThrow(BadRequestException);
   });
 
   it('rejects invalid poscomp range filters', async () => {
-    await expect(
-      service.findAll({ poscompMin: 800, poscompMax: 700 }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.findAll({ poscompMin: 800, poscompMax: 700 })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });

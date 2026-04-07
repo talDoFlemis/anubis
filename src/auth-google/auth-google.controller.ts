@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
   ApiConflictResponse,
   ApiOkResponse,
@@ -34,10 +27,7 @@ export class AuthGoogleController {
   @ApiUnprocessableEntityResponse({
     description: 'Invalid Google ID token or unable to resolve a user',
   })
-  login(
-    @Body() _loginDto: AuthGoogleLoginDto,
-    @CurrentUser() user: User,
-  ): LoginResponseDto {
+  login(@Body() _loginDto: AuthGoogleLoginDto, @CurrentUser() user: User): LoginResponseDto {
     return buildLoginResponse(user);
   }
 }

@@ -1,4 +1,4 @@
-import { Provider } from '@nestjs/common';
+import type { Provider } from '@nestjs/common';
 import { DRIZZLE, DRIZZLE_TX } from './drizzle.constants';
 import type { DrizzleDB } from './drizzle.provider';
 import { getTransaction } from './transaction.cls';

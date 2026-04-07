@@ -60,10 +60,7 @@ export class AuthEmailService {
         );
       }
 
-      const isValidPassword = await bcrypt.compare(
-        loginDto.password,
-        user.password ?? '',
-      );
+      const isValidPassword = await bcrypt.compare(loginDto.password, user.password ?? '');
 
       if (!isValidPassword) {
         throw new UnauthorizedException('E-mail ou senha invalidos.');
@@ -104,10 +101,7 @@ export class AuthEmailService {
 
   async register(dto: AuthRegisterDto): Promise<void> {
     const normalizedEmail = dto.email.toLowerCase().trim();
-    this.logger.debug(
-      { email: normalizedEmail },
-      'Candidate e-mail registration',
-    );
+    this.logger.debug({ email: normalizedEmail }, 'Candidate e-mail registration');
 
     try {
       const existingUser = await this.usersService.findByEmail(normalizedEmail);
@@ -124,10 +118,7 @@ export class AuthEmailService {
         throw new ConflictException('Este CPF ja esta cadastrado.');
       }
 
-      const hashedPassword = await bcrypt.hash(
-        dto.password,
-        BCRYPT_SALT_ROUNDS,
-      );
+      const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
       const user = await this.usersService.create({
         email: normalizedEmail,
         password: hashedPassword,
@@ -161,9 +152,7 @@ export class AuthEmailService {
         },
         {
           secret: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_SECRET'),
-          expiresIn: this.configService.getOrThrow(
-            'AUTH_CONFIRM_EMAIL_EXPIRES_IN',
-          ),
+          expiresIn: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_EXPIRES_IN'),
         },
       );
 
@@ -197,9 +186,7 @@ export class AuthEmailService {
     }
 
     if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
-      throw new BadRequestException(
-        'Link de confirmacao invalido ou expirado.',
-      );
+      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
     }
 
     await this.usersService.update(user.id, {
@@ -212,9 +199,7 @@ export class AuthEmailService {
     const token = await this.verifyConfirmToken(dto.hash);
 
     if (!token.newEmail) {
-      throw new BadRequestException(
-        'Link de confirmacao invalido ou expirado.',
-      );
+      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
     }
 
     const user = await this.usersService.findById(token.confirmEmailUserId);
@@ -223,25 +208,19 @@ export class AuthEmailService {
     }
 
     if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
-      throw new BadRequestException(
-        'Link de confirmacao invalido ou expirado.',
-      );
+      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
     }
 
     const normalizedEmail = token.newEmail.toLowerCase().trim();
     const existingUser = await this.usersService.findByEmail(normalizedEmail);
     if (existingUser && existingUser.id !== user.id) {
-      throw new ConflictException(
-        'Este e-mail ja esta em uso por outra conta.',
-      );
+      throw new ConflictException('Este e-mail ja esta em uso por outra conta.');
     }
 
     await this.usersService.update(user.id, {
       email: normalizedEmail,
       providerSubject:
-        user.authProvider === AuthProvidersEnum.email
-          ? normalizedEmail
-          : user.providerSubject,
+        user.authProvider === AuthProvidersEnum.email ? normalizedEmail : user.providerSubject,
       status: StatusEnum.active,
       confirmEmailTokenVersion: token.confirmEmailTokenVersion + 1,
     });
@@ -293,9 +272,7 @@ export class AuthEmailService {
     }
 
     if (user.forgotPasswordTokenVersion !== token.forgotPasswordTokenVersion) {
-      throw new BadRequestException(
-        'Link de redefinicao de senha invalido ou expirado.',
-      );
+      throw new BadRequestException('Link de redefinicao de senha invalido ou expirado.');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
@@ -318,9 +295,7 @@ export class AuthEmailService {
         secret: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_SECRET'),
       });
     } catch {
-      throw new BadRequestException(
-        'Link de confirmacao invalido ou expirado.',
-      );
+      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
     }
   }
 
@@ -333,9 +308,7 @@ export class AuthEmailService {
         secret: this.configService.getOrThrow('AUTH_FORGOT_SECRET'),
       });
     } catch {
-      throw new BadRequestException(
-        'Link de redefinicao de senha invalido ou expirado.',
-      );
+      throw new BadRequestException('Link de redefinicao de senha invalido ou expirado.');
     }
   }
 

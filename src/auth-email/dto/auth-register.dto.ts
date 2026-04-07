@@ -1,11 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEmail,
-  IsNotEmpty,
-  MaxLength,
-  MinLength,
-  Matches,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, MaxLength, MinLength, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class AuthRegisterDto {

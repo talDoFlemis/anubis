@@ -5,15 +5,18 @@ import {
   AuthCallout,
   AuthErrorMessage,
   AuthPageLayout,
-} from '@/components/auth/auth-layout';
+  EmailField,
+  OAuthDivider,
+  PasswordField,
+  SubmitButton,
+} from '@/components/auth';
 import { GoogleLoginButton } from '@/components/google-login-button';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useEmailRegister } from '@/hooks/use-auth';
+import { AUTH_SIGN_IN_ROUTE, AUTH_SIGN_UP_ROUTE } from '@/lib/auth-flow';
 
-export const Route = createFileRoute('/auth/sign-up')({
+export const Route = createFileRoute(AUTH_SIGN_UP_ROUTE)({
   component: SignUpPage,
 });
 
@@ -27,7 +30,7 @@ function SignUpPage() {
   const register = useEmailRegister();
   const navigate = useNavigate();
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.SubmitEvent) => {
     event.preventDefault();
 
     register.mutate(
@@ -41,10 +44,8 @@ function SignUpPage() {
       },
       {
         onSuccess: () => {
-          toast.success(
-            'Conta criada! Verifique seu email para confirmar o cadastro.',
-          );
-          navigate({ to: '/auth/sign-in' });
+          toast.success('Conta criada! Verifique seu email para confirmar o cadastro.');
+          navigate({ to: AUTH_SIGN_IN_ROUTE });
         },
       },
     );
@@ -69,10 +70,7 @@ function SignUpPage() {
       footer={
         <>
           Ja possui acesso?{' '}
-          <Link
-            to="/auth/sign-in"
-            className="text-primary underline-offset-4 hover:underline"
-          >
+          <Link to={AUTH_SIGN_IN_ROUTE} className="text-primary underline-offset-4 hover:underline">
             Entrar
           </Link>
           .
@@ -87,7 +85,7 @@ function SignUpPage() {
               id="firstName"
               placeholder="Seu nome"
               value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
+              onChange={event => setFirstName(event.target.value)}
               required
             />
           </div>
@@ -97,23 +95,13 @@ function SignUpPage() {
               id="lastName"
               placeholder="Seu sobrenome"
               value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
+              onChange={event => setLastName(event.target.value)}
               required
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="seu@email.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
+        <EmailField value={email} onChange={setEmail} />
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2">
@@ -123,7 +111,7 @@ function SignUpPage() {
               inputMode="numeric"
               placeholder="Somente numeros"
               value={cpf}
-              onChange={(event) => setCpf(event.target.value)}
+              onChange={event => setCpf(event.target.value)}
               required
             />
           </div>
@@ -133,40 +121,31 @@ function SignUpPage() {
               id="universityOfOrigin"
               placeholder="Ex.: UFRN"
               value={universityOfOrigin}
-              onChange={(event) => setUniversityOfOrigin(event.target.value)}
+              onChange={event => setUniversityOfOrigin(event.target.value)}
               required
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Minimo 6 caracteres"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength={6}
-            required
-          />
-        </div>
-
-        <AuthErrorMessage
-          message={register.isError ? register.error.message : null}
+        <PasswordField
+          id="password"
+          label="Senha"
+          value={password}
+          onChange={setPassword}
+          placeholder="Minimo 6 caracteres"
+          minLength={6}
         />
 
-        <Button type="submit" className="w-full" disabled={register.isPending}>
-          {register.isPending ? 'Criando conta...' : 'Criar conta'}
-        </Button>
+        <AuthErrorMessage message={register.isError ? register.error.message : null} />
+
+        <SubmitButton
+          isPending={register.isPending}
+          label="Criar conta"
+          pendingLabel="Criando conta..."
+        />
       </form>
 
-      <div className="relative py-1">
-        <Separator />
-        <span className="anubis-surface-stack absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-4 py-1 text-[0.68rem] text-muted-foreground font-label">
-          alternativa institucional
-        </span>
-      </div>
+      <OAuthDivider label="alternativa institucional" />
 
       <AuthCallout
         title="Iniciar com Google"

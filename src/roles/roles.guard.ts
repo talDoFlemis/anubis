@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  ForbiddenException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { ROLES_KEY } from './roles.decorator';
@@ -19,10 +14,10 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<RoleEnum[]>(
-      ROLES_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredRoles = this.reflector.getAllAndOverride<RoleEnum[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
@@ -44,10 +39,7 @@ export class RolesGuard implements CanActivate {
       });
     }
 
-    this.logger.debug(
-      { userId: request.user?.id, userRole, requiredRoles },
-      'Role check passed',
-    );
+    this.logger.debug({ userId: request.user?.id, userRole, requiredRoles }, 'Role check passed');
     return true;
   }
 }

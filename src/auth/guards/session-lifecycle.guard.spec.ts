@@ -1,14 +1,8 @@
-import {
-  ExecutionContext,
-  ForbiddenException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { PinoLogger } from 'nestjs-pino';
-import {
-  RestrictedSessionReason,
-  SessionLifecycleGuard,
-} from './session-lifecycle.guard';
+import type { ExecutionContext } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { PinoLogger } from 'nestjs-pino';
+import { RestrictedSessionReason, SessionLifecycleGuard } from './session-lifecycle.guard';
 
 describe('SessionLifecycleGuard', () => {
   let guard: SessionLifecycleGuard;
@@ -65,9 +59,7 @@ describe('SessionLifecycleGuard', () => {
   });
 
   it('allows onboarding-incomplete sessions on onboarding routes', () => {
-    reflector.getAllAndOverride.mockReturnValue([
-      RestrictedSessionReason.onboardingIncomplete,
-    ]);
+    reflector.getAllAndOverride.mockReturnValue([RestrictedSessionReason.onboardingIncomplete]);
 
     expect(
       guard.canActivate(
@@ -81,9 +73,7 @@ describe('SessionLifecycleGuard', () => {
   });
 
   it('keeps password-reset sessions blocked when only onboarding is allowed', () => {
-    reflector.getAllAndOverride.mockReturnValue([
-      RestrictedSessionReason.onboardingIncomplete,
-    ]);
+    reflector.getAllAndOverride.mockReturnValue([RestrictedSessionReason.onboardingIncomplete]);
 
     expect(() =>
       guard.canActivate(
@@ -97,9 +87,7 @@ describe('SessionLifecycleGuard', () => {
   });
 
   it('allows password-reset sessions on password routes', () => {
-    reflector.getAllAndOverride.mockReturnValue([
-      RestrictedSessionReason.mustChangePassword,
-    ]);
+    reflector.getAllAndOverride.mockReturnValue([RestrictedSessionReason.mustChangePassword]);
 
     expect(
       guard.canActivate(

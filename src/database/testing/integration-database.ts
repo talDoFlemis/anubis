@@ -24,8 +24,7 @@ export function createTestDrizzle(): { db: TestDrizzleDB; pool: Pool } {
 
   if (!connectionUri) {
     throw new Error(
-      'TEST_DATABASE_URL is not set. ' +
-        'Ensure Jest globalSetup (global-setup.ts) has run.',
+      'TEST_DATABASE_URL is not set. ' + 'Ensure Jest globalSetup (global-setup.ts) has run.',
     );
   }
 
@@ -39,7 +38,5 @@ export function createTestDrizzle(): { db: TestDrizzleDB; pool: Pool } {
  * Truncates all application tables, resetting data between tests.
  */
 export async function truncateAllTables(db: TestDrizzleDB): Promise<void> {
-  await db.execute(
-    sql`TRUNCATE TABLE candidates, users, session RESTART IDENTITY CASCADE`,
-  );
+  await db.execute(sql`TRUNCATE TABLE candidates, users, session RESTART IDENTITY CASCADE`);
 }

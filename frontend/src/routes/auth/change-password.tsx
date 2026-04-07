@@ -1,18 +1,21 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import {
   AuthCallout,
   AuthErrorMessage,
   AuthPageLayout,
-} from '@/components/auth/auth-layout';
+  PasswordField,
+  SubmitButton,
+} from '@/components/auth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useLogout, useUpdateProfile } from '@/hooks/use-auth';
-import { getPostAuthPath } from '@/lib/auth-flow';
+import {
+  AUTH_CHANGE_PASSWORD_ROUTE,
+  getPostAuthPath,
+  validatePasswordMatch,
+} from '@/lib/auth-flow';
 
-export const Route = createFileRoute('/auth/change-password')({
+export const Route = createFileRoute(AUTH_CHANGE_PASSWORD_ROUTE)({
   component: ChangePasswordPage,
 });
 
@@ -24,11 +27,10 @@ function ChangePasswordPage() {
   const logout = useLogout();
   const navigate = useNavigate();
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.SubmitEvent) => {
     event.preventDefault();
 
-    if (password !== confirmPassword) {
-      toast.error('As senhas nao coincidem.');
+    if (!validatePasswordMatch(password, confirmPassword)) {
       return;
     }
 
@@ -38,8 +40,7 @@ function ChangePasswordPage() {
         password,
       },
       {
-        onSuccess: (updatedUser) => {
-          toast.success('Senha atualizada com sucesso.');
+        onSuccess: updatedUser => {
           navigate({ to: getPostAuthPath(updatedUser) });
         },
       },
@@ -58,61 +59,43 @@ function ChangePasswordPage() {
         { label: 'Acao', value: 'Nova senha' },
         { label: 'Destino', value: 'Home' },
       ]}
-      notes={[
-        'Use a senha temporaria recebida anteriormente para autorizar a troca nesta etapa.',
-      ]}
+      notes={['Use a senha temporaria recebida anteriormente para autorizar a troca nesta etapa.']}
       compact
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="currentPassword">Senha atual</Label>
-          <Input
-            id="currentPassword"
-            type="password"
-            value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
-            placeholder="Informe a senha temporaria"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="password">Nova senha</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength={6}
-            placeholder="Minimo 6 caracteres"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            minLength={6}
-            placeholder="Repita a nova senha"
-            required
-          />
-        </div>
-
-        <AuthErrorMessage
-          message={updateProfile.isError ? updateProfile.error.message : null}
+        <PasswordField
+          id="currentPassword"
+          label="Senha atual"
+          value={currentPassword}
+          onChange={setCurrentPassword}
+          placeholder="Informe a senha temporaria"
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={updateProfile.isPending}
-        >
-          {updateProfile.isPending ? 'Salvando...' : 'Salvar nova senha'}
-        </Button>
+        <PasswordField
+          id="password"
+          label="Nova senha"
+          value={password}
+          onChange={setPassword}
+          placeholder="Minimo 6 caracteres"
+          minLength={6}
+        />
+
+        <PasswordField
+          id="confirmPassword"
+          label="Confirmar nova senha"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          placeholder="Repita a nova senha"
+          minLength={6}
+        />
+
+        <AuthErrorMessage message={updateProfile.isError ? updateProfile.error.message : null} />
+
+        <SubmitButton
+          isPending={updateProfile.isPending}
+          label="Salvar nova senha"
+          pendingLabel="Salvando..."
+        />
       </form>
 
       <AuthCallout

@@ -15,16 +15,13 @@ export class TransactionMiddleware implements NestMiddleware {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   use(req: Request, res: Response, next: NextFunction): void {
-    if (
-      READ_ONLY_METHODS.has(req.method) ||
-      SKIP_PATHS.some((p) => req.path.startsWith(p))
-    ) {
+    if (READ_ONLY_METHODS.has(req.method) || SKIP_PATHS.some(p => req.path.startsWith(p))) {
       return next();
     }
 
     const db = this.db as NodePgDatabase<DrizzleSchema>;
 
-    db.transaction(async (tx) => {
+    db.transaction(async tx => {
       return new Promise<void>((resolve, reject) => {
         transactionStorage.run({ tx: tx as unknown as DrizzleDB }, () => {
           res.on('finish', () => {

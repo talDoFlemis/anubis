@@ -5,12 +5,7 @@ import type { User } from '../users/domain/user';
 
 type SessionUserPayload = Pick<
   User,
-  | 'id'
-  | 'email'
-  | 'role'
-  | 'onboardingCompleted'
-  | 'mustChangePassword'
-  | 'status'
+  'id' | 'email' | 'role' | 'onboardingCompleted' | 'mustChangePassword' | 'status'
 >;
 
 @Injectable()
@@ -19,10 +14,7 @@ export class SessionSerializer extends PassportSerializer {
     super();
   }
 
-  serializeUser(
-    user: User,
-    done: (err: Error | null, payload: SessionUserPayload) => void,
-  ): void {
+  serializeUser(user: User, done: (err: Error | null, payload: SessionUserPayload) => void): void {
     const payload: SessionUserPayload = {
       id: user.id,
       email: user.email,

@@ -8,12 +8,7 @@ import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
 import { User } from '../../../domain/user';
-import {
-  CreateUserData,
-  NullableUser,
-  UpdateUserData,
-  UserRepository,
-} from '../user.repository';
+import { CreateUserData, NullableUser, UpdateUserData, UserRepository } from '../user.repository';
 
 type UserRow = typeof users.$inferSelect;
 
@@ -48,11 +43,7 @@ export class UserDrizzleRepository extends UserRepository {
   }
 
   async findById(id: string): Promise<NullableUser> {
-    const [row] = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const [row] = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
 
     if (!row) return null;
     return this.toDomain(row);
@@ -71,11 +62,7 @@ export class UserDrizzleRepository extends UserRepository {
   }
 
   async findByCpf(cpf: string): Promise<NullableUser> {
-    const [row] = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.cpf, cpf))
-      .limit(1);
+    const [row] = await this.db.select().from(users).where(eq(users.cpf, cpf)).limit(1);
 
     if (!row) return null;
     return this.toDomain(row);
@@ -125,22 +112,16 @@ export class UserDrizzleRepository extends UserRepository {
       updateData.mustChangePassword = payload.mustChangePassword;
     }
     if (payload.bootstrapPasswordExpiresAt !== undefined) {
-      updateData.bootstrapPasswordExpiresAt =
-        payload.bootstrapPasswordExpiresAt;
+      updateData.bootstrapPasswordExpiresAt = payload.bootstrapPasswordExpiresAt;
     }
     if (payload.confirmEmailTokenVersion !== undefined) {
       updateData.confirmEmailTokenVersion = payload.confirmEmailTokenVersion;
     }
     if (payload.forgotPasswordTokenVersion !== undefined) {
-      updateData.forgotPasswordTokenVersion =
-        payload.forgotPasswordTokenVersion;
+      updateData.forgotPasswordTokenVersion = payload.forgotPasswordTokenVersion;
     }
 
-    const [row] = await this.db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, id))
-      .returning();
+    const [row] = await this.db.update(users).set(updateData).where(eq(users.id, id)).returning();
 
     if (!row) return null;
     return this.toDomain(row);

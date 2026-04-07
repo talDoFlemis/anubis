@@ -1,11 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  integer,
-  numeric,
-  timestamp,
-} from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, integer, numeric, timestamp } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
 export const candidates = pgTable('candidates', {
@@ -17,12 +10,8 @@ export const candidates = pgTable('candidates', {
   }).notNull(),
   ira: numeric('ira', { precision: 5, scale: 2 }),
   poscomp: integer('poscomp'),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export type CandidateInsert = typeof candidates.$inferInsert;

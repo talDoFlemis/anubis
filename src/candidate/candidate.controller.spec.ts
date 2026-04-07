@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { Reflector } from '@nestjs/core';
 import { getLoggerToken } from 'nestjs-pino';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
@@ -69,18 +70,14 @@ describe('CandidateController', () => {
   it('gets current candidate profile using current user id', async () => {
     candidateService.findMine.mockResolvedValue(candidateProfile);
 
-    await expect(
-      controller.getMine({ id: 'user-1' } as never),
-    ).resolves.toEqual(candidateProfile);
+    await expect(controller.getMine({ id: 'user-1' } as never)).resolves.toEqual(candidateProfile);
     expect(candidateService.findMine).toHaveBeenCalledWith('user-1');
   });
 
   it('gets one candidate by user id', async () => {
     candidateService.findOneById.mockResolvedValue(candidateProfile);
 
-    await expect(controller.findOne('user-1')).resolves.toEqual(
-      candidateProfile,
-    );
+    await expect(controller.findOne('user-1')).resolves.toEqual(candidateProfile);
     expect(candidateService.findOneById).toHaveBeenCalledWith('user-1');
   });
 
@@ -94,9 +91,7 @@ describe('CandidateController', () => {
       }),
     );
 
-    await expect(
-      controller.findAll({ universityOfOrigin: 'UFRN' }),
-    ).resolves.toEqual(
+    await expect(controller.findAll({ universityOfOrigin: 'UFRN' })).resolves.toEqual(
       buildPaginatedResult({
         data: [candidateProfile],
         page: 1,

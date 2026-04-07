@@ -1,16 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import {
-  AuthErrorMessage,
-  AuthPageLayout,
-} from '@/components/auth/auth-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { AuthErrorMessage, AuthPageLayout, EmailField, SubmitButton } from '@/components/auth';
 import { useForgotPassword } from '@/hooks/use-auth';
+import { AUTH_FORGOT_PASSWORD_ROUTE, AUTH_HOME_ROUTE } from '@/lib/auth-flow';
 
-export const Route = createFileRoute('/auth/forgot-password')({
+export const Route = createFileRoute(AUTH_FORGOT_PASSWORD_ROUTE)({
   component: ForgotPasswordPage,
 });
 
@@ -18,16 +13,14 @@ function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const forgotPassword = useForgotPassword();
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.SubmitEvent) => {
     event.preventDefault();
 
     forgotPassword.mutate(
       { email },
       {
         onSuccess: () => {
-          toast.success(
-            'Email enviado! Verifique sua caixa de entrada para redefinir a senha.',
-          );
+          toast.success('Email enviado! Verifique sua caixa de entrada para redefinir a senha.');
         },
       },
     );
@@ -50,40 +43,21 @@ function ForgotPasswordPage() {
       ]}
       compact
       footer={
-        <Link
-          to="/auth/sign-in"
-          className="text-primary underline-offset-4 hover:underline"
-        >
+        <Link to={AUTH_HOME_ROUTE} className="text-primary underline-offset-4 hover:underline">
           Voltar para o login
         </Link>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="seu@email.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
+        <EmailField value={email} onChange={setEmail} />
 
-        <AuthErrorMessage
-          message={forgotPassword.isError ? forgotPassword.error.message : null}
+        <AuthErrorMessage message={forgotPassword.isError ? forgotPassword.error.message : null} />
+
+        <SubmitButton
+          isPending={forgotPassword.isPending}
+          label="Enviar link de recuperacao"
+          pendingLabel="Enviando..."
         />
-
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={forgotPassword.isPending}
-        >
-          {forgotPassword.isPending
-            ? 'Enviando...'
-            : 'Enviar link de recuperacao'}
-        </Button>
       </form>
     </AuthPageLayout>
   );

@@ -1,8 +1,5 @@
-import {
-  INestApplication,
-  ValidationPipe,
-  VersioningType,
-} from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import { Pool } from 'pg';

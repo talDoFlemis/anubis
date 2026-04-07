@@ -19,15 +19,9 @@ export class GoogleOauthTransport implements MailTransport, OnModuleDestroy {
   }
 
   private async buildTransporter(): Promise<nodemailer.Transporter> {
-    const clientId = this.configService.getOrThrow<string>(
-      'MAIL_GOOGLE_CLIENT_ID',
-    );
-    const clientSecret = this.configService.getOrThrow<string>(
-      'MAIL_GOOGLE_CLIENT_SECRET',
-    );
-    const refreshToken = this.configService.getOrThrow<string>(
-      'MAIL_GOOGLE_REFRESH_TOKEN',
-    );
+    const clientId = this.configService.getOrThrow<string>('MAIL_GOOGLE_CLIENT_ID');
+    const clientSecret = this.configService.getOrThrow<string>('MAIL_GOOGLE_CLIENT_SECRET');
+    const refreshToken = this.configService.getOrThrow<string>('MAIL_GOOGLE_REFRESH_TOKEN');
     const user = this.configService.getOrThrow<string>('MAIL_GOOGLE_USER');
 
     const oauth2Client = new google.auth.OAuth2(
@@ -49,8 +43,7 @@ export class GoogleOauthTransport implements MailTransport, OnModuleDestroy {
       typeof (responseData as { expiry_date: unknown }).expiry_date === 'number'
         ? (responseData as { expiry_date: number }).expiry_date
         : null;
-    this.tokenExpiresAt =
-      typeof expiryDate === 'number' ? expiryDate : Date.now() + 3600_000;
+    this.tokenExpiresAt = typeof expiryDate === 'number' ? expiryDate : Date.now() + 3600_000;
 
     this.cachedTransporter = nodemailer.createTransport({
       service: 'gmail',
@@ -81,11 +74,7 @@ export class GoogleOauthTransport implements MailTransport, OnModuleDestroy {
     }
   }
 
-  async sendMail(options: {
-    to: string;
-    subject: string;
-    html: string;
-  }): Promise<void> {
+  async sendMail(options: { to: string; subject: string; html: string }): Promise<void> {
     const transporter = await this.getTransporter();
     const from = this.configService.getOrThrow<string>('MAIL_DEFAULT_FROM');
 

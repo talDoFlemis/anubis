@@ -1,14 +1,6 @@
 import type { ReactNode } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  Bell,
-  CalendarDays,
-  CircleCheckBig,
-  Clock3,
-  Mail,
-  Shield,
-  Sparkles,
-} from 'lucide-react';
+import { Bell, CalendarDays, CircleCheckBig, Clock3, Mail, Shield, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,10 +20,7 @@ const ROLE_LABELS: Record<string, string> = {
   'post-graduate-coordinator': 'Coordenador de Pos-Graduacao',
 };
 
-function getInitials(
-  firstName: string | null,
-  lastName: string | null,
-): string {
+function getInitials(firstName: string | null, lastName: string | null): string {
   const first = firstName?.charAt(0)?.toUpperCase() ?? '';
   const last = lastName?.charAt(0)?.toUpperCase() ?? '';
 
@@ -64,17 +53,13 @@ function HomePage() {
     return <FallbackHome />;
   }
 
-  const displayName =
-    [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
   const initials = getInitials(user.firstName, user.lastName);
   const universityOfOrigin =
-    candidateProfile?.universityOfOrigin ||
-    mockCandidateHome.profile.universityOfOrigin;
+    candidateProfile?.universityOfOrigin || mockCandidateHome.profile.universityOfOrigin;
   const iraValue = candidateProfile?.ira?.trim() || 'Not set';
   const poscompValue =
-    candidateProfile?.poscomp != null
-      ? String(candidateProfile.poscomp)
-      : 'Not set';
+    candidateProfile?.poscomp != null ? String(candidateProfile.poscomp) : 'Not set';
 
   return (
     <div className="anubis-page-shell min-h-svh px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
@@ -84,54 +69,44 @@ function HomePage() {
             <div className="space-y-6">
               <div className="flex flex-wrap items-center gap-3">
                 <Badge variant="outline">{mockCandidateHome.cycleName}</Badge>
-                <Badge variant="secondary">
-                  {mockCandidateHome.summary.statusLabel}
-                </Badge>
+                <Badge variant="secondary">{mockCandidateHome.summary.statusLabel}</Badge>
               </div>
 
               <div className="space-y-4">
                 <p className="font-label text-primary">Home do candidato</p>
                 <div className="space-y-4">
-                  <h1 className="font-serif text-4xl leading-tight tracking-[-0.03em] text-foreground sm:text-5xl">
-                    {displayName}, sua candidatura segue em uma mesa de leitura
-                    clara e orientada por prazos.
+                  <h1 className="text-foreground font-serif text-4xl leading-tight tracking-[-0.03em] sm:text-5xl">
+                    {displayName}, sua candidatura segue em uma mesa de leitura clara e orientada
+                    por prazos.
                   </h1>
-                  <p className="max-w-3xl text-base leading-8 text-muted-foreground">
-                    Esta visao inicial usa dados simulados para a experiencia do
-                    candidato e organiza o que vem a seguir: notificacoes,
-                    progresso, documentos e marcos do processo seletivo.
+                  <p className="text-muted-foreground max-w-3xl text-base leading-8">
+                    Esta visao inicial usa dados simulados para a experiencia do candidato e
+                    organiza o que vem a seguir: notificacoes, progresso, documentos e marcos do
+                    processo seletivo.
                   </p>
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <MetricCard
-                  label="Progresso"
-                  value={mockCandidateHome.summary.progressLabel}
-                />
+                <MetricCard label="Progresso" value={mockCandidateHome.summary.progressLabel} />
                 <MetricCard
                   label="Marco seguinte"
                   value={mockCandidateHome.summary.nextMilestone}
                 />
-                <MetricCard
-                  label="Perfil academico"
-                  value={universityOfOrigin}
-                />
+                <MetricCard label="Perfil academico" value={universityOfOrigin} />
               </div>
             </div>
 
             <div className="anubis-glass anubis-ghost-border space-y-5 rounded-[1.75rem] p-6">
               <div className="flex items-center gap-4">
-                <Avatar className="h-[4.5rem] w-[4.5rem] border-0 bg-primary/8">
-                  <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
+                <Avatar className="bg-primary/8 h-[4.5rem] w-[4.5rem] border-0">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
-                  <p className="font-serif text-2xl text-foreground">
-                    {displayName}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-foreground font-serif text-2xl">{displayName}</p>
+                  <p className="text-muted-foreground text-sm">
                     {user.email ?? 'Email nao informado'}
                   </p>
                 </div>
@@ -171,25 +146,16 @@ function HomePage() {
                 <CardTitle>Etapas em destaque</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {mockCandidateHome.timeline.map((item) => (
-                  <div
-                    key={item.title}
-                    className="anubis-surface-muted rounded-[1.5rem] p-5"
-                  >
+                {mockCandidateHome.timeline.map(item => (
+                  <div key={item.title} className="anubis-surface-muted rounded-[1.5rem] p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="space-y-2">
-                        <p className="font-serif text-xl text-foreground">
-                          {item.title}
-                        </p>
-                        <p className="text-sm leading-6 text-muted-foreground">
+                        <p className="text-foreground font-serif text-xl">{item.title}</p>
+                        <p className="text-muted-foreground text-sm leading-6">
                           {item.description}
                         </p>
                       </div>
-                      <Badge
-                        variant={
-                          item.status === 'current' ? 'default' : 'outline'
-                        }
-                      >
+                      <Badge variant={item.status === 'current' ? 'default' : 'outline'}>
                         {item.date}
                       </Badge>
                     </div>
@@ -202,27 +168,18 @@ function HomePage() {
           <div className="space-y-6">
             <Card>
               <CardHeader className="space-y-3">
-                <p className="font-label text-primary">
-                  Alertas e leitura rapida
-                </p>
+                <p className="font-label text-primary">Alertas e leitura rapida</p>
                 <CardTitle>O que merece atencao agora</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {mockCandidateHome.notices.map((notice) => (
-                  <div
-                    key={notice.title}
-                    className="anubis-surface-muted rounded-[1.5rem] p-5"
-                  >
-                    <div className="mb-3 flex items-center gap-3 text-primary">
+                {mockCandidateHome.notices.map(notice => (
+                  <div key={notice.title} className="anubis-surface-muted rounded-[1.5rem] p-5">
+                    <div className="text-primary mb-3 flex items-center gap-3">
                       <Bell className="h-4 w-4" />
-                      <span className="font-label text-primary">
-                        {notice.tag}
-                      </span>
+                      <span className="font-label text-primary">{notice.tag}</span>
                     </div>
-                    <p className="font-serif text-xl text-foreground">
-                      {notice.title}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    <p className="text-foreground font-serif text-xl">{notice.title}</p>
+                    <p className="text-muted-foreground mt-2 text-sm leading-6">
                       {notice.description}
                     </p>
                   </div>
@@ -236,23 +193,18 @@ function HomePage() {
                 <CardTitle>Checklist curado para esta semana</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {mockCandidateHome.tasks.map((task) => (
-                  <div
-                    key={task.title}
-                    className="anubis-surface-stack rounded-[1.5rem] p-5"
-                  >
+                {mockCandidateHome.tasks.map(task => (
+                  <div key={task.title} className="anubis-surface-stack rounded-[1.5rem] p-5">
                     <div className="flex items-start gap-4">
-                      <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary">
+                      <div className="bg-primary/10 text-primary mt-1 rounded-full p-2">
                         <CircleCheckBig className="h-4 w-4" />
                       </div>
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-serif text-lg text-foreground">
-                            {task.title}
-                          </p>
+                          <p className="text-foreground font-serif text-lg">{task.title}</p>
                           <Badge variant="outline">{task.emphasis}</Badge>
                         </div>
-                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
                           <Clock3 className="h-4 w-4" />
                           {task.due}
                         </p>
@@ -275,29 +227,19 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="anubis-glass anubis-ghost-border rounded-[1.5rem] p-5">
       <p className="font-label text-muted-foreground">{label}</p>
-      <p className="mt-3 font-serif text-2xl leading-tight text-foreground">
-        {value}
-      </p>
+      <p className="text-foreground mt-3 font-serif text-2xl leading-tight">{value}</p>
     </div>
   );
 }
 
-function ProfileLine({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
+function ProfileLine({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="anubis-surface-stack rounded-[1.2rem] p-4">
-      <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+      <div className="text-muted-foreground mb-2 flex items-center gap-2">
         {icon}
         <span className="font-label text-muted-foreground">{label}</span>
       </div>
-      <p className="text-sm leading-6 text-foreground">{value}</p>
+      <p className="text-foreground text-sm leading-6">{value}</p>
     </div>
   );
 }
@@ -309,8 +251,7 @@ function FallbackHome() {
     return null;
   }
 
-  const displayName =
-    [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
 
   return (
     <div className="min-h-svh px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
@@ -320,11 +261,11 @@ function FallbackHome() {
             <p className="font-label text-primary">Perfil</p>
             <CardTitle>{displayName}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
+          <CardContent className="text-muted-foreground space-y-4 text-sm leading-6">
             <p>
-              A nova home editorial foi implementada apenas para candidatos
-              nesta fase. Seu acesso continua disponivel com uma visao segura
-              enquanto os demais perfis aguardam a proxima iteracao.
+              A nova home editorial foi implementada apenas para candidatos nesta fase. Seu acesso
+              continua disponivel com uma visao segura enquanto os demais perfis aguardam a proxima
+              iteracao.
             </p>
             <p>Email: {user.email ?? 'Nao informado'}</p>
             <p>Papel: {ROLE_LABELS[user.role] ?? user.role}</p>

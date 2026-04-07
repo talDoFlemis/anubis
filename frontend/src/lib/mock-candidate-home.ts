@@ -63,8 +63,7 @@ export const mockCandidateHome = {
   timeline: [
     {
       title: 'Conta criada e acesso confirmado',
-      description:
-        'Cadastro inicial validado e ambiente liberado para acompanhamento das etapas.',
+      description: 'Cadastro inicial validado e ambiente liberado para acompanhamento das etapas.',
       date: 'Concluido',
       status: 'completed',
     },

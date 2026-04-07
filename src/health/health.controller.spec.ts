@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { HealthCheckService, HttpHealthIndicator } from '@nestjs/terminus';
 import { HealthController } from './health.controller';
 import { DrizzleDBHealthIndicator } from 'src/database/drizzle.health';

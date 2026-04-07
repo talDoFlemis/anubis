@@ -21,12 +21,7 @@ import { PassportModule } from '@nestjs/passport';
     PassportModule.register({ session: true }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    SessionAuthGuard,
-    SessionLifecycleGuard,
-    SessionSerializer,
-  ],
+  providers: [AuthService, SessionAuthGuard, SessionLifecycleGuard, SessionSerializer],
   exports: [AuthService, SessionAuthGuard, SessionLifecycleGuard],
 })
 export class AuthModule {}

@@ -1,11 +1,4 @@
-import {
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, HttpCode, HttpStatus, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiHeader,
   ApiNoContentResponse,

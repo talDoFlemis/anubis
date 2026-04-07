@@ -25,10 +25,7 @@ import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
 import { User } from '../users/domain/user';
 import { CandidateService } from './candidate.service';
-import {
-  CandidateResponseDto,
-  PaginatedCandidateResponseDto,
-} from './dto/candidate-response.dto';
+import { CandidateResponseDto, PaginatedCandidateResponseDto } from './dto/candidate-response.dto';
 import { FindCandidatesDto } from './dto/find-candidates.dto';
 import { PaginatedResult } from '../common/dto/paginated-response.dto';
 
@@ -68,9 +65,7 @@ export class CandidateController {
   @ApiUnauthorizedResponse({ description: 'No active session' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @ApiNotFoundResponse({ description: 'Candidate profile not found' })
-  findOne(
-    @Param('userId', new ParseUUIDPipe()) userId: string,
-  ): Promise<CandidateResponseDto> {
+  findOne(@Param('userId', new ParseUUIDPipe()) userId: string): Promise<CandidateResponseDto> {
     return this.candidateService.findOneById(userId);
   }
 
@@ -82,9 +77,7 @@ export class CandidateController {
   @ApiOkResponse({ type: PaginatedCandidateResponseDto })
   @ApiUnauthorizedResponse({ description: 'No active session' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  findAll(
-    @Query() filters: FindCandidatesDto,
-  ): Promise<PaginatedResult<CandidateResponseDto>> {
+  findAll(@Query() filters: FindCandidatesDto): Promise<PaginatedResult<CandidateResponseDto>> {
     return this.candidateService.findAll(filters);
   }
 }

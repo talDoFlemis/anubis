@@ -41,10 +41,7 @@ export class AuthService {
     authProvider: AuthProvidersEnum,
     socialData: SocialInterface,
   ): Promise<{ user: User; loginResponse: LoginResponseDto }> {
-    this.logger.debug(
-      { provider: authProvider, subject: socialData.id },
-      'Social login attempt',
-    );
+    this.logger.debug({ provider: authProvider, subject: socialData.id }, 'Social login attempt');
 
     if (!socialData.id || !socialData.email || !socialData.verified_email) {
       throw new UnprocessableEntityException({
@@ -66,8 +63,7 @@ export class AuthService {
       };
     }
 
-    const existingByEmail =
-      await this.usersService.findByEmail(normalizedEmail);
+    const existingByEmail = await this.usersService.findByEmail(normalizedEmail);
     if (existingByEmail) {
       throw new ConflictException({
         message: `Este e-mail ja pertence a uma conta criada com ${existingByEmail.authProvider}. Use seu provedor original.`,
@@ -131,11 +127,7 @@ export class AuthService {
     return this.usersService.findById(userId);
   }
 
-  async update(
-    userId: string,
-    sessionId: string,
-    userDto: AuthUpdateDto,
-  ): Promise<User | null> {
+  async update(userId: string, sessionId: string, userDto: AuthUpdateDto): Promise<User | null> {
     const currentUser = await this.usersService.findById(userId);
     if (!currentUser) {
       throw new NotFoundException({ message: 'Usuario nao encontrado.' });
@@ -158,10 +150,7 @@ export class AuthService {
       }
     }
 
-    const passwordUpdate = await this.preparePasswordUpdate(
-      userDto,
-      currentUser,
-    );
+    const passwordUpdate = await this.preparePasswordUpdate(userDto, currentUser);
 
     if (userDto.email && userDto.email !== currentUser.email) {
       const normalizedEmail = userDto.email.toLowerCase().trim();
@@ -173,8 +162,7 @@ export class AuthService {
         });
       }
 
-      const nextConfirmEmailTokenVersion =
-        currentUser.confirmEmailTokenVersion + 1;
+      const nextConfirmEmailTokenVersion = currentUser.confirmEmailTokenVersion + 1;
       await this.usersService.update(currentUser.id, {
         confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
       });
@@ -187,9 +175,7 @@ export class AuthService {
         },
         {
           secret: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_SECRET'),
-          expiresIn: this.configService.getOrThrow(
-            'AUTH_CONFIRM_EMAIL_EXPIRES_IN',
-          ),
+          expiresIn: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_EXPIRES_IN'),
         },
       );
 
@@ -210,10 +196,8 @@ export class AuthService {
     }
 
     const updatePayload: Record<string, unknown> = {};
-    if (userDto.firstName !== undefined)
-      updatePayload.firstName = userDto.firstName;
-    if (userDto.lastName !== undefined)
-      updatePayload.lastName = userDto.lastName;
+    if (userDto.firstName !== undefined) updatePayload.firstName = userDto.firstName;
+    if (userDto.lastName !== undefined) updatePayload.lastName = userDto.lastName;
     if (userDto.cpf !== undefined) updatePayload.cpf = userDto.cpf;
     if (passwordUpdate) {
       updatePayload.password = passwordUpdate.hashedPassword;
@@ -259,8 +243,7 @@ export class AuthService {
 
     if (currentUser.authProvider !== AuthProvidersEnum.email) {
       throw new BadRequestException({
-        message:
-          'Conta cadastrada com outro provedor. Use seu provedor original.',
+        message: 'Conta cadastrada com outro provedor. Use seu provedor original.',
       });
     }
 
@@ -274,10 +257,7 @@ export class AuthService {
       throw new BadRequestException({ message: 'Senha atual incorreta.' });
     }
 
-    const isValidOldPassword = await bcrypt.compare(
-      userDto.oldPassword,
-      currentUser.password,
-    );
+    const isValidOldPassword = await bcrypt.compare(userDto.oldPassword, currentUser.password);
 
     if (!isValidOldPassword) {
       throw new BadRequestException({ message: 'Senha atual incorreta.' });

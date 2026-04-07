@@ -1,5 +1,5 @@
-import { User } from '../../domain/user';
-import { AuthProvidersEnum } from '../../../auth/auth-providers.enum';
+import type { User } from '../../domain/user';
+import type { AuthProvidersEnum } from '../../../auth/auth-providers.enum';
 
 export type NullableUser = User | null;
 
@@ -51,10 +51,7 @@ export abstract class UserRepository {
     providerSubject: string;
   }): Promise<NullableUser>;
 
-  abstract update(
-    id: User['id'],
-    payload: UpdateUserData,
-  ): Promise<NullableUser>;
+  abstract update(id: User['id'], payload: UpdateUserData): Promise<NullableUser>;
 
   abstract remove(id: User['id']): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import {
   createTestDrizzle,
   truncateAllTables,
@@ -85,7 +85,7 @@ describe('SessionDrizzleRepository (integration)', () => {
       const remaining = await getAllSessions();
       expect(remaining).toHaveLength(2);
 
-      const sids = remaining.map((r) => r.sid).sort();
+      const sids = remaining.map(r => r.sid).sort();
       expect(sids).toEqual(['sess-2', 'sess-4']);
     });
 
