@@ -1,12 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import {
-  AuthErrorMessage,
-  AuthPageLayout,
-  EmailField,
-  SubmitButton,
-} from '@/components/auth';
+import { AuthErrorMessage, AuthPageLayout, EmailField, SubmitButton } from '@/components/auth';
 import { useForgotPassword } from '@/hooks/use-auth';
 import { AUTH_FORGOT_PASSWORD_ROUTE, AUTH_HOME_ROUTE } from '@/lib/auth-flow';
 
@@ -25,9 +20,7 @@ function ForgotPasswordPage() {
       { email },
       {
         onSuccess: () => {
-          toast.success(
-            'Email enviado! Verifique sua caixa de entrada para redefinir a senha.',
-          );
+          toast.success('Email enviado! Verifique sua caixa de entrada para redefinir a senha.');
         },
       },
     );
@@ -50,10 +43,7 @@ function ForgotPasswordPage() {
       ]}
       compact
       footer={
-        <Link
-          to={AUTH_HOME_ROUTE}
-          className="text-primary underline-offset-4 hover:underline"
-        >
+        <Link to={AUTH_HOME_ROUTE} className="text-primary underline-offset-4 hover:underline">
           Voltar para o login
         </Link>
       }
@@ -61,9 +51,7 @@ function ForgotPasswordPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <EmailField value={email} onChange={setEmail} />
 
-        <AuthErrorMessage
-          message={forgotPassword.isError ? forgotPassword.error.message : null}
-        />
+        <AuthErrorMessage message={forgotPassword.isError ? forgotPassword.error.message : null} />
 
         <SubmitButton
           isPending={forgotPassword.isPending}

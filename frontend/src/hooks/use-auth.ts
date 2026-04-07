@@ -1,9 +1,4 @@
-import {
-  queryOptions,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { api, type CandidateProfile, type User } from '@/lib/api';
 import { AUTH_SIGN_IN_ROUTE, getPostAuthPath } from '@/lib/auth-flow';
@@ -33,9 +28,7 @@ export function useMyCandidateProfile(enabled = true) {
   });
 }
 
-async function refreshCurrentUser(
-  queryClient: ReturnType<typeof useQueryClient>,
-) {
+async function refreshCurrentUser(queryClient: ReturnType<typeof useQueryClient>) {
   await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
   return queryClient.fetchQuery({ ...authQueryOptions, staleTime: 0 });
 }
@@ -46,7 +39,7 @@ export function useEmailLogin() {
 
   return useMutation({
     mutationFn: api.auth.emailLogin,
-    onSuccess: async (data) => {
+    onSuccess: async data => {
       await refreshCurrentUser(queryClient);
       queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
       navigate({ to: getPostAuthPath(data) });
@@ -60,7 +53,7 @@ export function useGoogleLogin() {
 
   return useMutation({
     mutationFn: api.auth.googleLogin,
-    onSuccess: async (data) => {
+    onSuccess: async data => {
       await refreshCurrentUser(queryClient);
       queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
       navigate({ to: getPostAuthPath(data) });
@@ -79,7 +72,7 @@ export function useCompleteCandidateOnboarding() {
 
   return useMutation({
     mutationFn: api.auth.completeCandidateOnboarding,
-    onSuccess: async (user) => {
+    onSuccess: async user => {
       queryClient.setQueryData(['auth', 'me'], user);
       await refreshCurrentUser(queryClient);
       await queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
@@ -92,7 +85,7 @@ export function useUpdateProfile() {
 
   return useMutation({
     mutationFn: api.auth.update,
-    onSuccess: async (user) => {
+    onSuccess: async user => {
       queryClient.setQueryData(['auth', 'me'], user as User | null);
       await refreshCurrentUser(queryClient);
       await queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
@@ -132,10 +125,7 @@ export function useLogout() {
     mutationFn: api.auth.logout,
     onSuccess: () => {
       queryClient.setQueryData(['auth', 'me'], null);
-      queryClient.setQueryData(
-        ['candidates', 'me'],
-        null as CandidateProfile | null,
-      );
+      queryClient.setQueryData(['candidates', 'me'], null as CandidateProfile | null);
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
       navigate({ to: AUTH_SIGN_IN_ROUTE });

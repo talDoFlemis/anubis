@@ -35,7 +35,7 @@ export function PasswordField({
         {forgotPasswordLink ? (
           <Link
             to="/auth/forgot-password"
-            className="text-sm text-primary underline-offset-4 hover:underline"
+            className="text-primary text-sm underline-offset-4 hover:underline"
           >
             Recuperar acesso
           </Link>
@@ -47,7 +47,7 @@ export function PasswordField({
           type={visible ? 'text' : 'password'}
           placeholder={placeholder}
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={event => onChange(event.target.value)}
           minLength={minLength}
           required={required}
           className="pr-11"
@@ -56,16 +56,12 @@ export function PasswordField({
           type="button"
           variant="ghost"
           size="icon"
-          className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 active:translate-y-[-50%]"
-          onClick={() => setVisible((prev) => !prev)}
+          className="absolute top-1/2 right-1 h-9 w-9 -translate-y-1/2 active:translate-y-[-50%]"
+          onClick={() => setVisible(prev => !prev)}
           tabIndex={-1}
           aria-label={visible ? 'Ocultar senha' : 'Mostrar senha'}
         >
-          {visible ? (
-            <EyeOff className="h-4 w-4" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
+          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </Button>
       </div>
     </div>

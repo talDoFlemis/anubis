@@ -44,9 +44,7 @@ function SignUpPage() {
       },
       {
         onSuccess: () => {
-          toast.success(
-            'Conta criada! Verifique seu email para confirmar o cadastro.',
-          );
+          toast.success('Conta criada! Verifique seu email para confirmar o cadastro.');
           navigate({ to: AUTH_SIGN_IN_ROUTE });
         },
       },
@@ -72,10 +70,7 @@ function SignUpPage() {
       footer={
         <>
           Ja possui acesso?{' '}
-          <Link
-            to={AUTH_SIGN_IN_ROUTE}
-            className="text-primary underline-offset-4 hover:underline"
-          >
+          <Link to={AUTH_SIGN_IN_ROUTE} className="text-primary underline-offset-4 hover:underline">
             Entrar
           </Link>
           .
@@ -90,7 +85,7 @@ function SignUpPage() {
               id="firstName"
               placeholder="Seu nome"
               value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
+              onChange={event => setFirstName(event.target.value)}
               required
             />
           </div>
@@ -100,7 +95,7 @@ function SignUpPage() {
               id="lastName"
               placeholder="Seu sobrenome"
               value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
+              onChange={event => setLastName(event.target.value)}
               required
             />
           </div>
@@ -116,7 +111,7 @@ function SignUpPage() {
               inputMode="numeric"
               placeholder="Somente numeros"
               value={cpf}
-              onChange={(event) => setCpf(event.target.value)}
+              onChange={event => setCpf(event.target.value)}
               required
             />
           </div>
@@ -126,7 +121,7 @@ function SignUpPage() {
               id="universityOfOrigin"
               placeholder="Ex.: UFRN"
               value={universityOfOrigin}
-              onChange={(event) => setUniversityOfOrigin(event.target.value)}
+              onChange={event => setUniversityOfOrigin(event.target.value)}
               required
             />
           </div>
@@ -141,9 +136,7 @@ function SignUpPage() {
           minLength={6}
         />
 
-        <AuthErrorMessage
-          message={register.isError ? register.error.message : null}
-        />
+        <AuthErrorMessage message={register.isError ? register.error.message : null} />
 
         <SubmitButton
           isPending={register.isPending}

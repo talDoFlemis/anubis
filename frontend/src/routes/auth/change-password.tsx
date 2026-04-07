@@ -40,7 +40,7 @@ function ChangePasswordPage() {
         password,
       },
       {
-        onSuccess: (updatedUser) => {
+        onSuccess: updatedUser => {
           navigate({ to: getPostAuthPath(updatedUser) });
         },
       },
@@ -59,9 +59,7 @@ function ChangePasswordPage() {
         { label: 'Acao', value: 'Nova senha' },
         { label: 'Destino', value: 'Home' },
       ]}
-      notes={[
-        'Use a senha temporaria recebida anteriormente para autorizar a troca nesta etapa.',
-      ]}
+      notes={['Use a senha temporaria recebida anteriormente para autorizar a troca nesta etapa.']}
       compact
     >
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -91,9 +89,7 @@ function ChangePasswordPage() {
           minLength={6}
         />
 
-        <AuthErrorMessage
-          message={updateProfile.isError ? updateProfile.error.message : null}
-        />
+        <AuthErrorMessage message={updateProfile.isError ? updateProfile.error.message : null} />
 
         <SubmitButton
           isPending={updateProfile.isPending}

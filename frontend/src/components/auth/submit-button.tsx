@@ -6,11 +6,7 @@ interface SubmitButtonProps {
   pendingLabel: string;
 }
 
-export function SubmitButton({
-  isPending,
-  label,
-  pendingLabel,
-}: SubmitButtonProps) {
+export function SubmitButton({ isPending, label, pendingLabel }: SubmitButtonProps) {
   return (
     <Button type="submit" className="w-full" disabled={isPending}>
       {isPending ? pendingLabel : label}

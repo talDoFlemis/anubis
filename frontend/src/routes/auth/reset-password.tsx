@@ -42,14 +42,11 @@ function ResetPasswordPage() {
             description="Solicite um novo envio e retome o fluxo a partir do email cadastrado."
             className="bg-[rgba(186,26,26,0.08)]"
           >
-            <XCircle className="h-5 w-5 text-destructive" />
+            <XCircle className="text-destructive h-5 w-5" />
           </AuthCallout>
         }
         footer={
-          <Button
-            variant="outline"
-            onClick={() => navigate({ to: AUTH_SIGN_IN_ROUTE })}
-          >
+          <Button variant="outline" onClick={() => navigate({ to: AUTH_SIGN_IN_ROUTE })}>
             Ir para o login
           </Button>
         }
@@ -95,14 +92,11 @@ function ResetPasswordPage() {
           title="Link de recuperacao validado"
           description="Agora falta apenas registrar a nova senha para voltar ao fluxo normal de acesso."
         >
-          <KeyRound className="h-5 w-5 text-primary" />
+          <KeyRound className="text-primary h-5 w-5" />
         </AuthCallout>
       }
       footer={
-        <Link
-          to={AUTH_SIGN_IN_ROUTE}
-          className="text-primary underline-offset-4 hover:underline"
-        >
+        <Link to={AUTH_SIGN_IN_ROUTE} className="text-primary underline-offset-4 hover:underline">
           Cancelar e voltar ao login
         </Link>
       }
@@ -126,9 +120,7 @@ function ResetPasswordPage() {
           minLength={6}
         />
 
-        <AuthErrorMessage
-          message={resetPassword.isError ? resetPassword.error.message : null}
-        />
+        <AuthErrorMessage message={resetPassword.isError ? resetPassword.error.message : null} />
 
         <SubmitButton
           isPending={resetPassword.isPending}

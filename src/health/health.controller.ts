@@ -1,10 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
-import {
-  ApiOperation,
-  ApiServiceUnavailableResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
 import { ApiOkResponse } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { DrizzleDBHealthIndicator } from 'src/database/drizzle.health';

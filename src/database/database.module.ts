@@ -7,12 +7,7 @@ import { TransactionMiddleware } from './transaction.middleware';
 
 @Global()
 @Module({
-  providers: [
-    drizzleProvider,
-    drizzleTxProvider,
-    DrizzleDBHealthIndicator,
-    HealthIndicatorService,
-  ],
+  providers: [drizzleProvider, drizzleTxProvider, DrizzleDBHealthIndicator, HealthIndicatorService],
   exports: [drizzleProvider, drizzleTxProvider, DrizzleDBHealthIndicator],
 })
 export class DatabaseModule implements NestModule {

@@ -1,13 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  Matches,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, Matches, Max, MaxLength, Min } from 'class-validator';
 import { IsCpf } from 'src/common/validators/is-cpf.validator';
 
 export class CompleteCandidateOnboardingDto {

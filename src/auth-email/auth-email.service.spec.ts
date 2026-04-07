@@ -1,11 +1,8 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  BadRequestException,
-  ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -18,7 +15,7 @@ import { MailService } from '../mail/mail.service';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
-import { User } from '../users/domain/user';
+import type { User } from '../users/domain/user';
 
 jest.mock('bcrypt', () => ({ compare: jest.fn(), hash: jest.fn() }));
 

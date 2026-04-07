@@ -6,10 +6,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { AuthProvidersEnum } from 'src/auth/auth-providers.enum';
 
 @Injectable()
-export class GoogleIdTokenStrategy extends PassportStrategy(
-  Strategy,
-  'google-id-token',
-) {
+export class GoogleIdTokenStrategy extends PassportStrategy(Strategy, 'google-id-token') {
   constructor(
     private readonly authGoogleService: AuthGoogleService,
     private readonly authService: AuthService,

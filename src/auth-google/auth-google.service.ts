@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { SocialInterface } from '../social/interfaces/social.interface';
@@ -19,9 +15,7 @@ export class AuthGoogleService {
     );
   }
 
-  async getProfileByToken(
-    loginDto: AuthGoogleLoginDto,
-  ): Promise<SocialInterface> {
+  async getProfileByToken(loginDto: AuthGoogleLoginDto): Promise<SocialInterface> {
     const ticket = await this.google.verifyIdToken({
       idToken: loginDto.idToken,
       audience: [this.configService.getOrThrow('GOOGLE_CLIENT_ID')],
@@ -30,9 +24,7 @@ export class AuthGoogleService {
     const data = ticket.getPayload();
 
     if (!data) {
-      throw new UnprocessableEntityException(
-        'Falha ao verificar o token do Google.',
-      );
+      throw new UnprocessableEntityException('Falha ao verificar o token do Google.');
     }
 
     if (!data.email_verified) {

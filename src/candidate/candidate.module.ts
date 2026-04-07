@@ -11,13 +11,7 @@ import { CandidateDrizzlePersistenceModule } from './infrastructure/persistence/
 @Module({
   imports: [UsersModule, CandidateDrizzlePersistenceModule],
   controllers: [CandidateController],
-  providers: [
-    CandidateService,
-    SessionAuthGuard,
-    SessionLifecycleGuard,
-    RolesGuard,
-    Reflector,
-  ],
+  providers: [CandidateService, SessionAuthGuard, SessionLifecycleGuard, RolesGuard, Reflector],
   exports: [CandidateService],
 })
 export class CandidateModule {}

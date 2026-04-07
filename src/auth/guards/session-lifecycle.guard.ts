@@ -30,17 +30,15 @@ export class SessionLifecycleGuard implements CanActivate {
     const userId = session?.id;
 
     if (!userId) {
-      this.logger.error(
-        'Restricted-session guard denied unauthenticated access',
-      );
+      this.logger.error('Restricted-session guard denied unauthenticated access');
       throw new UnauthorizedException();
     }
 
     const allowedReasons =
-      this.reflector.getAllAndOverride<RestrictedSessionReason[]>(
-        ALLOW_RESTRICTED_SESSION_KEY,
-        [context.getHandler(), context.getClass()],
-      ) ?? [];
+      this.reflector.getAllAndOverride<RestrictedSessionReason[]>(ALLOW_RESTRICTED_SESSION_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? [];
 
     const reason = this.resolveRestrictionReason(session);
     if (!reason) {
@@ -49,17 +47,11 @@ export class SessionLifecycleGuard implements CanActivate {
     }
 
     if (allowedReasons.includes(reason)) {
-      this.logger.debug(
-        { userId, reason },
-        'Restricted-session guard allowed restricted route',
-      );
+      this.logger.debug({ userId, reason }, 'Restricted-session guard allowed restricted route');
       return true;
     }
 
-    this.logger.error(
-      { userId, reason },
-      'Restricted-session guard blocked access',
-    );
+    this.logger.error({ userId, reason }, 'Restricted-session guard blocked access');
     throw new ForbiddenException(
       'Sessao autenticada com restricoes de seguranca. Conclua a etapa obrigatoria antes de acessar este recurso.',
     );

@@ -46,10 +46,7 @@ export class SessionService {
     return this.sessionRepository.deleteByUserId(userId);
   }
 
-  deleteByUserIdWithExclude(params: {
-    userId: string;
-    excludeSessionId: string;
-  }): Promise<void> {
+  deleteByUserIdWithExclude(params: { userId: string; excludeSessionId: string }): Promise<void> {
     return this.sessionRepository.deleteByUserIdWithExclude(params);
   }
 
@@ -65,10 +62,7 @@ export class SessionService {
       return true;
     }
 
-    return (
-      previousUser.status !== nextUser.status &&
-      nextUser.status !== StatusEnum.active
-    );
+    return previousUser.status !== nextUser.status && nextUser.status !== StatusEnum.active;
   }
 
   private didSnapshotChange(

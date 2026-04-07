@@ -28,10 +28,7 @@ import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candid
 import { AuthUpdateDto } from '../auth-email/dto/auth-update.dto';
 import { SessionAuthGuard } from './guards/session-auth.guard';
 import { AuthService } from './auth.service';
-import {
-  RestrictedSessionReason,
-  SessionLifecycleGuard,
-} from './guards/session-lifecycle.guard';
+import { RestrictedSessionReason, SessionLifecycleGuard } from './guards/session-lifecycle.guard';
 import { AllowRestrictedSession } from './decorators/allow-restricted-session.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '../users/domain/user';
@@ -83,10 +80,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Old password missing or incorrect' })
   @ApiConflictResponse({ description: 'New email address is already taken' })
   @ApiUnprocessableEntityResponse({ description: 'Validation failed' })
-  async update(
-    @Req() req: Request,
-    @Body() userDto: AuthUpdateDto,
-  ): Promise<User | null> {
+  async update(@Req() req: Request, @Body() userDto: AuthUpdateDto): Promise<User | null> {
     return this.authService.update(req.user!.id, req.session.id, userDto);
   }
 
@@ -101,7 +95,7 @@ export class AuthController {
   async delete(@Req() req: Request): Promise<void> {
     await this.authService.deleteUser(req.user!.id);
     await new Promise<void>((resolve, reject) => {
-      req.session.destroy((err) => {
+      req.session.destroy(err => {
         if (err) reject(err instanceof Error ? err : new Error(String(err)));
         else resolve();
       });
@@ -120,7 +114,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'No active session' })
   async logout(@Req() req: Request): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-      req.session.destroy((err) => {
+      req.session.destroy(err => {
         if (err) reject(err instanceof Error ? err : new Error(String(err)));
         else resolve();
       });

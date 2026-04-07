@@ -24,7 +24,7 @@ export function EmailField({
         type="email"
         placeholder={placeholder}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={event => onChange(event.target.value)}
         required={required}
       />
     </div>

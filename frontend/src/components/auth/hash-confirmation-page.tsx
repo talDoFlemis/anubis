@@ -41,11 +41,7 @@ interface HashConfirmationPageProps {
   config: HashConfirmationConfig;
 }
 
-export function HashConfirmationPage({
-  hash,
-  mutation,
-  config,
-}: HashConfirmationPageProps) {
+export function HashConfirmationPage({ hash, mutation, config }: HashConfirmationPageProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,14 +63,11 @@ export function HashConfirmationPage({
             description={config.invalidHash.calloutDescription}
             className="bg-[rgba(186,26,26,0.08)]"
           >
-            <XCircle className="h-5 w-5 text-destructive" />
+            <XCircle className="text-destructive h-5 w-5" />
           </AuthCallout>
         }
         footer={
-          <Button
-            variant="outline"
-            onClick={() => navigate({ to: config.errorAction.to })}
-          >
+          <Button variant="outline" onClick={() => navigate({ to: config.errorAction.to })}>
             {config.errorAction.label}
           </Button>
         }
@@ -96,7 +89,7 @@ export function HashConfirmationPage({
             title={config.pending.calloutTitle}
             description={config.pending.calloutDescription}
           >
-            <LoaderCircle className="h-5 w-5 animate-spin text-primary" />
+            <LoaderCircle className="text-primary h-5 w-5 animate-spin" />
           </AuthCallout>
         }
       >
@@ -118,14 +111,11 @@ export function HashConfirmationPage({
             description={mutation.error.message}
             className="bg-[rgba(186,26,26,0.08)]"
           >
-            <XCircle className="h-5 w-5 text-destructive" />
+            <XCircle className="text-destructive h-5 w-5" />
           </AuthCallout>
         }
         footer={
-          <Button
-            variant="outline"
-            onClick={() => navigate({ to: config.errorAction.to })}
-          >
+          <Button variant="outline" onClick={() => navigate({ to: config.errorAction.to })}>
             {config.errorAction.label}
           </Button>
         }
@@ -146,7 +136,7 @@ export function HashConfirmationPage({
           title={config.success.calloutTitle}
           description={config.success.calloutDescription}
         >
-          <CheckCircle className="h-5 w-5 text-primary" />
+          <CheckCircle className="text-primary h-5 w-5" />
         </AuthCallout>
       }
       footer={

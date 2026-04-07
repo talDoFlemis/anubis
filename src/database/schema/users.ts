@@ -1,12 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  pgEnum,
-  timestamp,
-  boolean,
-  integer,
-} from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, pgEnum, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
 
 export const roleEnum = pgEnum('role', [
   'professor',
@@ -35,18 +27,10 @@ export const users = pgTable('users', {
   bootstrapPasswordExpiresAt: timestamp('bootstrap_password_expires_at', {
     withTimezone: true,
   }),
-  confirmEmailTokenVersion: integer('confirm_email_token_version')
-    .notNull()
-    .default(0),
-  forgotPasswordTokenVersion: integer('forgot_password_token_version')
-    .notNull()
-    .default(0),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  confirmEmailTokenVersion: integer('confirm_email_token_version').notNull().default(0),
+  forgotPasswordTokenVersion: integer('forgot_password_token_version').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export type UserInsert = typeof users.$inferInsert;

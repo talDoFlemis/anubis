@@ -43,11 +43,10 @@ export function AuthPageLayout({
               <div className="space-y-5">
                 <p className="font-label text-primary">Plataforma Anubis</p>
                 <div className="space-y-4">
-                  <h1 className="font-serif text-4xl leading-tight tracking-[-0.03em] text-foreground xl:text-5xl">
-                    {asideTitle ??
-                      'Curadoria academica para jornadas de ingresso.'}
+                  <h1 className="text-foreground font-serif text-4xl leading-tight tracking-[-0.03em] xl:text-5xl">
+                    {asideTitle ?? 'Curadoria academica para jornadas de ingresso.'}
                   </h1>
-                  <p className="max-w-xl text-base leading-7 text-muted-foreground">
+                  <p className="text-muted-foreground max-w-xl text-base leading-7">
                     {asideDescription ??
                       'Uma experiencia editorial para organizar etapas, documentos e prazos com clareza, calma e prioridade.'}
                   </p>
@@ -56,17 +55,10 @@ export function AuthPageLayout({
 
               {metrics.length ? (
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {metrics.map((metric) => (
-                    <div
-                      key={metric.label}
-                      className="anubis-surface-muted rounded-[1.5rem] p-5"
-                    >
-                      <p className="font-label text-muted-foreground">
-                        {metric.label}
-                      </p>
-                      <p className="mt-3 font-serif text-3xl text-foreground">
-                        {metric.value}
-                      </p>
+                  {metrics.map(metric => (
+                    <div key={metric.label} className="anubis-surface-muted rounded-[1.5rem] p-5">
+                      <p className="font-label text-muted-foreground">{metric.label}</p>
+                      <p className="text-foreground mt-3 font-serif text-3xl">{metric.value}</p>
                     </div>
                   ))}
                 </div>
@@ -74,10 +66,10 @@ export function AuthPageLayout({
 
               {notes.length ? (
                 <div className="space-y-3">
-                  {notes.map((note) => (
+                  {notes.map(note => (
                     <div
                       key={note}
-                      className="anubis-surface-stack rounded-[1.35rem] px-5 py-4 text-sm leading-6 text-muted-foreground"
+                      className="anubis-surface-stack text-muted-foreground rounded-[1.35rem] px-5 py-4 text-sm leading-6"
                     >
                       {note}
                     </div>
@@ -88,20 +80,15 @@ export function AuthPageLayout({
           </section>
 
           <section className="flex items-center justify-center">
-            <Card
-              className={cn(
-                'w-full max-w-xl rounded-[2rem]',
-                compact ? 'max-w-lg' : '',
-              )}
-            >
+            <Card className={cn('w-full max-w-xl rounded-[2rem]', compact ? 'max-w-lg' : '')}>
               <CardContent className="space-y-8 p-7 sm:p-9">
                 <div className="space-y-4">
                   <p className="font-label text-primary">{eyebrow}</p>
                   <div className="space-y-3">
-                    <h2 className="font-serif text-4xl leading-tight tracking-[-0.03em] text-foreground sm:text-[2.7rem]">
+                    <h2 className="text-foreground font-serif text-4xl leading-tight tracking-[-0.03em] sm:text-[2.7rem]">
                       {title}
                     </h2>
-                    <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+                    <p className="text-muted-foreground max-w-2xl text-sm leading-7 sm:text-base">
                       {description}
                     </p>
                   </div>
@@ -112,7 +99,7 @@ export function AuthPageLayout({
                 {children}
 
                 {footer ? (
-                  <div className="border-t border-transparent pt-1 text-sm leading-6 text-muted-foreground">
+                  <div className="text-muted-foreground border-t border-transparent pt-1 text-sm leading-6">
                     {footer}
                   </div>
                 ) : null}
@@ -137,18 +124,11 @@ export function AuthCallout({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        'anubis-surface-muted space-y-3 rounded-[1.5rem] p-5',
-        className,
-      )}
-    >
+    <div className={cn('anubis-surface-muted space-y-3 rounded-[1.5rem] p-5', className)}>
       <div className="space-y-1">
-        <p className="font-serif text-xl text-foreground">{title}</p>
+        <p className="text-foreground font-serif text-xl">{title}</p>
         {description ? (
-          <p className="text-sm leading-6 text-muted-foreground">
-            {description}
-          </p>
+          <p className="text-muted-foreground text-sm leading-6">{description}</p>
         ) : null}
       </div>
       {children}
@@ -162,12 +142,12 @@ export function AuthErrorMessage({ message }: { message?: string | null }) {
   }
 
   return (
-    <div className="rounded-[1.25rem] bg-[rgba(186,26,26,0.08)] px-4 py-3 text-sm text-destructive">
+    <div className="text-destructive rounded-[1.25rem] bg-[rgba(186,26,26,0.08)] px-4 py-3 text-sm">
       {message}
     </div>
   );
 }
 
 export function AuthHelperText({ children }: { children: ReactNode }) {
-  return <p className="text-sm leading-6 text-muted-foreground">{children}</p>;
+  return <p className="text-muted-foreground text-sm leading-6">{children}</p>;
 }

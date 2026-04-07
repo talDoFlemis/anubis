@@ -33,8 +33,7 @@ export function buildPaginatedResult<T>(params: {
   limit: number;
   total: number;
 }): PaginatedResult<T> {
-  const totalPages =
-    params.total === 0 ? 0 : Math.ceil(params.total / params.limit);
+  const totalPages = params.total === 0 ? 0 : Math.ceil(params.total / params.limit);
 
   return {
     data: params.data,

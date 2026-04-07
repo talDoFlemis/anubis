@@ -34,10 +34,7 @@ export class CandidateService {
 
     try {
       await this.candidateRepository.upsertByUserId(params);
-      this.logger.info(
-        { userId: params.userId },
-        'Candidate profile created or updated',
-      );
+      this.logger.info({ userId: params.userId }, 'Candidate profile created or updated');
     } catch (error: unknown) {
       this.logger.error(
         {
@@ -50,10 +47,7 @@ export class CandidateService {
     }
   }
 
-  async completeOnboarding(
-    userId: string,
-    dto: CompleteCandidateOnboardingDto,
-  ): Promise<void> {
+  async completeOnboarding(userId: string, dto: CompleteCandidateOnboardingDto): Promise<void> {
     this.logger.debug({ userId }, 'Candidate onboarding completion requested');
 
     try {
@@ -64,9 +58,7 @@ export class CandidateService {
       }
 
       if (user.role !== RoleEnum.candidate) {
-        throw new BadRequestException(
-          'Apenas candidatos podem concluir onboarding de candidato.',
-        );
+        throw new BadRequestException('Apenas candidatos podem concluir onboarding de candidato.');
       }
 
       const existingCpf = await this.usersService.findByCpf(dto.cpf);
@@ -127,8 +119,7 @@ export class CandidateService {
   async findOneById(userId: string): Promise<CandidateProfile> {
     this.logger.debug({ userId }, 'Fetching candidate aggregate by id');
 
-    const candidate =
-      await this.candidateRepository.findProfileByUserId(userId);
+    const candidate = await this.candidateRepository.findProfileByUserId(userId);
     if (!candidate) {
       throw new NotFoundException('Candidato nao encontrado.');
     }
@@ -136,9 +127,7 @@ export class CandidateService {
     return candidate;
   }
 
-  async findAll(
-    filters: FindCandidatesDto,
-  ): Promise<PaginatedResult<CandidateProfile>> {
+  async findAll(filters: FindCandidatesDto): Promise<PaginatedResult<CandidateProfile>> {
     this.logger.debug({ filters }, 'Fetching candidates by filters');
 
     if (
@@ -154,9 +143,7 @@ export class CandidateService {
       filters.poscompMax !== undefined &&
       filters.poscompMin > filters.poscompMax
     ) {
-      throw new BadRequestException(
-        'poscompMin nao pode ser maior que poscompMax.',
-      );
+      throw new BadRequestException('poscompMin nao pode ser maior que poscompMax.');
     }
 
     return this.candidateRepository.findAllByFilters(filters);

@@ -1,11 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { HashConfirmationPage } from '@/components/auth';
 import { useConfirmNewEmail } from '@/hooks/use-auth';
-import {
-  AUTH_CONFIRM_NEW_EMAIL_ROUTE,
-  AUTH_HOME_ROUTE,
-  validateHashSearch,
-} from '@/lib/auth-flow';
+import { AUTH_CONFIRM_NEW_EMAIL_ROUTE, AUTH_HOME_ROUTE, validateHashSearch } from '@/lib/auth-flow';
 
 export const Route = createFileRoute(AUTH_CONFIRM_NEW_EMAIL_ROUTE)({
   validateSearch: validateHashSearch,
@@ -19,16 +15,14 @@ const CONFIRM_NEW_EMAIL_CONFIG = {
     description:
       'Abra novamente a mensagem mais recente enviada para o novo endereco e tente outra vez.',
     calloutTitle: 'Link invalido',
-    calloutDescription:
-      'A confirmacao do novo email precisa de um link completo e ainda valido.',
+    calloutDescription: 'A confirmacao do novo email precisa de um link completo e ainda valido.',
   },
   pending: {
     title: 'Confirmando o novo endereco da sua conta.',
     description:
       'Estamos validando a alteracao para concluir a atualizacao do seu acesso principal.',
     calloutTitle: 'Validando o novo email',
-    calloutDescription:
-      'Aguarde alguns instantes enquanto a alteracao e registrada.',
+    calloutDescription: 'Aguarde alguns instantes enquanto a alteracao e registrada.',
   },
   error: {
     title: 'Nao foi possivel confirmar o novo endereco.',

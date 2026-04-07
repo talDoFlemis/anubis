@@ -1,20 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import {
-  AuthCallout,
-  AuthErrorMessage,
-  AuthPageLayout,
-  SubmitButton,
-} from '@/components/auth';
+import { AuthCallout, AuthErrorMessage, AuthPageLayout, SubmitButton } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  useAuth,
-  useCompleteCandidateOnboarding,
-  useLogout,
-} from '@/hooks/use-auth';
+import { useAuth, useCompleteCandidateOnboarding, useLogout } from '@/hooks/use-auth';
 import { AUTH_ONBOARDING_ROUTE, getPostAuthPath } from '@/lib/auth-flow';
 
 export const Route = createFileRoute(AUTH_ONBOARDING_ROUTE)({
@@ -50,7 +41,7 @@ function CandidateOnboardingPage() {
         poscomp: poscomp ? Number(poscomp) : undefined,
       },
       {
-        onSuccess: (updatedUser) => {
+        onSuccess: updatedUser => {
           toast.success('Cadastro concluido com sucesso.');
           navigate({ to: getPostAuthPath(updatedUser) });
         },
@@ -83,7 +74,7 @@ function CandidateOnboardingPage() {
             <Input
               id="firstName"
               value={resolvedFirstName}
-              onChange={(event) => setFirstName(event.target.value)}
+              onChange={event => setFirstName(event.target.value)}
               placeholder="Seu nome"
               required
             />
@@ -93,7 +84,7 @@ function CandidateOnboardingPage() {
             <Input
               id="lastName"
               value={resolvedLastName}
-              onChange={(event) => setLastName(event.target.value)}
+              onChange={event => setLastName(event.target.value)}
               placeholder="Seu sobrenome"
               required
             />
@@ -106,7 +97,7 @@ function CandidateOnboardingPage() {
             id="cpf"
             inputMode="numeric"
             value={resolvedCpf}
-            onChange={(event) => setCpf(event.target.value)}
+            onChange={event => setCpf(event.target.value)}
             placeholder="Somente numeros"
             required
           />
@@ -117,7 +108,7 @@ function CandidateOnboardingPage() {
           <Input
             id="universityOfOrigin"
             value={universityOfOrigin}
-            onChange={(event) => setUniversityOfOrigin(event.target.value)}
+            onChange={event => setUniversityOfOrigin(event.target.value)}
             placeholder="Ex.: UFRN"
             required
           />
@@ -130,7 +121,7 @@ function CandidateOnboardingPage() {
               id="ira"
               inputMode="decimal"
               value={ira}
-              onChange={(event) => setIra(event.target.value)}
+              onChange={event => setIra(event.target.value)}
               placeholder="Ex.: 8.75"
             />
           </div>
@@ -140,15 +131,13 @@ function CandidateOnboardingPage() {
               id="poscomp"
               inputMode="numeric"
               value={poscomp}
-              onChange={(event) => setPoscomp(event.target.value)}
+              onChange={event => setPoscomp(event.target.value)}
               placeholder="Ex.: 780"
             />
           </div>
         </div>
 
-        <AuthErrorMessage
-          message={onboarding.isError ? onboarding.error.message : null}
-        />
+        <AuthErrorMessage message={onboarding.isError ? onboarding.error.message : null} />
 
         <SubmitButton
           isPending={onboarding.isPending}

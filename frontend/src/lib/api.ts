@@ -8,11 +8,7 @@ export class ApiError extends Error {
   status: number;
   legacyErrors: Record<string, string> | null;
 
-  constructor(
-    status: number,
-    message: string,
-    legacyErrors: Record<string, string> | null = null,
-  ) {
+  constructor(status: number, message: string, legacyErrors: Record<string, string> | null = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
@@ -38,9 +34,7 @@ function normalizeErrors(value: unknown): Record<string, string> | null {
   }
 
   const normalizedEntries = Object.entries(value as Record<string, unknown>)
-    .map(
-      ([field, fieldValue]) => [field, normalizeMessage(fieldValue)] as const,
-    )
+    .map(([field, fieldValue]) => [field, normalizeMessage(fieldValue)] as const)
     .filter((entry): entry is [string, string] => Boolean(entry[1]));
 
   if (normalizedEntries.length === 0) {
@@ -68,10 +62,7 @@ function parseErrorBody(body: unknown): {
   };
 }
 
-async function request<T>(
-  endpoint: string,
-  options: RequestOptions = {},
-): Promise<T> {
+async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers, ...rest } = options;
 
   const response = await fetch(`${API_URL}/v1${endpoint}`, {

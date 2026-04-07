@@ -58,9 +58,7 @@ export class CandidateDrizzleRepository extends CandidateRepository {
     return row ? this.toProfile(row) : null;
   }
 
-  async findAllByFilters(
-    filters: FindCandidatesDto,
-  ): Promise<PaginatedResult<CandidateProfile>> {
+  async findAllByFilters(filters: FindCandidatesDto): Promise<PaginatedResult<CandidateProfile>> {
     const conditions: SQL[] = [];
     const page = filters.page ?? 1;
     const limit = filters.limit ?? 20;
@@ -85,24 +83,16 @@ export class CandidateDrizzleRepository extends CandidateRepository {
       conditions.push(eq(users.status, filters.status));
     }
     if (filters.onboardingCompleted !== undefined) {
-      conditions.push(
-        eq(users.onboardingCompleted, filters.onboardingCompleted),
-      );
+      conditions.push(eq(users.onboardingCompleted, filters.onboardingCompleted));
     }
     if (filters.universityOfOrigin) {
-      conditions.push(
-        ilike(candidates.universityOfOrigin, `%${filters.universityOfOrigin}%`),
-      );
+      conditions.push(ilike(candidates.universityOfOrigin, `%${filters.universityOfOrigin}%`));
     }
     if (filters.iraMin !== undefined) {
-      conditions.push(
-        gte(sql`${candidates.ira}::numeric`, String(filters.iraMin)),
-      );
+      conditions.push(gte(sql`${candidates.ira}::numeric`, String(filters.iraMin)));
     }
     if (filters.iraMax !== undefined) {
-      conditions.push(
-        lte(sql`${candidates.ira}::numeric`, String(filters.iraMax)),
-      );
+      conditions.push(lte(sql`${candidates.ira}::numeric`, String(filters.iraMax)));
     }
     if (filters.poscompMin !== undefined) {
       conditions.push(gte(candidates.poscomp, filters.poscompMin));
@@ -141,7 +131,7 @@ export class CandidateDrizzleRepository extends CandidateRepository {
       .where(conditions.length ? and(...conditions) : undefined);
 
     return buildPaginatedResult({
-      data: rows.map((row) => this.toProfile(row)),
+      data: rows.map(row => this.toProfile(row)),
       page,
       limit,
       total: totalRow?.count ?? 0,

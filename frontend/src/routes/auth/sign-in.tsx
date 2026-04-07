@@ -46,10 +46,7 @@ function SignInPage() {
       footer={
         <>
           Candidatos ainda nao cadastrados podem{' '}
-          <Link
-            to={AUTH_SIGN_IN_ROUTE}
-            className="text-primary underline-offset-4 hover:underline"
-          >
+          <Link to={AUTH_SIGN_IN_ROUTE} className="text-primary underline-offset-4 hover:underline">
             criar a conta aqui
           </Link>
           .
@@ -67,15 +64,9 @@ function SignInPage() {
           forgotPasswordLink
         />
 
-        <AuthErrorMessage
-          message={emailLogin.isError ? emailLogin.error.message : null}
-        />
+        <AuthErrorMessage message={emailLogin.isError ? emailLogin.error.message : null} />
 
-        <SubmitButton
-          isPending={emailLogin.isPending}
-          label="Entrar"
-          pendingLabel="Entrando..."
-        />
+        <SubmitButton isPending={emailLogin.isPending} label="Entrar" pendingLabel="Entrando..." />
       </form>
 
       <OAuthDivider />

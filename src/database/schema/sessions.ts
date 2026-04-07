@@ -14,5 +14,5 @@ export const sessions = pgTable(
       withTimezone: false,
     }).notNull(),
   },
-  (table) => [index('IDX_session_expire').on(table.expire)],
+  table => [index('IDX_session_expire').on(table.expire)],
 );

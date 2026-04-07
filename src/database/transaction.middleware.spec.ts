@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { TransactionMiddleware } from './transaction.middleware';
 import { transactionStorage } from './transaction.cls';
 import type { DrizzleDB } from './drizzle.provider';
@@ -39,7 +39,7 @@ describe('TransactionMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  it('should store the transaction in AsyncLocalStorage and call next', (done) => {
+  it('should store the transaction in AsyncLocalStorage and call next', done => {
     const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
 
@@ -54,28 +54,24 @@ describe('TransactionMiddleware', () => {
       res.emit('finish');
     });
 
-    mockDb.transaction.mockImplementation(
-      async (callback: (tx: DrizzleDB) => Promise<void>) => {
-        await callback(mockTx);
-        done();
-      },
-    );
+    mockDb.transaction.mockImplementation(async (callback: (tx: DrizzleDB) => Promise<void>) => {
+      await callback(mockTx);
+      done();
+    });
 
     middleware.use(req, res, next);
   });
 
-  it('should commit transaction when response status is < 400', (done) => {
+  it('should commit transaction when response status is < 400', done => {
     const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
 
-    mockDb.transaction.mockImplementation(
-      async (callback: (tx: DrizzleDB) => Promise<void>) => {
-        // If the callback resolves, the transaction commits
-        await callback(mockTx);
-        // Reaching here means commit (no error thrown)
-        done();
-      },
-    );
+    mockDb.transaction.mockImplementation(async (callback: (tx: DrizzleDB) => Promise<void>) => {
+      // If the callback resolves, the transaction commits
+      await callback(mockTx);
+      // Reaching here means commit (no error thrown)
+      done();
+    });
 
     const next = jest.fn(() => {
       res.statusCode = 200;
@@ -85,23 +81,21 @@ describe('TransactionMiddleware', () => {
     middleware.use(req, res, next);
   });
 
-  it('should rollback transaction when response status is >= 400', (done) => {
+  it('should rollback transaction when response status is >= 400', done => {
     const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     res.headersSent = true;
 
-    mockDb.transaction.mockImplementation(
-      async (callback: (tx: DrizzleDB) => Promise<void>) => {
-        try {
-          await callback(mockTx);
-          done.fail('Expected transaction to be rejected');
-        } catch (err) {
-          expect(err).toBeInstanceOf(Error);
-          expect((err as Error).message).toBe('HTTP 422');
-          done();
-        }
-      },
-    );
+    mockDb.transaction.mockImplementation(async (callback: (tx: DrizzleDB) => Promise<void>) => {
+      try {
+        await callback(mockTx);
+        done.fail('Expected transaction to be rejected');
+      } catch (err) {
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toBe('HTTP 422');
+        done();
+      }
+    });
 
     const next = jest.fn(() => {
       res.statusCode = 422;
@@ -111,23 +105,21 @@ describe('TransactionMiddleware', () => {
     middleware.use(req, res, next);
   });
 
-  it('should rollback transaction on response error event', (done) => {
+  it('should rollback transaction on response error event', done => {
     const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     res.headersSent = true;
     const streamError = new Error('connection reset');
 
-    mockDb.transaction.mockImplementation(
-      async (callback: (tx: DrizzleDB) => Promise<void>) => {
-        try {
-          await callback(mockTx);
-          done.fail('Expected transaction to be rejected');
-        } catch (err) {
-          expect(err).toBe(streamError);
-          done();
-        }
-      },
-    );
+    mockDb.transaction.mockImplementation(async (callback: (tx: DrizzleDB) => Promise<void>) => {
+      try {
+        await callback(mockTx);
+        done.fail('Expected transaction to be rejected');
+      } catch (err) {
+        expect(err).toBe(streamError);
+        done();
+      }
+    });
 
     const next = jest.fn(() => {
       res.emit('error', streamError);
@@ -136,7 +128,7 @@ describe('TransactionMiddleware', () => {
     middleware.use(req, res, next);
   });
 
-  it('should forward error to next() if response not yet sent', (done) => {
+  it('should forward error to next() if response not yet sent', done => {
     const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     res.headersSent = false;
@@ -153,24 +145,22 @@ describe('TransactionMiddleware', () => {
       }
     });
 
-    middleware.use(req, res, next as unknown as import('express').NextFunction);
+    middleware.use(req, res, next as unknown as NextFunction);
   });
 
-  it('should not call next(err) if headers already sent on rollback', (done) => {
+  it('should not call next(err) if headers already sent on rollback', done => {
     const req = { method: 'POST', path: '/v1/auth/login' } as Request;
     const res = createMockResponse();
     res.headersSent = true;
 
-    mockDb.transaction.mockImplementation(
-      async (callback: (tx: DrizzleDB) => Promise<void>) => {
-        try {
-          await callback(mockTx);
-        } catch {
-          // Transaction rolled back, fall through to .catch()
-          throw new Error('rolled back');
-        }
-      },
-    );
+    mockDb.transaction.mockImplementation(async (callback: (tx: DrizzleDB) => Promise<void>) => {
+      try {
+        await callback(mockTx);
+      } catch {
+        // Transaction rolled back, fall through to .catch()
+        throw new Error('rolled back');
+      }
+    });
 
     const next = jest.fn(() => {
       res.statusCode = 500;
@@ -179,14 +169,12 @@ describe('TransactionMiddleware', () => {
 
     // After the catch, next should NOT be called with an error
     // because headersSent is true
-    mockDb.transaction.mockImplementation(
-      async (callback: (tx: DrizzleDB) => Promise<void>) => {
-        await callback(mockTx).catch(() => {
-          // rolled back
-        });
-        throw new Error('rolled back');
-      },
-    );
+    mockDb.transaction.mockImplementation(async (callback: (tx: DrizzleDB) => Promise<void>) => {
+      await callback(mockTx).catch(() => {
+        // rolled back
+      });
+      throw new Error('rolled back');
+    });
 
     middleware.use(req, res, next);
 

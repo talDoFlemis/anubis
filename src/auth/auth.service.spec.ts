@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -13,7 +14,7 @@ import { MailService } from '../mail/mail.service';
 import { AuthProvidersEnum } from './auth-providers.enum';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
-import { User } from '../users/domain/user';
+import type { User } from '../users/domain/user';
 
 jest.mock('bcrypt', () => ({ compare: jest.fn(), hash: jest.fn() }));
 
@@ -64,13 +65,11 @@ describe('AuthService', () => {
           useValue: {
             deleteByUserId: jest.fn(),
             deleteByUserIdWithExclude: jest.fn(),
-            resolveSnapshotChange: jest
-              .fn()
-              .mockImplementation(({ passwordChanged }) => ({
-                revokeAllSessions: false,
-                revokeOtherSessions: Boolean(passwordChanged),
-                refreshCurrentSession: false,
-              })),
+            resolveSnapshotChange: jest.fn().mockImplementation(({ passwordChanged }) => ({
+              revokeAllSessions: false,
+              revokeOtherSessions: Boolean(passwordChanged),
+              refreshCurrentSession: false,
+            })),
           },
         },
         {

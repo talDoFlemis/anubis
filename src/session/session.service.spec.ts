@@ -1,6 +1,6 @@
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
-import { SessionRepository } from './infrastructure/persistence/session.repository';
+import type { SessionRepository } from './infrastructure/persistence/session.repository';
 import { SessionService } from './session.service';
 
 describe('SessionService', () => {

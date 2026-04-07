@@ -20,7 +20,7 @@ export function GoogleLoginButton({
     <div className="space-y-2">
       <div className="flex justify-center overflow-hidden rounded-2xl">
         <GoogleLogin
-          onSuccess={(credentialResponse) => {
+          onSuccess={credentialResponse => {
             const idToken = credentialResponse.credential;
             if (!idToken) {
               toast.error('Nao foi possivel obter o token do Google.');
@@ -35,7 +35,7 @@ export function GoogleLoginButton({
             googleLoginMutation.mutate(
               { idToken },
               {
-                onError: (error) => {
+                onError: error => {
                   toast.error(error.message);
                 },
               },
@@ -48,9 +48,7 @@ export function GoogleLoginButton({
           text={text}
         />
       </div>
-      {helperText ? (
-        <p className="text-sm leading-6 text-muted-foreground">{helperText}</p>
-      ) : null}
+      {helperText ? <p className="text-muted-foreground text-sm leading-6">{helperText}</p> : null}
     </div>
   );
 }
