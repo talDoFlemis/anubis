@@ -217,7 +217,6 @@ jobs:
           slim build \
             --env-file .env \
             --http-probe=false \
-            --include-workdir \
             --include-path /app/drizzle \
             --target migrate-pre-slim:${{ github.run_number }}
 

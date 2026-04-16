@@ -104,6 +104,7 @@ services:
   migrate:
     build:
       dockerfile: ./Dockerfile.migrate
+    image: ghcr.io/taldoflemis/anubis/migrate:latest
     environment:
       DATABASE_USER: postgres
       DATABASE_PORT: 5432

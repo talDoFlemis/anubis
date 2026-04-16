@@ -1,7 +1,5 @@
 import { defineConfig } from 'drizzle-kit';
 
-// FIXME: force new migrate image release
-
 export default defineConfig({
   schema: './src/database/schema/*.ts',
   out: './drizzle',
