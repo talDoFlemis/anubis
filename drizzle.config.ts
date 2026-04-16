@@ -1,17 +1,15 @@
 import { defineConfig } from 'drizzle-kit';
 
-// todo: forcando de novo o image
-
 export default defineConfig({
-  schema: './src/database/schema/*.ts',
-  out: './drizzle',
-  dialect: 'postgresql',
-  dbCredentials: {
-    host: process.env.DATABASE_HOST || 'localhost',
-    port: Number(process.env.DATABASE_PORT) || 5432,
-    user: process.env.DATABASE_USER || 'postgres',
-    password: process.env.DATABASE_PASSWORD || 'postgres',
-    database: process.env.DATABASE_NAME || 'anubis',
-    ssl: process.env.DATABASE_SSL === 'true',
-  },
+    schema: './src/database/schema/*.ts',
+    out: './drizzle',
+    dialect: 'postgresql',
+    dbCredentials: {
+        host: process.env.DATABASE_HOST || 'localhost',
+        port: Number(process.env.DATABASE_PORT) || 5432,
+        user: process.env.DATABASE_USER || 'postgres',
+        password: process.env.DATABASE_PASSWORD || 'postgres',
+        database: process.env.DATABASE_NAME || 'anubis',
+        ssl: process.env.DATABASE_SSL === 'true',
+    },
 });
