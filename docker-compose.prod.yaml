@@ -71,8 +71,6 @@ services:
       MAIL_GOOGLE_USER: ${MAIL_GOOGLE_USER}
 
       SYSTEM_SECRET: ${SYSTEM_SECRET}
-    expose:
-      - "3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,7 +85,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+          "fetch('http://api:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 15s
       timeout: 5s
@@ -101,9 +99,6 @@ services:
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: "true"
       MP_SMTP_AUTH_ALLOW_INSECURE: "true"
-    ports:
-      - "1025:1025"
-      - "8025:8025"
     networks:
       - backend
     healthcheck:
@@ -119,19 +114,17 @@ services:
     environment:
       VITE_API_URL: ${VITE_API_URL}
       VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-    expose:
-      - "8080"
     networks:
       - edge
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://frontend:8080/ || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 20s
 
   nginx:
-    image: nginx:1.27-alpine
+    image: cgr.dev/chainguard/nginx:latest
     restart: unless-stopped
     depends_on:
       api:
@@ -145,7 +138,7 @@ services:
     networks:
       - edge
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health || exit 1"]
+      test: ["CMD", "/usr/sbin/nginx", "-t"]
       interval: 30s
       timeout: 5s
       retries: 3
