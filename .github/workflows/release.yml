@@ -218,6 +218,8 @@ jobs:
             --env-file .env \
             --http-probe=false \
             --include-path /app/drizzle \
+            --include-path /app/node_modules \
+            --include-path /app/scripts \
             --target migrate-pre-slim:${{ github.run_number }}
 
       - name: Tag and push slimmed image
