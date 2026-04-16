@@ -71,7 +71,7 @@ jobs:
         id: semantic
         uses: cycjimmy/semantic-release-action@v4
         with:
-          semantic_version: ''
+          semantic_version: ""
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -123,6 +123,7 @@ jobs:
           slim build \
             --env-file .env \
             --http-probe-cmd GET:/ \
+            --include-bin /usr/bin/wget \
             --publish-exposed-ports \
             --target backend-pre-slim:${{ github.run_number }}
 
