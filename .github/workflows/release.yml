@@ -39,10 +39,33 @@ jobs:
           filters: |
             frontend:
               - 'frontend/**'
+
             drizzle:
               - 'drizzle/**'
+              - 'drizzle.config.ts'
+
             backend:
-              - '!(frontend|drizzle)/**'
+              - 'src/**'
+              - 'test/**'
+              - 'scripts/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'tsconfig.json'
+              - 'tsconfig.build.json'
+              - 'nest-cli.json'
+              - 'jest.integration.config.ts'
+              - 'eslint.config.mjs'
+              - 'Dockerfile'
+              - 'Dockerfile.migrate'
+              - 'docker-compose.yaml'
+              - 'docker-compose.prod.yaml'
+              - 'nginx.conf'
+              - 'deploy/**'
+            shared:
+              - '.github/workflows/**'
+              - 'docs/**'
+              - 'README.md'
+              - '.env.example'
 
   release:
     name: Semantic Release
@@ -78,7 +101,12 @@ jobs:
   publish-backend:
     name: Publish Backend to GHCR
     needs: [release, changes]
-    if: needs.release.outputs.new_release_published == 'true' && needs.changes.outputs.backend == 'true'
+    if: >
+      needs.release.outputs.new_release_published == 'true' &&
+      (
+        needs.changes.outputs.backend == 'true' ||
+        needs.changes.outputs.shared == 'true'
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -138,7 +166,12 @@ jobs:
   publish-migrate:
     name: Publish Migrate to GHCR
     needs: [release, changes]
-    if: needs.release.outputs.new_release_published == 'true' && needs.changes.outputs.drizzle == 'true'
+    if: >
+      needs.release.outputs.new_release_published == 'true' &&
+      (
+        needs.changes.outputs.drizzle == 'true' ||
+        needs.changes.outputs.shared == 'true'
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -199,7 +232,12 @@ jobs:
   publish-frontend:
     name: Publish Frontend to GHCR
     needs: [release, changes]
-    if: needs.release.outputs.new_release_published == 'true' && needs.changes.outputs.frontend == 'true'
+    if: >
+      needs.release.outputs.new_release_published == 'true' &&
+      (
+        needs.changes.outputs.frontend == 'true' ||
+        needs.changes.outputs.shared == 'true'
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
