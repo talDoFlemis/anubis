@@ -18,8 +18,7 @@ services:
       start_period: 20s
 
   migrate:
-    build:
-      dockerfile: ./Dockerfile.migrate
+    image: ghcr.io/taldoflemis/anubis/migrate:latest
     environment:
       NODE_ENV: production
       DATABASE_USER: ${DATABASE_USER}
