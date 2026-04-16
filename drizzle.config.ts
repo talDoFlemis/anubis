@@ -1,5 +1,7 @@
 import { defineConfig } from 'drizzle-kit';
 
+// todo: forcando de novo o image
+
 export default defineConfig({
   schema: './src/database/schema/*.ts',
   out: './drizzle',
