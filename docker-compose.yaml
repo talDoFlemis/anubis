@@ -34,6 +34,7 @@ services:
       GOOGLE_CLIENT_ID: your-google-client-id
       GOOGLE_CLIENT_SECRET: your-google-client-secret
 
+      API_PREFIX: /tubias
       AUTH_CONFIRM_EMAIL_SECRET: your-confirm-email-secret-min-32-chars-long
       AUTH_CONFIRM_EMAIL_EXPIRES_IN: 1d
       AUTH_FORGOT_SECRET: your-forgot-password-secret-min-32-chars-long

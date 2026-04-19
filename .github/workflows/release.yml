@@ -153,6 +153,7 @@ jobs:
             --http-probe-cmd GET:/ \
             --include-bin /usr/bin/wget \
             --publish-exposed-ports \
+            --include-path=/app \
             --target backend-pre-slim:${{ github.run_number }}
 
       - name: Tag and push slimmed image
