@@ -21,6 +21,8 @@ services:
     ports:
       - '3000:3000'
     image: ghcr.io/taldoflemis/anubis:latest
+    env_file:
+      - .env
     environment:
       DATABASE_USER: postgres
       DATABASE_PORT: 5432
@@ -98,6 +100,9 @@ services:
     image: ghcr.io/taldoflemis/anubis/frontend:latest
     ports:
       - '5173:8080'
+
+    env_file:
+      - ./frontend/.env
     environment:
       VITE_API_URL: http://localhost:3000
       VITE_GOOGLE_CLIENT_ID: your-google-client-id
