@@ -136,33 +136,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: false
-          load: true
-          tags: backend-pre-slim:${{ github.run_number }}
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
-
-      - name: Prepare env file
-        run: cp .env.example .env
-
-      - name: Install and run docker-slim
-        run: |
-          curl -sL https://raw.githubusercontent.com/slimtoolkit/slim/master/scripts/install-slim.sh | sudo -E bash -s
-          slim build \
-            --env-file .env \
-            --http-probe-cmd GET:/ \
-            --include-bin /usr/bin/wget \
-            --publish-exposed-ports \
-            --include-path=/app \
-            --target backend-pre-slim:${{ github.run_number }}
-
-      - name: Tag and push slimmed image
-        run: |
-          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
-            [ -z "$tag" ] && continue
-            docker tag backend-pre-slim.slim "$tag"
-            docker push "$tag"
-          done
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=migrate
+          cache-to: type=gha,mode=max,scope=migrate
 
   publish-migrate:
     name: Publish Migrate to GHCR
