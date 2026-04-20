@@ -6,7 +6,7 @@ import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import helmet from 'helmet';
-import type { Request, Response, NextFunction } from 'express';
+import type { Application, NextFunction, Request, Response } from 'express';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import passport from 'passport';
 
@@ -21,7 +21,12 @@ const helmetWithoutCsp = helmet({ contentSecurityPolicy: false });
 export function configureApp(app: INestApplication): void {
   const configService = app.get(ConfigService);
   const logger = app.get(Logger);
+  const expressApp = app.getHttpAdapter().getInstance() as Application;
   app.useLogger(logger);
+
+  // Trust the edge proxy chain so Express respects X-Forwarded-Proto and can
+  // emit secure session cookies when TLS terminates upstream.
+  expressApp.set('trust proxy', 1);
 
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
   app.useGlobalFilters(app.get(AllExceptionsFilter));
