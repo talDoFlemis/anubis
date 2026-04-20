@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MaxLength, MinLength, Matches } from 'class-validator';
+import { IsEmail, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { normalizeCpf } from '../../common/utils/normalize-cpf';
+import { IsCpf } from '../../common/validators/is-cpf.validator';
 
 export class AuthRegisterDto {
   @ApiProperty({ example: 'test@example.com', type: String })
@@ -22,8 +24,8 @@ export class AuthRegisterDto {
   lastName: string;
 
   @ApiProperty({ example: '12345678901' })
-  @Transform(({ value }) => (value as string).replace(/\D/g, '').trim())
-  @Matches(/^\d{11}$/)
+  @Transform(({ value }) => normalizeCpf(value))
+  @IsCpf()
   cpf: string;
 
   @ApiProperty({ example: 'UFRN' })

@@ -4,6 +4,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import { normalizeCpf } from '../utils/normalize-cpf';
 
 /**
  * Validates a Brazilian CPF number.
@@ -14,9 +15,11 @@ import {
  */
 export function isValidCpf(cpf: unknown): boolean {
   if (typeof cpf !== 'string') return false;
+  if (!/^[\d.-]+$/.test(cpf)) return false;
 
-  // Strip formatting characters
-  const digits = cpf.replace(/[.-]/g, '');
+  const digits = normalizeCpf(cpf);
+
+  if (typeof digits !== 'string') return false;
 
   if (digits.length !== 11) return false;
   if (!/^\d{11}$/.test(digits)) return false;

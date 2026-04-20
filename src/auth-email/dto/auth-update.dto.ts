@@ -1,6 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { normalizeCpf } from '../../common/utils/normalize-cpf';
+import { IsCpf } from '../../common/validators/is-cpf.validator';
 
 export class AuthUpdateDto {
   @ApiPropertyOptional({ example: 'John' })
@@ -22,8 +24,8 @@ export class AuthUpdateDto {
 
   @ApiPropertyOptional({ example: '12345678901' })
   @IsOptional()
-  @Transform(({ value }) => (value as string).replace(/\D/g, '').trim())
-  @Matches(/^\d{11}$/)
+  @Transform(({ value }) => normalizeCpf(value))
+  @IsCpf()
   cpf?: string;
 
   @ApiPropertyOptional()

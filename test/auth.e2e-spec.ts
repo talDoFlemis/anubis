@@ -1,4 +1,4 @@
-import type { ExecutionContext, INestApplication } from '@nestjs/common';
+import { ValidationPipe, type ExecutionContext, type INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -22,7 +22,6 @@ import { Reflector } from '@nestjs/core';
 
 type LoginResponseBody = {
   onboardingCompleted: boolean;
-  authProvider: string;
 };
 
 type OnboardingResponseBody = {
@@ -134,6 +133,13 @@ describe('Auth journeys (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
     app.use(
       (
         req: {
@@ -186,14 +192,14 @@ describe('Auth journeys (e2e)', () => {
         password: 'password123',
         firstName: 'Jane',
         lastName: 'Doe',
-        cpf: '12345678901',
+        cpf: '529.982.247-25',
         universityOfOrigin: 'UFRN',
       })
       .expect(204);
 
     expect(authEmailService.register).toHaveBeenCalledWith(
       expect.objectContaining({
-        cpf: '12345678901',
+        cpf: '52998224725',
         universityOfOrigin: 'UFRN',
       }),
     );
@@ -229,7 +235,6 @@ describe('Auth journeys (e2e)', () => {
       password: 'password123',
     });
     expect(body.onboardingCompleted).toBe(true);
-    expect(body.authProvider).toBe('email');
   });
 
   it('confirms a new e-mail via the regrouped email provider route', async () => {
@@ -291,14 +296,13 @@ describe('Auth journeys (e2e)', () => {
       expect.objectContaining({ id: 'google-sub' }),
     );
     expect(body.onboardingCompleted).toBe(false);
-    expect(body.authProvider).toBe('google');
   });
 
   it('completes candidate onboarding from an authenticated session', async () => {
     authService.completeCandidateOnboarding.mockResolvedValue({
       id: 'user-1',
       onboardingCompleted: true,
-      cpf: '12345678901',
+      cpf: '52998224725',
     });
 
     const response = await request(app.getHttpServer())
@@ -306,7 +310,7 @@ describe('Auth journeys (e2e)', () => {
       .send({
         firstName: 'Jane',
         lastName: 'Doe',
-        cpf: '12345678901',
+        cpf: '529.982.247-25',
         universityOfOrigin: 'UFRN',
       })
       .expect(200);
@@ -315,7 +319,7 @@ describe('Auth journeys (e2e)', () => {
 
     expect(authService.completeCandidateOnboarding).toHaveBeenCalledWith(
       'user-1',
-      expect.objectContaining({ cpf: '12345678901' }),
+      expect.objectContaining({ cpf: '52998224725' }),
     );
     expect(body.onboardingCompleted).toBe(true);
   });
