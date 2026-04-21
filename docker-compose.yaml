@@ -31,9 +31,10 @@ services:
       APP_SESSION_SECRET: superdupersecrethereasdfasdfasdfasdfasdfasdfasdfasdfasdfasfdasfasdf
       APP_CORS_ORIGIN: http://localhost:5173
 
-      GOOGLE_CLIENT_ID: your-google-client-id
-      GOOGLE_CLIENT_SECRET: your-google-client-secret
-
+      GOOGLE_CLIENT_ID:
+      GOOGLE_CLIENT_SECRET:
+      APP_SECURE_COOKIE: false
+      
       AUTH_CONFIRM_EMAIL_SECRET: your-confirm-email-secret-min-32-chars-long
       AUTH_CONFIRM_EMAIL_EXPIRES_IN: 1d
       AUTH_FORGOT_SECRET: your-forgot-password-secret-min-32-chars-long
@@ -99,7 +100,7 @@ services:
       - '5173:8080'
     environment:
       VITE_API_URL: http://localhost:3000
-      VITE_GOOGLE_CLIENT_ID: your-google-client-id
+      VITE_GOOGLE_CLIENT_ID:
 
   migrate:
     build:
