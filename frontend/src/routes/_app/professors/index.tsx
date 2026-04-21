@@ -32,7 +32,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
-import { mockDocentes, type Docente, type StatusDocente } from '@/lib/mock-professors-management';
+import {
+  linhasPesquisaPrincipais,
+  mockDocentes,
+  type Docente,
+  type StatusDocente,
+} from '@/lib/mock-professors-management';
 
 export const Route = createFileRoute('/_app/professors/')({
   component: GestaoDocentesScreen,
@@ -62,10 +67,64 @@ const MANAGEMENT_TABS = [
   },
 ] as const;
 
+interface NovoDocenteFormData {
+  nomeCompleto: string;
+  cpf: string;
+  matriculaDocente: string;
+  email: string;
+  instituicaoOrigem: string;
+  linhaPesquisaPrincipal: string;
+}
+
+interface NovoDocenteFormErrors {
+  nomeCompleto?: string;
+  cpf?: string;
+  matriculaDocente?: string;
+  email?: string;
+  instituicaoOrigem?: string;
+  linhaPesquisaPrincipal?: string;
+}
+
+const INITIAL_NOVO_DOCENTE_FORM: NovoDocenteFormData = {
+  nomeCompleto: '',
+  cpf: '',
+  matriculaDocente: '',
+  email: '',
+  instituicaoOrigem: '',
+  linhaPesquisaPrincipal: '',
+};
+
+function normalizeCpf(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isValidCpf(value: string): boolean {
+  const cpf = normalizeCpf(value);
+  return /^\d{11}$/.test(cpf);
+}
+
+function createDocenteId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `doc-${Date.now()}`;
+}
+
 export function GestaoDocentesScreen() {
   const { data: user } = useAuth();
   const [docentes, setDocentes] = React.useState<Docente[]>(mockDocentes);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [cadastroAberto, setCadastroAberto] = React.useState(false);
+  const [novoDocenteForm, setNovoDocenteForm] =
+    React.useState<NovoDocenteFormData>(INITIAL_NOVO_DOCENTE_FORM);
+  const [novoDocenteFormErrors, setNovoDocenteFormErrors] = React.useState<NovoDocenteFormErrors>(
+    {},
+  );
   const [docenteParaReenvio, setDocenteParaReenvio] = React.useState<Docente | null>(null);
   const [docenteParaAcoes, setDocenteParaAcoes] = React.useState<Docente | null>(null);
   const profileInitials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`
@@ -118,6 +177,71 @@ export function GestaoDocentesScreen() {
     setDocenteParaAcoes(null);
   };
 
+  const handleCloseCadastro = () => {
+    setCadastroAberto(false);
+    setNovoDocenteForm(INITIAL_NOVO_DOCENTE_FORM);
+    setNovoDocenteFormErrors({});
+  };
+
+  const validateNovoDocenteForm = (): boolean => {
+    const errors: NovoDocenteFormErrors = {};
+
+    if (!novoDocenteForm.nomeCompleto.trim()) {
+      errors.nomeCompleto = 'Informe o nome completo.';
+    }
+
+    if (!novoDocenteForm.cpf.trim()) {
+      errors.cpf = 'Informe o CPF.';
+    } else if (!isValidCpf(novoDocenteForm.cpf)) {
+      errors.cpf = 'CPF deve conter 11 numeros.';
+    }
+
+    if (!novoDocenteForm.matriculaDocente.trim()) {
+      errors.matriculaDocente = 'Informe a matricula do docente.';
+    }
+
+    if (!novoDocenteForm.email.trim()) {
+      errors.email = 'Informe o e-mail.';
+    } else if (!isValidEmail(novoDocenteForm.email.trim())) {
+      errors.email = 'E-mail invalido.';
+    }
+
+    if (!novoDocenteForm.instituicaoOrigem.trim()) {
+      errors.instituicaoOrigem = 'Informe a instituicao de origem.';
+    }
+
+    if (!novoDocenteForm.linhaPesquisaPrincipal.trim()) {
+      errors.linhaPesquisaPrincipal = 'Selecione a linha de pesquisa principal.';
+    }
+
+    setNovoDocenteFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSalvarCadastro = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!validateNovoDocenteForm()) {
+      return;
+    }
+
+    const novoDocente: Docente = {
+      id: createDocenteId(),
+      nome: novoDocenteForm.nomeCompleto.trim(),
+      cpf: normalizeCpf(novoDocenteForm.cpf),
+      matriculaDocente: novoDocenteForm.matriculaDocente.trim(),
+      tipo: 'DOCENTE PERMANENTE',
+      email: novoDocenteForm.email.trim().toLowerCase(),
+      instituicaoOrigem: novoDocenteForm.instituicaoOrigem.trim(),
+      linhaPesquisaPrincipal: novoDocenteForm.linhaPesquisaPrincipal,
+      status: 'Pendente',
+    };
+
+    setDocentes(current => [novoDocente, ...current]);
+    toast.success('Cadastro de docente salvo com sucesso.');
+    handleCloseCadastro();
+  };
+
   const renderBadgeStatus = (status: StatusDocente) => {
     switch (status) {
       case 'Verificado':
@@ -168,7 +292,10 @@ export function GestaoDocentesScreen() {
           <h1 className="font-serif text-4xl font-bold tracking-tight text-slate-900">
             Gestão de Docentes
           </h1>
-          <Button disabled className="bg-blue-600 font-medium text-white hover:bg-blue-700">
+          <Button
+            className="bg-blue-600 font-medium text-white hover:bg-blue-700"
+            onClick={() => setCadastroAberto(true)}
+          >
             <UserPlus className="mr-2 h-4 w-4" />
             Cadastrar Novo Docente
           </Button>
@@ -347,6 +474,160 @@ export function GestaoDocentesScreen() {
               Confirmar Reenvio
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cadastroAberto} onOpenChange={open => !open && handleCloseCadastro()}>
+        <DialogContent className="p-6 sm:max-w-2xl">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="font-serif text-xl font-bold text-slate-900">
+              Cadastrar Novo Docente
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed text-slate-500">
+              Preencha os dados para incluir o docente no sistema. O docente receberá um e-mail para ativar o acesso e criar sua senha.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4" onSubmit={handleSalvarCadastro}>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
+                Nome completo
+              </p>
+              <Input
+                value={novoDocenteForm.nomeCompleto}
+                onChange={event =>
+                  setNovoDocenteForm(current => ({ ...current, nomeCompleto: event.target.value }))
+                }
+                placeholder="Ex.: Maria da Silva"
+              />
+              {novoDocenteFormErrors.nomeCompleto ? (
+                <p className="text-xs text-red-600">{novoDocenteFormErrors.nomeCompleto}</p>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">CPF</p>
+                <Input
+                  inputMode="numeric"
+                  value={novoDocenteForm.cpf}
+                  onChange={event =>
+                    setNovoDocenteForm(current => ({
+                      ...current,
+                      cpf: normalizeCpf(event.target.value).slice(0, 11),
+                    }))
+                  }
+                  maxLength={11}
+                  placeholder="Somente numeros"
+                />
+                {novoDocenteFormErrors.cpf ? (
+                  <p className="text-xs text-red-600">{novoDocenteFormErrors.cpf}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
+                  Matricula do docente
+                </p>
+                <Input
+                  value={novoDocenteForm.matriculaDocente}
+                  onChange={event =>
+                    setNovoDocenteForm(current => ({
+                      ...current,
+                      matriculaDocente: event.target.value,
+                    }))
+                  }
+                  placeholder="Ex.: DOC-2026-001"
+                />
+                {novoDocenteFormErrors.matriculaDocente ? (
+                  <p className="text-xs text-red-600">{novoDocenteFormErrors.matriculaDocente}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
+                  E-mail
+                </p>
+                <Input
+                  type="email"
+                  value={novoDocenteForm.email}
+                  onChange={event =>
+                    setNovoDocenteForm(current => ({ ...current, email: event.target.value }))
+                  }
+                  placeholder="nome@instituicao.br"
+                />
+                {novoDocenteFormErrors.email ? (
+                  <p className="text-xs text-red-600">{novoDocenteFormErrors.email}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
+                  Instituicao de origem
+                </p>
+                <Input
+                  value={novoDocenteForm.instituicaoOrigem}
+                  onChange={event =>
+                    setNovoDocenteForm(current => ({
+                      ...current,
+                      instituicaoOrigem: event.target.value,
+                    }))
+                  }
+                  placeholder="Ex.: UFC"
+                />
+                {novoDocenteFormErrors.instituicaoOrigem ? (
+                  <p className="text-xs text-red-600">{novoDocenteFormErrors.instituicaoOrigem}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
+                Linha de pesquisa principal
+              </p>
+              <Select
+                value={novoDocenteForm.linhaPesquisaPrincipal}
+                onValueChange={value =>
+                  setNovoDocenteForm(current => ({ ...current, linhaPesquisaPrincipal: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma linha de pesquisa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {linhasPesquisaPrincipais.map(linha => (
+                    <SelectItem key={linha} value={linha}>
+                      {linha}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {novoDocenteFormErrors.linhaPesquisaPrincipal ? (
+                <p className="text-xs text-red-600">
+                  {novoDocenteFormErrors.linhaPesquisaPrincipal}
+                </p>
+              ) : null}
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
+                onClick={handleCloseCadastro}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="bg-blue-600 font-medium text-white hover:bg-blue-700"
+              >
+                Salvar Cadastro
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
