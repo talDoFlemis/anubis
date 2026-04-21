@@ -6,9 +6,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - '5432:5432'
+      - "5432:5432"
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -h localhost -U $$POSTGRES_USER']
+      test: ["CMD-SHELL", "pg_isready -h localhost -U $$POSTGRES_USER"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -19,7 +19,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '3000:3000'
+      - "3000:3000"
     image: ghcr.io/taldoflemis/anubis:latest
     env_file:
       - .env
@@ -33,10 +33,12 @@ services:
       APP_SESSION_SECRET: superdupersecrethereasdfasdfasdfasdfasdfasdfasdfasdfasdfasfdasfasdf
       APP_CORS_ORIGIN: http://localhost:5173
 
-      GOOGLE_CLIENT_ID: your-google-client-id
-      GOOGLE_CLIENT_SECRET: your-google-client-secret
+      GOOGLE_CLIENT_ID:
+      GOOGLE_CLIENT_SECRET:
 
       API_PREFIX: /tubias
+      # APP_SECURE_COOKIE: false
+
       AUTH_CONFIRM_EMAIL_SECRET: your-confirm-email-secret-min-32-chars-long
       AUTH_CONFIRM_EMAIL_EXPIRES_IN: 1d
       AUTH_FORGOT_SECRET: your-forgot-password-secret-min-32-chars-long
@@ -69,10 +71,10 @@ services:
     healthcheck:
       test:
         [
-          'CMD',
-          'node',
-          '-e',
-          'fetch(''http://localhost:3000/health'').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))',
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 15s
       timeout: 5s
@@ -82,13 +84,13 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - '1025:1025'
-      - '8025:8025'
+      - "1025:1025"
+      - "8025:8025"
     environment:
       - MP_SMTP_AUTH_ACCEPT_ANY=true
       - MP_SMTP_AUTH_ALLOW_INSECURE=true
     healthcheck:
-      test: ['CMD-SHELL', 'wget http://localhost:8025 -O /dev/null']
+      test: ["CMD-SHELL", "wget http://localhost:8025 -O /dev/null"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -99,13 +101,13 @@ services:
       context: ./frontend/
     image: ghcr.io/taldoflemis/anubis/frontend:latest
     ports:
-      - '5173:8080'
+      - "5173:8080"
 
     env_file:
       - ./frontend/.env
     environment:
       VITE_API_URL: http://localhost:3000
-      VITE_GOOGLE_CLIENT_ID: your-google-client-id
+      VITE_GOOGLE_CLIENT_ID:
 
   migrate:
     build:
