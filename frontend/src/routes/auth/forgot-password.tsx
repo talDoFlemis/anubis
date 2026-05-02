@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AuthErrorMessage, AuthPageLayout, EmailField, SubmitButton } from '@/components/auth';
 import { useForgotPassword } from '@/hooks/use-auth';
-import { AUTH_FORGOT_PASSWORD_ROUTE, AUTH_HOME_ROUTE } from '@/lib/auth-flow';
+import { AUTH_HOME_ROUTE } from '@/lib/auth-flow';
 
-export const Route = createFileRoute(AUTH_FORGOT_PASSWORD_ROUTE)({
+export const Route = createFileRoute('/auth/forgot-password')({
   component: ForgotPasswordPage,
 });
 

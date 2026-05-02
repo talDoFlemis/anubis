@@ -9,13 +9,9 @@ import {
 } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { useLogout, useUpdateProfile } from '@/hooks/use-auth';
-import {
-  AUTH_CHANGE_PASSWORD_ROUTE,
-  getPostAuthPath,
-  validatePasswordMatch,
-} from '@/lib/auth-flow';
+import { getPostAuthPath, validatePasswordMatch } from '@/lib/auth-flow';
 
-export const Route = createFileRoute(AUTH_CHANGE_PASSWORD_ROUTE)({
+export const Route = createFileRoute('/auth/change-password')({
   component: ChangePasswordPage,
 });
 

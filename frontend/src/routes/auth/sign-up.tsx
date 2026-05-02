@@ -14,9 +14,9 @@ import { GoogleLoginButton } from '@/components/google-login-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useEmailRegister } from '@/hooks/use-auth';
-import { AUTH_SIGN_IN_ROUTE, AUTH_SIGN_UP_ROUTE } from '@/lib/auth-flow';
+import { AUTH_SIGN_IN_ROUTE } from '@/lib/auth-flow';
 
-export const Route = createFileRoute(AUTH_SIGN_UP_ROUTE)({
+export const Route = createFileRoute('/auth/sign-up')({
   component: SignUpPage,
 });
 

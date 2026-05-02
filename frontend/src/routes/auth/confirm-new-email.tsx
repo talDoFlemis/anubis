@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { HashConfirmationPage } from '@/components/auth';
 import { useConfirmNewEmail } from '@/hooks/use-auth';
-import { AUTH_CONFIRM_NEW_EMAIL_ROUTE, AUTH_HOME_ROUTE, validateHashSearch } from '@/lib/auth-flow';
+import { AUTH_HOME_ROUTE, validateHashSearch } from '@/lib/auth-flow';
 
-export const Route = createFileRoute(AUTH_CONFIRM_NEW_EMAIL_ROUTE)({
+export const Route = createFileRoute('/auth/confirm-new-email')({
   validateSearch: validateHashSearch,
   component: ConfirmNewEmailPage,
 });

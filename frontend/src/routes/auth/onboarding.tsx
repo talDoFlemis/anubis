@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useCompleteCandidateOnboarding, useLogout } from '@/hooks/use-auth';
-import { AUTH_ONBOARDING_ROUTE, getPostAuthPath } from '@/lib/auth-flow';
+import { getPostAuthPath } from '@/lib/auth-flow';
 
-export const Route = createFileRoute(AUTH_ONBOARDING_ROUTE)({
+export const Route = createFileRoute('/auth/onboarding')({
   component: CandidateOnboardingPage,
 });
 
