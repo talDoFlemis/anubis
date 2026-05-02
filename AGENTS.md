@@ -24,7 +24,7 @@ anubis/
 ├── test/                 # E2E tests
 ├── drizzle/              # SQL migration files
 ├── scripts/              # Utility scripts
-└── frontend/             # Frontend application (separate codebase)
+└── frontend/             # Frontend application (separate codebase) verify the AGENTS.md in the frontend repo for guidelines
 ```
 
 ## Project Snapshot
@@ -175,16 +175,6 @@ For schema/repository changes, also run relevant integration tests.
 - **E2E**: `test/**/*.e2e-spec.ts` - use supertest
 - Mock external services in tests
 - Test auth flows for both success and provider-conflict paths
-
-## Frontend
-
-When creating or modifying frontend screens or components:
-
-- **Always reference `DESIGN.md`** for design system guidelines
-- Follow the "Alexandria" design language: high-end editorial with serif authority
-- Use the defined color palette, typography hierarchy, and component patterns
-- Apply the "No-Line Rule" - define boundaries through surface color shifts, not borders
-- Maintain whitespace as structure and one primary action per view
 
 ## Agent Tips
 
