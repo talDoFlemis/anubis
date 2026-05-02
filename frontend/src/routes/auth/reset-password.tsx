@@ -10,14 +10,9 @@ import {
 } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { useResetPassword } from '@/hooks/use-auth';
-import {
-  AUTH_RESET_PASSWORD_ROUTE,
-  AUTH_SIGN_IN_ROUTE,
-  validateHashSearch,
-  validatePasswordMatch,
-} from '@/lib/auth-flow';
+import { AUTH_SIGN_IN_ROUTE, validateHashSearch, validatePasswordMatch } from '@/lib/auth-flow';
 
-export const Route = createFileRoute(AUTH_RESET_PASSWORD_ROUTE)({
+export const Route = createFileRoute('/auth/reset-password')({
   validateSearch: validateHashSearch,
   component: ResetPasswordPage,
 });

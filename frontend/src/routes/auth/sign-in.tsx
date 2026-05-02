@@ -13,7 +13,7 @@ import { GoogleLoginButton } from '@/components/google-login-button';
 import { useEmailLogin } from '@/hooks/use-auth';
 import { AUTH_SIGN_IN_ROUTE } from '@/lib/auth-flow';
 
-export const Route = createFileRoute(AUTH_SIGN_IN_ROUTE)({
+export const Route = createFileRoute('/auth/sign-in')({
   component: SignInPage,
 });
 
