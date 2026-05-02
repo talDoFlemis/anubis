@@ -23,7 +23,7 @@ export const linhasPesquisaPrincipais = [
   'Seguranca da Informacao',
 ] as const;
 
-export const mockDocentes: Docente[] = [
+const mockDocenteBase: Docente[] = [
   {
     id: '1',
     nome: 'Dr. Ricardo Almeida',
@@ -69,3 +69,16 @@ export const mockDocentes: Docente[] = [
     status: 'Desativado',
   },
 ];
+
+export const mockDocentes: Docente[] = Array.from({ length: 14 }, (_, index) => {
+  const base = mockDocenteBase[index % mockDocenteBase.length];
+  const cycle = Math.floor(index / mockDocenteBase.length) + 1;
+
+  return {
+    ...base,
+    id: `${base.id}-${cycle}`,
+    nome: cycle === 1 ? base.nome : `${base.nome} ${cycle}`,
+    matriculaDocente: `${base.matriculaDocente}-${cycle}`,
+    cpf: `${base.cpf.slice(0, 9)}${String(cycle).padStart(2, '0')}`.slice(0, 11),
+  };
+});

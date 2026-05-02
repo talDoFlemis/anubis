@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { linhasPesquisaPrincipais } from '@/lib/mock-professors-management';
-import { ManagementPageLayout } from '../shared/management-page-layout';
-import { CreateProfessorDialog } from './components/CreateProfessorDialog';
-import { ProfessorActionsDialog } from './components/ProfessorActionsDialog';
-import { ProfessorsHeader } from './components/ProfessorsHeader';
-import { ProfessorsTable } from './components/ProfessorsTable';
-import { ResendInviteDialog } from './components/ResendInviteDialog';
-import { useProfessors } from './hooks/useProfessors';
+import { ManagementPageLayout } from '@/components/layout/management-page-layout';
+import { CreateProfessorDialog } from '@/features/professors/components/CreateProfessorDialog';
+import { ProfessorActionsDialog } from '@/features/professors/components/ProfessorActionsDialog';
+import { ProfessorsHeader } from '@/features/professors/components/ProfessorsHeader';
+import { ProfessorsTable } from '@/features/professors/components/ProfessorsTable';
+import { ResendInviteDialog } from '@/features/professors/components/ResendInviteDialog';
+import { useProfessors } from '@/features/professors/hooks/useProfessors';
 
 export const Route = createFileRoute('/_app/professors/')({
   component: GestaoDocentesScreen,
@@ -16,13 +16,18 @@ export const Route = createFileRoute('/_app/professors/')({
 export function GestaoDocentesScreen() {
   const {
     docentesFiltrados,
+    totalDocentes,
     searchQuery,
+    currentPage,
+    pageSize,
     cadastroAberto,
     novoDocenteForm,
     novoDocenteFormErrors,
     docenteParaReenvio,
     docenteParaAcoes,
     setSearchQuery,
+    handlePageChange,
+    handlePageSizeChange,
     handleOpenCadastro,
     handleCloseCadastro,
     handleFieldChange,
@@ -38,16 +43,24 @@ export function GestaoDocentesScreen() {
   } = useProfessors();
 
   return (
-    <ManagementPageLayout activeTab="professors">
-      <ProfessorsHeader onOpenCadastro={handleOpenCadastro} />
+    <ManagementPageLayout>
+      <div className="flex flex-col space-y-6">
+        <ProfessorsHeader />
 
-      <ProfessorsTable
-        docentes={docentesFiltrados}
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        onOpenReenvio={handleOpenReenvio}
-        onOpenAcoes={handleOpenAcoes}
-      />
+        <ProfessorsTable
+          docentes={docentesFiltrados}
+          totalDocentes={totalDocentes}
+          onOpenCadastro={handleOpenCadastro}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          onOpenReenvio={handleOpenReenvio}
+          onOpenAcoes={handleOpenAcoes}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      </div>
 
       <ResendInviteDialog
         docente={docenteParaReenvio}

@@ -8,14 +8,18 @@ import {
   type NovoDocenteFormErrors,
 } from '../types/professors-form.types';
 import {
-  createDocenteId,
   normalizeCpf,
   validateNovoDocenteForm,
+  filterProfessors,
+  toggleProfessorStatus,
+  mapFormToDocente,
 } from '../utils/professors-form.utils';
 
 export function useProfessors() {
   const [docentes, setDocentes] = React.useState<Docente[]>(mockDocentes);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
   const [cadastroAberto, setCadastroAberto] = React.useState(false);
   const [novoDocenteForm, setNovoDocenteForm] =
     React.useState<NovoDocenteFormData>(INITIAL_NOVO_DOCENTE_FORM);
@@ -26,9 +30,16 @@ export function useProfessors() {
   const [docenteParaAcoes, setDocenteParaAcoes] = React.useState<Docente | null>(null);
 
   const docentesFiltrados = React.useMemo(
-    () => docentes.filter(d => d.nome.toLowerCase().includes(searchQuery.toLowerCase())),
+    () => filterProfessors(docentes, searchQuery),
     [docentes, searchQuery],
   );
+
+  const paginatedDocentes = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return docentesFiltrados.slice(start, start + pageSize);
+  }, [docentesFiltrados, currentPage, pageSize]);
+
+  const totalPages = Math.ceil(docentesFiltrados.length / pageSize);
 
   const handleOpenCadastro = () => {
     setCadastroAberto(true);
@@ -61,17 +72,7 @@ export function useProfessors() {
       return;
     }
 
-    const novoDocente: Docente = {
-      id: createDocenteId(),
-      nome: novoDocenteForm.nomeCompleto.trim(),
-      cpf: normalizeCpf(novoDocenteForm.cpf),
-      matriculaDocente: novoDocenteForm.matriculaDocente.trim(),
-      tipo: 'DOCENTE PERMANENTE',
-      email: novoDocenteForm.email.trim().toLowerCase(),
-      instituicaoOrigem: novoDocenteForm.instituicaoOrigem.trim(),
-      linhaPesquisaPrincipal: novoDocenteForm.linhaPesquisaPrincipal,
-      status: 'Pendente',
-    };
+    const novoDocente = mapFormToDocente(novoDocenteForm);
 
     setDocentes(current => [novoDocente, ...current]);
     toast.success('Cadastro de docente salvo com sucesso.');
@@ -104,18 +105,7 @@ export function useProfessors() {
       return;
     }
 
-    setDocentes(current =>
-      current.map(docente => {
-        if (docente.id !== docenteParaAcoes.id) {
-          return docente;
-        }
-
-        return {
-          ...docente,
-          status: docente.status === 'Desativado' ? 'Verificado' : 'Desativado',
-        };
-      }),
-    );
+    setDocentes(current => toggleProfessorStatus(current, docenteParaAcoes.id));
 
     toast.success(
       docenteParaAcoes.status === 'Desativado'
@@ -134,15 +124,35 @@ export function useProfessors() {
     handleCloseAcoes();
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
   return {
-    docentesFiltrados,
+    docentesFiltrados: paginatedDocentes,
+    totalDocentes: docentesFiltrados.length,
     searchQuery,
+    currentPage,
+    pageSize,
+    totalPages,
     cadastroAberto,
     novoDocenteForm,
     novoDocenteFormErrors,
     docenteParaReenvio,
     docenteParaAcoes,
-    setSearchQuery,
+    setSearchQuery: handleSearchChange,
+    handlePageChange,
+    handlePageSizeChange,
     handleOpenCadastro,
     handleCloseCadastro,
     handleFieldChange,

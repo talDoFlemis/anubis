@@ -1,3 +1,4 @@
+import type { Docente } from '@/lib/mock-professors-management';
 import type { NovoDocenteFormData, NovoDocenteFormErrors } from '../types/professors-form.types';
 
 export function normalizeCpf(value: string): string {
@@ -53,4 +54,39 @@ export function validateNovoDocenteForm(formData: NovoDocenteFormData): NovoDoce
   }
 
   return errors;
+}
+
+export function filterProfessors(docentes: Docente[], query: string): Docente[] {
+  const normalizedQuery = query.toLowerCase().trim();
+  if (!normalizedQuery) return docentes;
+
+  return docentes.filter(
+    d =>
+      d.nome.toLowerCase().includes(normalizedQuery) ||
+      d.email.toLowerCase().includes(normalizedQuery),
+  );
+}
+
+export function toggleProfessorStatus(docentes: Docente[], professorId: string): Docente[] {
+  return docentes.map(docente => {
+    if (docente.id !== professorId) return docente;
+    return {
+      ...docente,
+      status: docente.status === 'Desativado' ? 'Verificado' : 'Desativado',
+    };
+  });
+}
+
+export function mapFormToDocente(formData: NovoDocenteFormData): Docente {
+  return {
+    id: createDocenteId(),
+    nome: formData.nomeCompleto.trim(),
+    cpf: normalizeCpf(formData.cpf),
+    matriculaDocente: formData.matriculaDocente.trim(),
+    tipo: 'DOCENTE PERMANENTE',
+    email: formData.email.trim().toLowerCase(),
+    instituicaoOrigem: formData.instituicaoOrigem.trim(),
+    linhaPesquisaPrincipal: formData.linhaPesquisaPrincipal,
+    status: 'Pendente',
+  };
 }
