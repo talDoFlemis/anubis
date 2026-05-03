@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import { linhasPesquisaPrincipais } from '@/lib/mock-professors-management';
+import { mainResearchLines } from '@/lib/mock-professors-management';
 import { ManagementPageLayout } from '@/components/layout/management-page-layout';
 import { CreateProfessorDialog } from '@/features/professors/components/CreateProfessorDialog';
 import { ProfessorActionsDialog } from '@/features/professors/components/ProfessorActionsDialog';
@@ -15,31 +15,27 @@ export const Route = createFileRoute('/_app/professors/')({
 
 export function GestaoDocentesScreen() {
   const {
-    docentesFiltrados,
-    totalDocentes,
+    professors,
+    totalProfessors,
     searchQuery,
     currentPage,
     pageSize,
-    cadastroAberto,
-    novoDocenteForm,
-    novoDocenteFormErrors,
-    docenteParaReenvio,
-    docenteParaAcoes,
+    isCreateProfessorDialogOpen,
+    professorToResendInvite,
+    professorForActions,
     setSearchQuery,
     handlePageChange,
     handlePageSizeChange,
-    handleOpenCadastro,
-    handleCloseCadastro,
-    handleFieldChange,
-    handleCpfChange,
-    handleSalvarCadastro,
-    handleOpenReenvio,
-    handleCloseReenvio,
-    handleReenviarConvite,
-    handleOpenAcoes,
-    handleCloseAcoes,
-    handleToggleDocenteStatus,
-    handleRedefinirSenha,
+    handleOpenCreateProfessorDialog,
+    handleCloseCreateProfessorDialog,
+    handleCreateProfessor,
+    handleOpenResendInvite,
+    handleCloseResendInvite,
+    handleResendInvite,
+    handleOpenProfessorActions,
+    handleCloseProfessorActions,
+    handleToggleProfessorStatus,
+    handleResetPassword,
   } = useProfessors();
 
   return (
@@ -48,13 +44,13 @@ export function GestaoDocentesScreen() {
         <ProfessorsHeader />
 
         <ProfessorsTable
-          docentes={docentesFiltrados}
-          totalDocentes={totalDocentes}
-          onOpenCadastro={handleOpenCadastro}
+          professors={professors}
+          totalProfessors={totalProfessors}
+          onOpenCreateProfessorDialog={handleOpenCreateProfessorDialog}
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
-          onOpenReenvio={handleOpenReenvio}
-          onOpenAcoes={handleOpenAcoes}
+          onOpenResendInvite={handleOpenResendInvite}
+          onOpenProfessorActions={handleOpenProfessorActions}
           currentPage={currentPage}
           pageSize={pageSize}
           onPageChange={handlePageChange}
@@ -63,31 +59,23 @@ export function GestaoDocentesScreen() {
       </div>
 
       <ResendInviteDialog
-        docente={docenteParaReenvio}
-        onClose={handleCloseReenvio}
-        onConfirm={handleReenviarConvite}
+        professor={professorToResendInvite}
+        onClose={handleCloseResendInvite}
+        onConfirm={handleResendInvite}
       />
 
       <CreateProfessorDialog
-        open={cadastroAberto}
-        formData={novoDocenteForm}
-        formErrors={novoDocenteFormErrors}
-        linhasPesquisa={linhasPesquisaPrincipais}
-        onClose={handleCloseCadastro}
-        onSubmit={handleSalvarCadastro}
-        onNomeCompletoChange={value => handleFieldChange('nomeCompleto', value)}
-        onCpfChange={handleCpfChange}
-        onMatriculaChange={value => handleFieldChange('matriculaDocente', value)}
-        onEmailChange={value => handleFieldChange('email', value)}
-        onInstituicaoChange={value => handleFieldChange('instituicaoOrigem', value)}
-        onLinhaPesquisaChange={value => handleFieldChange('linhaPesquisaPrincipal', value)}
+        open={isCreateProfessorDialogOpen}
+        linhasPesquisa={mainResearchLines}
+        onClose={handleCloseCreateProfessorDialog}
+        onSubmit={handleCreateProfessor}
       />
 
       <ProfessorActionsDialog
-        docente={docenteParaAcoes}
-        onClose={handleCloseAcoes}
-        onToggleStatus={handleToggleDocenteStatus}
-        onResetPassword={handleRedefinirSenha}
+        professor={professorForActions}
+        onClose={handleCloseProfessorActions}
+        onToggleStatus={handleToggleProfessorStatus}
+        onResetPassword={handleResetPassword}
       />
     </ManagementPageLayout>
   );

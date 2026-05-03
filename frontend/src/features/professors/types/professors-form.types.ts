@@ -1,26 +1,25 @@
-export interface NovoDocenteFormData {
-  nomeCompleto: string;
-  cpf: string;
-  matriculaDocente: string;
-  email: string;
-  instituicaoOrigem: string;
-  linhaPesquisaPrincipal: string;
-}
+import { z } from 'zod';
 
-export interface NovoDocenteFormErrors {
-  nomeCompleto?: string;
-  cpf?: string;
-  matriculaDocente?: string;
-  email?: string;
-  instituicaoOrigem?: string;
-  linhaPesquisaPrincipal?: string;
-}
+export const newProfessorFormSchema = z.object({
+  fullName: z.string().trim().min(1, 'Informe o nome completo.'),
+  cpf: z
+    .string()
+    .trim()
+    .min(1, 'Informe o CPF.')
+    .regex(/^\d{11}$/, 'CPF deve conter 11 numeros.'),
+  professorId: z.string().trim().min(1, 'Informe a matricula do docente.'),
+  email: z.email('E-mail invalido.').trim().min(1, 'Informe o e-mail.'),
+  originInstitution: z.string().trim().min(1, 'Informe a instituicao de origem.'),
+  mainResearchLine: z.string().trim().min(1, 'Selecione a linha de pesquisa principal.'),
+});
 
-export const INITIAL_NOVO_DOCENTE_FORM: NovoDocenteFormData = {
-  nomeCompleto: '',
+export type NewProfessorFormData = z.infer<typeof newProfessorFormSchema>;
+
+export const INITIAL_NEW_PROFESSOR_FORM: NewProfessorFormData = {
+  fullName: '',
   cpf: '',
-  matriculaDocente: '',
+  professorId: '',
   email: '',
-  instituicaoOrigem: '',
-  linhaPesquisaPrincipal: '',
+  originInstitution: '',
+  mainResearchLine: '',
 };

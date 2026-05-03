@@ -3,17 +3,21 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
+import { toFieldErrors } from '@/shared/errors/fieldErrors';
 
 interface PasswordFieldProps {
   id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   minLength?: number;
   required?: boolean;
   forgotPasswordLink?: boolean;
+  errors?: readonly unknown[];
+  isInvalid?: boolean;
 }
 
 export function PasswordField({
@@ -21,17 +25,21 @@ export function PasswordField({
   label,
   value,
   onChange,
+  onBlur,
   placeholder = 'Sua senha',
   minLength,
   required = true,
   forgotPasswordLink = false,
+  errors,
+  isInvalid = false,
 }: PasswordFieldProps) {
+  const fieldErrors = toFieldErrors(errors);
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="space-y-2">
+    <Field data-invalid={isInvalid} className="space-y-2">
       <div className="flex items-center justify-between gap-3">
-        <Label htmlFor={id}>{label}</Label>
+        <FieldLabel htmlFor={id}>{label}</FieldLabel>
         {forgotPasswordLink ? (
           <Link
             to="/auth/forgot-password"
@@ -41,29 +49,36 @@ export function PasswordField({
           </Link>
         ) : null}
       </div>
-      <div className="relative">
-        <Input
-          id={id}
-          type={visible ? 'text' : 'password'}
-          placeholder={placeholder}
-          value={value}
-          onChange={event => onChange(event.target.value)}
-          minLength={minLength}
-          required={required}
-          className="pr-11"
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="absolute top-1/2 right-1 h-9 w-9 -translate-y-1/2 active:translate-y-[-50%]"
-          onClick={() => setVisible(prev => !prev)}
-          tabIndex={-1}
-          aria-label={visible ? 'Ocultar senha' : 'Mostrar senha'}
-        >
-          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </Button>
-      </div>
-    </div>
+
+      <FieldContent>
+        <div className="relative">
+          <Input
+            id={id}
+            type={visible ? 'text' : 'password'}
+            placeholder={placeholder}
+            value={value}
+            onChange={event => onChange(event.target.value)}
+            onBlur={onBlur}
+            minLength={minLength}
+            required={required}
+            className="pr-11"
+            aria-invalid={isInvalid}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute top-1/2 right-1 h-9 w-9 -translate-y-1/2 active:translate-y-[-50%]"
+            onClick={() => setVisible(prev => !prev)}
+            tabIndex={-1}
+            aria-label={visible ? 'Ocultar senha' : 'Mostrar senha'}
+          >
+            {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <FieldError errors={fieldErrors} />
+      </FieldContent>
+    </Field>
   );
 }

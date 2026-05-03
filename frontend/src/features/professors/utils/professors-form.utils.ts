@@ -1,20 +1,11 @@
-import type { Docente } from '@/lib/mock-professors-management';
-import type { NovoDocenteFormData, NovoDocenteFormErrors } from '../types/professors-form.types';
+import type { Professor } from '@/lib/mock-professors-management';
+import type { NewProfessorFormData } from '../types/professors-form.types';
 
 export function normalizeCpf(value: string): string {
   return value.replace(/\D/g, '');
 }
 
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function isValidCpf(value: string): boolean {
-  const cpf = normalizeCpf(value);
-  return /^\d{11}$/.test(cpf);
-}
-
-export function createDocenteId(): string {
+export function createProfessorId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
@@ -22,71 +13,37 @@ export function createDocenteId(): string {
   return `doc-${Date.now()}`;
 }
 
-export function validateNovoDocenteForm(formData: NovoDocenteFormData): NovoDocenteFormErrors {
-  const errors: NovoDocenteFormErrors = {};
-
-  if (!formData.nomeCompleto.trim()) {
-    errors.nomeCompleto = 'Informe o nome completo.';
-  }
-
-  if (!formData.cpf.trim()) {
-    errors.cpf = 'Informe o CPF.';
-  } else if (!isValidCpf(formData.cpf)) {
-    errors.cpf = 'CPF deve conter 11 numeros.';
-  }
-
-  if (!formData.matriculaDocente.trim()) {
-    errors.matriculaDocente = 'Informe a matricula do docente.';
-  }
-
-  if (!formData.email.trim()) {
-    errors.email = 'Informe o e-mail.';
-  } else if (!isValidEmail(formData.email.trim())) {
-    errors.email = 'E-mail invalido.';
-  }
-
-  if (!formData.instituicaoOrigem.trim()) {
-    errors.instituicaoOrigem = 'Informe a instituicao de origem.';
-  }
-
-  if (!formData.linhaPesquisaPrincipal.trim()) {
-    errors.linhaPesquisaPrincipal = 'Selecione a linha de pesquisa principal.';
-  }
-
-  return errors;
-}
-
-export function filterProfessors(docentes: Docente[], query: string): Docente[] {
+export function filterProfessors(professors: Professor[], query: string): Professor[] {
   const normalizedQuery = query.toLowerCase().trim();
-  if (!normalizedQuery) return docentes;
+  if (!normalizedQuery) return professors;
 
-  return docentes.filter(
-    d =>
-      d.nome.toLowerCase().includes(normalizedQuery) ||
-      d.email.toLowerCase().includes(normalizedQuery),
+  return professors.filter(
+    professor =>
+      professor.nome.toLowerCase().includes(normalizedQuery) ||
+      professor.email.toLowerCase().includes(normalizedQuery),
   );
 }
 
-export function toggleProfessorStatus(docentes: Docente[], professorId: string): Docente[] {
-  return docentes.map(docente => {
-    if (docente.id !== professorId) return docente;
+export function toggleProfessorStatus(professors: Professor[], professorId: string): Professor[] {
+  return professors.map(professor => {
+    if (professor.id !== professorId) return professor;
     return {
-      ...docente,
-      status: docente.status === 'Desativado' ? 'Verificado' : 'Desativado',
+      ...professor,
+      status: professor.status === 'Desativado' ? 'Verificado' : 'Desativado',
     };
   });
 }
 
-export function mapFormToDocente(formData: NovoDocenteFormData): Docente {
+export function mapFormToProfessor(formData: NewProfessorFormData): Professor {
   return {
-    id: createDocenteId(),
-    nome: formData.nomeCompleto.trim(),
+    id: createProfessorId(),
+    nome: formData.fullName.trim(),
     cpf: normalizeCpf(formData.cpf),
-    matriculaDocente: formData.matriculaDocente.trim(),
+    matriculaDocente: formData.professorId.trim(),
     tipo: 'DOCENTE PERMANENTE',
     email: formData.email.trim().toLowerCase(),
-    instituicaoOrigem: formData.instituicaoOrigem.trim(),
-    linhaPesquisaPrincipal: formData.linhaPesquisaPrincipal,
+    instituicaoOrigem: formData.originInstitution.trim(),
+    linhaPesquisaPrincipal: formData.mainResearchLine,
     status: 'Pendente',
   };
 }

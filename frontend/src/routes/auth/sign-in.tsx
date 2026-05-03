@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useForm } from '@tanstack/react-form';
 import {
   AuthCallout,
   AuthErrorMessage,
@@ -11,21 +11,22 @@ import {
 } from '@/components/auth';
 import { GoogleLoginButton } from '@/components/google-login-button';
 import { useEmailLogin } from '@/hooks/use-auth';
-import { AUTH_SIGN_IN_ROUTE } from '@/lib/auth-flow';
+import { AUTH_SIGN_UP_ROUTE } from '@/lib/auth-flow';
+import { signInSchema, type SignInFormData } from '@/features/auth/auth-form.schemas';
 
 export const Route = createFileRoute('/auth/sign-in')({
   component: SignInPage,
 });
 
 function SignInPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const emailLogin = useEmailLogin();
-
-  const handleSubmit = (event: React.SubmitEvent) => {
-    event.preventDefault();
-    emailLogin.mutate({ email, password });
-  };
+  const form = useForm({
+    defaultValues: { email: '', password: '' } satisfies SignInFormData,
+    validators: { onSubmit: signInSchema },
+    onSubmit: async ({ value }) => {
+      emailLogin.mutate(value);
+    },
+  });
 
   return (
     <AuthPageLayout
@@ -46,23 +47,46 @@ function SignInPage() {
       footer={
         <>
           Candidatos ainda nao cadastrados podem{' '}
-          <Link to={AUTH_SIGN_IN_ROUTE} className="text-primary underline-offset-4 hover:underline">
+          <Link to={AUTH_SIGN_UP_ROUTE} className="text-primary underline-offset-4 hover:underline">
             criar a conta aqui
           </Link>
           .
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <EmailField value={email} onChange={setEmail} />
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-5"
+      >
+        <form.Field name="email">
+          {field => (
+            <EmailField
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
-        <PasswordField
-          id="password"
-          label="Senha"
-          value={password}
-          onChange={setPassword}
-          forgotPasswordLink
-        />
+        <form.Field name="password">
+          {field => (
+            <PasswordField
+              id="password"
+              label="Senha"
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              forgotPasswordLink
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
         <AuthErrorMessage message={emailLogin.isError ? emailLogin.error.message : null} />
 

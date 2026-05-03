@@ -5,24 +5,24 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table } from '@/components/table';
-import type { Docente, StatusDocente } from '@/lib/mock-professors-management';
+import type { Professor, ProfessorStatus } from '@/lib/mock-professors-management';
 import type { ColumnDef } from '@tanstack/react-table';
 
 interface ProfessorsTableProps {
-  docentes: Docente[];
+  professors: Professor[];
   searchQuery: string;
-  totalDocentes: number;
+  totalProfessors: number;
   currentPage: number;
   pageSize: number;
-  onOpenCadastro: () => void;
+  onOpenCreateProfessorDialog: () => void;
   onSearchQueryChange: (value: string) => void;
-  onOpenReenvio: (docente: Docente) => void;
-  onOpenAcoes: (docente: Docente) => void;
+  onOpenResendInvite: (professor: Professor) => void;
+  onOpenProfessorActions: (professor: Professor) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
 }
 
-function renderBadgeStatus(status: StatusDocente) {
+function renderBadgeStatus(status: ProfessorStatus) {
   switch (status) {
     case 'Verificado':
       return (
@@ -58,26 +58,28 @@ function renderAvatarInitials(nome: string) {
   return nome.match(/[A-Z]/g)?.slice(0, 2).join('');
 }
 
-function createProfessorColumns(onOpenReenvio: (docente: Docente) => void): ColumnDef<Docente>[] {
+function createProfessorColumns(
+  onOpenResendInvite: (professor: Professor) => void,
+): ColumnDef<Professor>[] {
   return [
     {
       accessorKey: 'nome',
       header: 'NOME DO DOCENTE',
       cell: ({ row }) => {
-        const docente = row.original;
+        const professor = row.original;
 
         return (
           <div className="flex items-center space-x-4">
-            <Avatar className={`h-10 w-10 ${docente.status === 'Desativado' ? 'grayscale' : ''}`}>
-              <AvatarImage src={docente.avatarUrl} />
+            <Avatar className={`h-10 w-10 ${professor.status === 'Desativado' ? 'grayscale' : ''}`}>
+              <AvatarImage src={professor.avatarUrl} />
               <AvatarFallback className="bg-slate-100 text-sm font-semibold text-slate-600">
-                {renderAvatarInitials(docente.nome)}
+                {renderAvatarInitials(professor.nome)}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-900">{docente.nome}</span>
+              <span className="text-sm font-bold text-slate-900">{professor.nome}</span>
               <span className="mt-0.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-                {docente.tipo}
+                {professor.tipo}
               </span>
             </div>
           </div>
@@ -93,14 +95,14 @@ function createProfessorColumns(onOpenReenvio: (docente: Docente) => void): Colu
       accessorKey: 'status',
       header: 'STATUS',
       cell: ({ row }) => {
-        const docente = row.original;
+        const professor = row.original;
 
         return (
           <div className="flex flex-col items-start gap-1">
-            {renderBadgeStatus(docente.status)}
-            {docente.status === 'Pendente' && (
+            {renderBadgeStatus(professor.status)}
+            {professor.status === 'Pendente' && (
               <button
-                onClick={() => onOpenReenvio(docente)}
+                onClick={() => onOpenResendInvite(professor)}
                 className="mt-1 text-[10px] font-bold tracking-wider text-blue-600 uppercase transition-colors hover:text-blue-800"
               >
                 REENVIAR CONVITE
@@ -114,8 +116,8 @@ function createProfessorColumns(onOpenReenvio: (docente: Docente) => void): Colu
 }
 
 function createProfessorQuickActions(
-  onOpenAcoes: (docente: Docente) => void,
-): ColumnDef<Docente>[] {
+  onOpenProfessorActions: (professor: Professor) => void,
+): ColumnDef<Professor>[] {
   return [
     {
       id: 'acoes',
@@ -125,7 +127,7 @@ function createProfessorQuickActions(
           <Button
             variant="ghost"
             className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900"
-            onClick={() => onOpenAcoes(row.original)}
+            onClick={() => onOpenProfessorActions(row.original)}
           >
             <span className="sr-only">Abrir ações</span>
             <MoreVertical className="h-4 w-4" />
@@ -137,20 +139,20 @@ function createProfessorQuickActions(
 }
 
 export function ProfessorsTable({
-  docentes,
+  professors,
   searchQuery,
-  totalDocentes,
+  totalProfessors,
   currentPage,
   pageSize,
-  onOpenCadastro,
+  onOpenCreateProfessorDialog,
   onSearchQueryChange,
-  onOpenReenvio,
-  onOpenAcoes,
+  onOpenResendInvite,
+  onOpenProfessorActions,
   onPageChange,
   onPageSizeChange,
 }: ProfessorsTableProps) {
-  const columns = createProfessorColumns(onOpenReenvio);
-  const quickActions = createProfessorQuickActions(onOpenAcoes);
+  const columns = createProfessorColumns(onOpenResendInvite);
+  const quickActions = createProfessorQuickActions(onOpenProfessorActions);
 
   return (
     <>
@@ -167,7 +169,7 @@ export function ProfessorsTable({
 
         <Button
           className="rounded-lg bg-blue-600 font-medium text-white hover:bg-blue-700"
-          onClick={onOpenCadastro}
+          onClick={onOpenCreateProfessorDialog}
         >
           <UserPlus className="mr-2 h-4 w-4" />
           Cadastrar Novo Docente
@@ -175,10 +177,10 @@ export function ProfessorsTable({
       </div>
 
       <Table
-        data={docentes}
+        data={professors}
         columns={columns}
         quickActions={quickActions}
-        totalItems={totalDocentes}
+        totalItems={totalProfessors}
         currentPage={currentPage}
         pageSize={pageSize}
         itemLabel="DOCENTES"

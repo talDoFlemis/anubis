@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useForm } from '@tanstack/react-form';
 import {
   AuthCallout,
   AuthErrorMessage,
@@ -9,39 +9,41 @@ import {
 } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { useLogout, useUpdateProfile } from '@/hooks/use-auth';
-import { getPostAuthPath, validatePasswordMatch } from '@/lib/auth-flow';
+import { getPostAuthPath } from '@/lib/auth-flow';
+import {
+  changePasswordSchema,
+  type ChangePasswordFormData,
+} from '@/features/auth/auth-form.schemas';
 
 export const Route = createFileRoute('/auth/change-password')({
   component: ChangePasswordPage,
 });
 
 function ChangePasswordPage() {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const updateProfile = useUpdateProfile();
   const logout = useLogout();
   const navigate = useNavigate();
-
-  const handleSubmit = (event: React.SubmitEvent) => {
-    event.preventDefault();
-
-    if (!validatePasswordMatch(password, confirmPassword)) {
-      return;
-    }
-
-    updateProfile.mutate(
-      {
-        oldPassword: currentPassword,
-        password,
-      },
-      {
-        onSuccess: updatedUser => {
-          navigate({ to: getPostAuthPath(updatedUser) });
+  const form = useForm({
+    defaultValues: {
+      currentPassword: '',
+      password: '',
+      confirmPassword: '',
+    } satisfies ChangePasswordFormData,
+    validators: { onSubmit: changePasswordSchema },
+    onSubmit: async ({ value }) => {
+      updateProfile.mutate(
+        {
+          oldPassword: value.currentPassword,
+          password: value.password,
         },
-      },
-    );
-  };
+        {
+          onSuccess: updatedUser => {
+            navigate({ to: getPostAuthPath(updatedUser) });
+          },
+        },
+      );
+    },
+  });
 
   return (
     <AuthPageLayout
@@ -58,32 +60,59 @@ function ChangePasswordPage() {
       notes={['Use a senha temporaria recebida anteriormente para autorizar a troca nesta etapa.']}
       compact
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <PasswordField
-          id="currentPassword"
-          label="Senha atual"
-          value={currentPassword}
-          onChange={setCurrentPassword}
-          placeholder="Informe a senha temporaria"
-        />
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-5"
+      >
+        <form.Field name="currentPassword">
+          {field => (
+            <PasswordField
+              id="currentPassword"
+              label="Senha atual"
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              placeholder="Informe a senha temporaria"
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
-        <PasswordField
-          id="password"
-          label="Nova senha"
-          value={password}
-          onChange={setPassword}
-          placeholder="Minimo 6 caracteres"
-          minLength={6}
-        />
+        <form.Field name="password">
+          {field => (
+            <PasswordField
+              id="password"
+              label="Nova senha"
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              placeholder="Minimo 6 caracteres"
+              minLength={6}
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
-        <PasswordField
-          id="confirmPassword"
-          label="Confirmar nova senha"
-          value={confirmPassword}
-          onChange={setConfirmPassword}
-          placeholder="Repita a nova senha"
-          minLength={6}
-        />
+        <form.Field name="confirmPassword">
+          {field => (
+            <PasswordField
+              id="confirmPassword"
+              label="Confirmar nova senha"
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              placeholder="Repita a nova senha"
+              minLength={6}
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
         <AuthErrorMessage message={updateProfile.isError ? updateProfile.error.message : null} />
 
