@@ -9,17 +9,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { Docente } from '@/lib/mock-professors-management';
+import type { Professor } from '@/lib/mock-professors-management';
 
 interface ResendInviteDialogProps {
-  docente: Docente | null;
+  professor: Professor | null;
   onClose: () => void;
   onConfirm: () => void;
 }
 
-export function ResendInviteDialog({ docente, onClose, onConfirm }: ResendInviteDialogProps) {
+export function ResendInviteDialog({ professor, onClose, onConfirm }: ResendInviteDialogProps) {
   return (
-    <Dialog open={Boolean(docente)} onOpenChange={open => !open && onClose()}>
+    <Dialog open={Boolean(professor)} onOpenChange={open => !open && onClose()}>
       <DialogContent className="p-6 sm:max-w-106.25">
         <DialogHeader className="mb-2">
           <div className="mb-4 flex items-center gap-4">

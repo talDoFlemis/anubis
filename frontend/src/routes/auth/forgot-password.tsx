@@ -1,30 +1,31 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useForm } from '@tanstack/react-form';
 import { toast } from 'sonner';
 import { AuthErrorMessage, AuthPageLayout, EmailField, SubmitButton } from '@/components/auth';
 import { useForgotPassword } from '@/hooks/use-auth';
 import { AUTH_HOME_ROUTE } from '@/lib/auth-flow';
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordFormData,
+} from '@/features/auth/auth-form.schemas';
 
 export const Route = createFileRoute('/auth/forgot-password')({
   component: ForgotPasswordPage,
 });
 
 function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
   const forgotPassword = useForgotPassword();
-
-  const handleSubmit = (event: React.SubmitEvent) => {
-    event.preventDefault();
-
-    forgotPassword.mutate(
-      { email },
-      {
+  const form = useForm({
+    defaultValues: { email: '' } satisfies ForgotPasswordFormData,
+    validators: { onSubmit: forgotPasswordSchema },
+    onSubmit: async ({ value }) => {
+      forgotPassword.mutate(value, {
         onSuccess: () => {
           toast.success('Email enviado! Verifique sua caixa de entrada para redefinir a senha.');
         },
-      },
-    );
-  };
+      });
+    },
+  });
 
   return (
     <AuthPageLayout
@@ -48,8 +49,24 @@ function ForgotPasswordPage() {
         </Link>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <EmailField value={email} onChange={setEmail} />
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-5"
+      >
+        <form.Field name="email">
+          {field => (
+            <EmailField
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
         <AuthErrorMessage message={forgotPassword.isError ? forgotPassword.error.message : null} />
 

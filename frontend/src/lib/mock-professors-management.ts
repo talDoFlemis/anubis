@@ -1,6 +1,6 @@
-export type StatusDocente = 'Verificado' | 'Pendente' | 'Desativado';
+export type ProfessorStatus = 'Verificado' | 'Pendente' | 'Desativado';
 
-export interface Docente {
+export interface Professor {
   id: string;
   nome: string;
   cpf: string;
@@ -9,11 +9,11 @@ export interface Docente {
   email: string;
   instituicaoOrigem: string;
   linhaPesquisaPrincipal: string;
-  status: StatusDocente;
+  status: ProfessorStatus;
   avatarUrl?: string;
 }
 
-export const linhasPesquisaPrincipais = [
+export const mainResearchLines = [
   'Inteligencia Artificial',
   'Sistemas Distribuidos',
   'Engenharia de Software',
@@ -23,7 +23,7 @@ export const linhasPesquisaPrincipais = [
   'Seguranca da Informacao',
 ] as const;
 
-const mockDocenteBase: Docente[] = [
+const mockProfessorBase: Professor[] = [
   {
     id: '1',
     nome: 'Dr. Ricardo Almeida',
@@ -70,9 +70,9 @@ const mockDocenteBase: Docente[] = [
   },
 ];
 
-export const mockDocentes: Docente[] = Array.from({ length: 14 }, (_, index) => {
-  const base = mockDocenteBase[index % mockDocenteBase.length];
-  const cycle = Math.floor(index / mockDocenteBase.length) + 1;
+export const mockProfessors: Professor[] = Array.from({ length: 14 }, (_, index) => {
+  const base = mockProfessorBase[index % mockProfessorBase.length];
+  const cycle = Math.floor(index / mockProfessorBase.length) + 1;
 
   return {
     ...base,

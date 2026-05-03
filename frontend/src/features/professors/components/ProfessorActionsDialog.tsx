@@ -9,30 +9,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { Docente } from '@/lib/mock-professors-management';
+import type { Professor } from '@/lib/mock-professors-management';
 
 interface ProfessorActionsDialogProps {
-  docente: Docente | null;
+  professor: Professor | null;
   onClose: () => void;
   onToggleStatus: () => void;
   onResetPassword: () => void;
 }
 
 export function ProfessorActionsDialog({
-  docente,
+  professor,
   onClose,
   onToggleStatus,
   onResetPassword,
 }: ProfessorActionsDialogProps) {
   return (
-    <Dialog open={Boolean(docente)} onOpenChange={open => !open && onClose()}>
+    <Dialog open={Boolean(professor)} onOpenChange={open => !open && onClose()}>
       <DialogContent className="p-6 sm:max-w-106.25">
         <DialogHeader className="mb-2">
           <DialogTitle className="font-serif text-xl font-bold text-slate-900">
             Ações do docente
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-slate-500">
-            Escolha a ação que deseja executar para {docente?.nome}.
+            Escolha a ação que deseja executar para {professor?.nome}.
           </DialogDescription>
         </DialogHeader>
 
@@ -44,7 +44,7 @@ export function ProfessorActionsDialog({
             onClick={onToggleStatus}
           >
             <ToggleLeft className="mr-2 h-4 w-4 text-slate-500" />
-            {docente?.status === 'Desativado' ? 'ATIVAR DOCENTE' : 'DESATIVAR DOCENTE'}
+            {professor?.status === 'Desativado' ? 'ATIVAR DOCENTE' : 'DESATIVAR DOCENTE'}
           </Button>
 
           <Button

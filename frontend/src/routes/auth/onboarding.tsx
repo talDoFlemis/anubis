@@ -1,12 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useForm } from '@tanstack/react-form';
 import { toast } from 'sonner';
 import { AuthCallout, AuthErrorMessage, AuthPageLayout, SubmitButton } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
 import { useAuth, useCompleteCandidateOnboarding, useLogout } from '@/hooks/use-auth';
 import { getPostAuthPath } from '@/lib/auth-flow';
+import { onboardingSchema, type OnboardingFormData } from '@/features/auth/auth-form.schemas';
+import { toFieldErrors } from '@/shared/errors/fieldErrors';
 
 export const Route = createFileRoute('/auth/onboarding')({
   component: CandidateOnboardingPage,
@@ -17,37 +19,35 @@ function CandidateOnboardingPage() {
   const onboarding = useCompleteCandidateOnboarding();
   const logout = useLogout();
   const navigate = useNavigate();
-  const [firstName, setFirstName] = useState<string | null>(null);
-  const [lastName, setLastName] = useState<string | null>(null);
-  const [cpf, setCpf] = useState<string | null>(null);
-  const [universityOfOrigin, setUniversityOfOrigin] = useState('');
-  const [ira, setIra] = useState('');
-  const [poscomp, setPoscomp] = useState('');
-
-  const resolvedFirstName = firstName ?? user?.firstName ?? '';
-  const resolvedLastName = lastName ?? user?.lastName ?? '';
-  const resolvedCpf = cpf ?? user?.cpf ?? '';
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-
-    onboarding.mutate(
-      {
-        firstName: resolvedFirstName,
-        lastName: resolvedLastName,
-        cpf: resolvedCpf,
-        universityOfOrigin,
-        ira: ira || undefined,
-        poscomp: poscomp ? Number(poscomp) : undefined,
-      },
-      {
-        onSuccess: updatedUser => {
-          toast.success('Cadastro concluido com sucesso.');
-          navigate({ to: getPostAuthPath(updatedUser) });
+  const form = useForm({
+    defaultValues: {
+      firstName: user?.firstName ?? '',
+      lastName: user?.lastName ?? '',
+      cpf: user?.cpf ?? '',
+      universityOfOrigin: '',
+      ira: '',
+      poscomp: '',
+    } satisfies OnboardingFormData,
+    validators: { onSubmit: onboardingSchema },
+    onSubmit: async ({ value }) => {
+      onboarding.mutate(
+        {
+          firstName: value.firstName,
+          lastName: value.lastName,
+          cpf: value.cpf,
+          universityOfOrigin: value.universityOfOrigin,
+          ira: value.ira.trim() || undefined,
+          poscomp: value.poscomp.trim() ? Number(value.poscomp) : undefined,
         },
-      },
-    );
-  };
+        {
+          onSuccess: updatedUser => {
+            toast.success('Cadastro concluido com sucesso.');
+            navigate({ to: getPostAuthPath(updatedUser) });
+          },
+        },
+      );
+    },
+  });
 
   return (
     <AuthPageLayout
@@ -67,74 +67,150 @@ function CandidateOnboardingPage() {
       ]}
       compact
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-5"
+      >
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="firstName">Nome</Label>
-            <Input
-              id="firstName"
-              value={resolvedFirstName}
-              onChange={event => setFirstName(event.target.value)}
-              placeholder="Seu nome"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="lastName">Sobrenome</Label>
-            <Input
-              id="lastName"
-              value={resolvedLastName}
-              onChange={event => setLastName(event.target.value)}
-              placeholder="Seu sobrenome"
-              required
-            />
-          </div>
+          <form.Field name="firstName">
+            {field => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+              return (
+                <Field data-invalid={isInvalid} className="space-y-2">
+                  <FieldLabel htmlFor={field.name}>Nome</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id={field.name}
+                      value={field.state.value}
+                      onChange={event => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      placeholder="Seu nome"
+                      required
+                      aria-invalid={isInvalid}
+                    />
+                    <FieldError errors={fieldErrors} />
+                  </FieldContent>
+                </Field>
+              );
+            }}
+          </form.Field>
+          <form.Field name="lastName">
+            {field => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+              return (
+                <Field data-invalid={isInvalid} className="space-y-2">
+                  <FieldLabel htmlFor={field.name}>Sobrenome</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id={field.name}
+                      value={field.state.value}
+                      onChange={event => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      placeholder="Seu sobrenome"
+                      required
+                      aria-invalid={isInvalid}
+                    />
+                    <FieldError errors={fieldErrors} />
+                  </FieldContent>
+                </Field>
+              );
+            }}
+          </form.Field>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="cpf">CPF</Label>
-          <Input
-            id="cpf"
-            inputMode="numeric"
-            value={resolvedCpf}
-            onChange={event => setCpf(event.target.value)}
-            placeholder="Somente numeros"
-            required
-          />
-        </div>
+        <form.Field name="cpf">
+          {field => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+            const fieldErrors = toFieldErrors(field.state.meta.errors);
 
-        <div className="space-y-2">
-          <Label htmlFor="universityOfOrigin">Universidade de origem</Label>
-          <Input
-            id="universityOfOrigin"
-            value={universityOfOrigin}
-            onChange={event => setUniversityOfOrigin(event.target.value)}
-            placeholder="Ex.: UFRN"
-            required
-          />
-        </div>
+            return (
+              <Field data-invalid={isInvalid} className="space-y-2">
+                <FieldLabel htmlFor={field.name}>CPF</FieldLabel>
+                <FieldContent>
+                  <Input
+                    id={field.name}
+                    inputMode="numeric"
+                    value={field.state.value}
+                    onChange={event => field.handleChange(event.target.value)}
+                    onBlur={field.handleBlur}
+                    placeholder="Somente numeros"
+                    required
+                    aria-invalid={isInvalid}
+                  />
+                  <FieldError errors={fieldErrors} />
+                </FieldContent>
+              </Field>
+            );
+          }}
+        </form.Field>
+
+        <form.Field name="universityOfOrigin">
+          {field => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+            const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+            return (
+              <Field data-invalid={isInvalid} className="space-y-2">
+                <FieldLabel htmlFor={field.name}>Universidade de origem</FieldLabel>
+                <FieldContent>
+                  <Input
+                    id={field.name}
+                    value={field.state.value}
+                    onChange={event => field.handleChange(event.target.value)}
+                    onBlur={field.handleBlur}
+                    placeholder="Ex.: UFRN"
+                    required
+                    aria-invalid={isInvalid}
+                  />
+                  <FieldError errors={fieldErrors} />
+                </FieldContent>
+              </Field>
+            );
+          }}
+        </form.Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="ira">IRA (opcional)</Label>
-            <Input
-              id="ira"
-              inputMode="decimal"
-              value={ira}
-              onChange={event => setIra(event.target.value)}
-              placeholder="Ex.: 8.75"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="poscomp">POSCOMP (opcional)</Label>
-            <Input
-              id="poscomp"
-              inputMode="numeric"
-              value={poscomp}
-              onChange={event => setPoscomp(event.target.value)}
-              placeholder="Ex.: 780"
-            />
-          </div>
+          <form.Field name="ira">
+            {field => (
+              <Field className="space-y-2">
+                <FieldLabel htmlFor={field.name}>IRA (opcional)</FieldLabel>
+                <FieldContent>
+                  <Input
+                    id={field.name}
+                    inputMode="decimal"
+                    value={field.state.value}
+                    onChange={event => field.handleChange(event.target.value)}
+                    onBlur={field.handleBlur}
+                    placeholder="Ex.: 8.75"
+                  />
+                </FieldContent>
+              </Field>
+            )}
+          </form.Field>
+          <form.Field name="poscomp">
+            {field => (
+              <Field className="space-y-2">
+                <FieldLabel htmlFor={field.name}>POSCOMP (opcional)</FieldLabel>
+                <FieldContent>
+                  <Input
+                    id={field.name}
+                    inputMode="numeric"
+                    value={field.state.value}
+                    onChange={event => field.handleChange(event.target.value)}
+                    onBlur={field.handleBlur}
+                    placeholder="Ex.: 780"
+                  />
+                </FieldContent>
+              </Field>
+            )}
+          </form.Field>
         </div>
 
         <AuthErrorMessage message={onboarding.isError ? onboarding.error.message : null} />

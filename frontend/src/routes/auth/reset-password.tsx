@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { KeyRound, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useForm } from '@tanstack/react-form';
 import {
   AuthCallout,
   AuthErrorMessage,
@@ -10,7 +10,8 @@ import {
 } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { useResetPassword } from '@/hooks/use-auth';
-import { AUTH_SIGN_IN_ROUTE, validateHashSearch, validatePasswordMatch } from '@/lib/auth-flow';
+import { AUTH_SIGN_IN_ROUTE, validateHashSearch } from '@/lib/auth-flow';
+import { resetPasswordSchema, type ResetPasswordFormData } from '@/features/auth/auth-form.schemas';
 
 export const Route = createFileRoute('/auth/reset-password')({
   validateSearch: validateHashSearch,
@@ -19,10 +20,23 @@ export const Route = createFileRoute('/auth/reset-password')({
 
 function ResetPasswordPage() {
   const { hash } = Route.useSearch();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const resetPassword = useResetPassword();
   const navigate = useNavigate();
+
+  const form = useForm({
+    defaultValues: { password: '', confirmPassword: '' } satisfies ResetPasswordFormData,
+    validators: { onSubmit: resetPasswordSchema },
+    onSubmit: async ({ value }) => {
+      resetPassword.mutate(
+        { hash, password: value.password },
+        {
+          onSuccess: () => {
+            navigate({ to: AUTH_SIGN_IN_ROUTE });
+          },
+        },
+      );
+    },
+  });
 
   if (!hash) {
     return (
@@ -50,23 +64,6 @@ function ResetPasswordPage() {
       </AuthPageLayout>
     );
   }
-
-  const handleSubmit = (event: React.SubmitEvent) => {
-    event.preventDefault();
-
-    if (!validatePasswordMatch(password, confirmPassword)) {
-      return;
-    }
-
-    resetPassword.mutate(
-      { hash, password },
-      {
-        onSuccess: () => {
-          navigate({ to: AUTH_SIGN_IN_ROUTE });
-        },
-      },
-    );
-  };
 
   return (
     <AuthPageLayout
@@ -96,24 +93,44 @@ function ResetPasswordPage() {
         </Link>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <PasswordField
-          id="password"
-          label="Nova senha"
-          value={password}
-          onChange={setPassword}
-          placeholder="Minimo 6 caracteres"
-          minLength={6}
-        />
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-5"
+      >
+        <form.Field name="password">
+          {field => (
+            <PasswordField
+              id="password"
+              label="Nova senha"
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              placeholder="Minimo 6 caracteres"
+              minLength={6}
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
-        <PasswordField
-          id="confirmPassword"
-          label="Confirmar senha"
-          value={confirmPassword}
-          onChange={setConfirmPassword}
-          placeholder="Repita a nova senha"
-          minLength={6}
-        />
+        <form.Field name="confirmPassword">
+          {field => (
+            <PasswordField
+              id="confirmPassword"
+              label="Confirmar senha"
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              placeholder="Repita a nova senha"
+              minLength={6}
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
         <AuthErrorMessage message={resetPassword.isError ? resetPassword.error.message : null} />
 

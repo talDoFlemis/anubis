@@ -1,4 +1,5 @@
-import type { FormEvent } from 'react';
+import * as React from 'react';
+import { useForm } from '@tanstack/react-form';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
+import { toFieldErrors } from '@/shared/errors/fieldErrors';
 import {
   Select,
   SelectContent,
@@ -17,37 +20,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { NovoDocenteFormData, NovoDocenteFormErrors } from '../types/professors-form.types';
+import { normalizeCpf } from '../utils/professors-form.utils';
+import {
+  INITIAL_NEW_PROFESSOR_FORM,
+  newProfessorFormSchema,
+  type NewProfessorFormData,
+} from '../types/professors-form.types';
 
 interface CreateProfessorDialogProps {
   open: boolean;
-  formData: NovoDocenteFormData;
-  formErrors: NovoDocenteFormErrors;
   linhasPesquisa: readonly string[];
   onClose: () => void;
-  onSubmit: (event: FormEvent) => void;
-  onNomeCompletoChange: (value: string) => void;
-  onCpfChange: (value: string) => void;
-  onMatriculaChange: (value: string) => void;
-  onEmailChange: (value: string) => void;
-  onInstituicaoChange: (value: string) => void;
-  onLinhaPesquisaChange: (value: string) => void;
+  onSubmit: (formData: NewProfessorFormData) => void;
 }
 
 export function CreateProfessorDialog({
   open,
-  formData,
-  formErrors,
   linhasPesquisa,
   onClose,
   onSubmit,
-  onNomeCompletoChange,
-  onCpfChange,
-  onMatriculaChange,
-  onEmailChange,
-  onInstituicaoChange,
-  onLinhaPesquisaChange,
 }: CreateProfessorDialogProps) {
+  const form = useForm({
+    defaultValues: INITIAL_NEW_PROFESSOR_FORM,
+    validators: { onSubmit: newProfessorFormSchema },
+    onSubmit: async ({ value }) => {
+      onSubmit(value);
+      form.reset();
+      onClose();
+    },
+  });
+
+  React.useEffect(() => {
+    if (!open) {
+      form.reset();
+    }
+  }, [form, open]);
+
   return (
     <Dialog open={open} onOpenChange={isOpen => !isOpen && onClose()}>
       <DialogContent className="p-6 sm:max-w-2xl">
@@ -62,96 +70,182 @@ export function CreateProfessorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={onSubmit}>
-          <div className="space-y-1">
-            <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
-              Nome completo
-            </p>
-            <Input
-              value={formData.nomeCompleto}
-              onChange={event => onNomeCompletoChange(event.target.value)}
-              placeholder="Ex.: Maria da Silva"
+        <form
+          className="space-y-4"
+          id="create-professor-form"
+          onSubmit={event => {
+            event.preventDefault();
+            form.handleSubmit();
+          }}
+        >
+          <form.Field
+            name="fullName"
+            children={field => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+              return (
+                <Field data-invalid={isInvalid} className="space-y-1">
+                  <FieldLabel htmlFor={field.name}>Nome completo</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={event => field.handleChange(event.target.value)}
+                      placeholder="Ex.: Maria da Silva"
+                      aria-invalid={isInvalid}
+                    />
+                    <FieldError errors={fieldErrors} />
+                  </FieldContent>
+                </Field>
+              );
+            }}
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <form.Field
+              name="cpf"
+              children={field => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+                return (
+                  <Field data-invalid={isInvalid} className="space-y-1">
+                    <FieldLabel htmlFor={field.name}>CPF</FieldLabel>
+                    <FieldContent>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        inputMode="numeric"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={event =>
+                          field.handleChange(normalizeCpf(event.target.value).slice(0, 11))
+                        }
+                        maxLength={11}
+                        placeholder="Somente numeros"
+                        aria-invalid={isInvalid}
+                      />
+                      <FieldError errors={fieldErrors} />
+                    </FieldContent>
+                  </Field>
+                );
+              }}
             />
-            {formErrors.nomeCompleto ? (
-              <p className="text-xs text-red-600">{formErrors.nomeCompleto}</p>
-            ) : null}
+
+            <form.Field
+              name="professorId"
+              children={field => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+                return (
+                  <Field data-invalid={isInvalid} className="space-y-1">
+                    <FieldLabel htmlFor={field.name}>Matricula do docente</FieldLabel>
+                    <FieldContent>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={event => field.handleChange(event.target.value)}
+                        placeholder="Ex.: DOC-2026-001"
+                        aria-invalid={isInvalid}
+                      />
+                      <FieldError errors={fieldErrors} />
+                    </FieldContent>
+                  </Field>
+                );
+              }}
+            />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">CPF</p>
-              <Input
-                inputMode="numeric"
-                value={formData.cpf}
-                onChange={event => onCpfChange(event.target.value)}
-                maxLength={11}
-                placeholder="Somente numeros"
-              />
-              {formErrors.cpf ? <p className="text-xs text-red-600">{formErrors.cpf}</p> : null}
-            </div>
+            <form.Field
+              name="email"
+              children={field => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                const fieldErrors = toFieldErrors(field.state.meta.errors);
 
-            <div className="space-y-1">
-              <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
-                Matricula do docente
-              </p>
-              <Input
-                value={formData.matriculaDocente}
-                onChange={event => onMatriculaChange(event.target.value)}
-                placeholder="Ex.: DOC-2026-001"
-              />
-              {formErrors.matriculaDocente ? (
-                <p className="text-xs text-red-600">{formErrors.matriculaDocente}</p>
-              ) : null}
-            </div>
+                return (
+                  <Field data-invalid={isInvalid} className="space-y-1">
+                    <FieldLabel htmlFor={field.name}>E-mail</FieldLabel>
+                    <FieldContent>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        type="email"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={event => field.handleChange(event.target.value)}
+                        placeholder="nome@instituicao.br"
+                        aria-invalid={isInvalid}
+                      />
+                      <FieldError errors={fieldErrors} />
+                    </FieldContent>
+                  </Field>
+                );
+              }}
+            />
+
+            <form.Field
+              name="originInstitution"
+              children={field => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+                return (
+                  <Field data-invalid={isInvalid} className="space-y-1">
+                    <FieldLabel htmlFor={field.name}>Instituicao de origem</FieldLabel>
+                    <FieldContent>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={event => field.handleChange(event.target.value)}
+                        placeholder="Ex.: UFC"
+                        aria-invalid={isInvalid}
+                      />
+                      <FieldError errors={fieldErrors} />
+                    </FieldContent>
+                  </Field>
+                );
+              }}
+            />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">E-mail</p>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={event => onEmailChange(event.target.value)}
-                placeholder="nome@instituicao.br"
-              />
-              {formErrors.email ? <p className="text-xs text-red-600">{formErrors.email}</p> : null}
-            </div>
+          <form.Field
+            name="mainResearchLine"
+            children={field => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const fieldErrors = toFieldErrors(field.state.meta.errors);
 
-            <div className="space-y-1">
-              <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
-                Instituicao de origem
-              </p>
-              <Input
-                value={formData.instituicaoOrigem}
-                onChange={event => onInstituicaoChange(event.target.value)}
-                placeholder="Ex.: UFC"
-              />
-              {formErrors.instituicaoOrigem ? (
-                <p className="text-xs text-red-600">{formErrors.instituicaoOrigem}</p>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
-              Linha de pesquisa principal
-            </p>
-            <Select value={formData.linhaPesquisaPrincipal} onValueChange={onLinhaPesquisaChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma linha de pesquisa" />
-              </SelectTrigger>
-              <SelectContent>
-                {linhasPesquisa.map(linha => (
-                  <SelectItem key={linha} value={linha}>
-                    {linha}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {formErrors.linhaPesquisaPrincipal ? (
-              <p className="text-xs text-red-600">{formErrors.linhaPesquisaPrincipal}</p>
-            ) : null}
-          </div>
+              return (
+                <Field data-invalid={isInvalid} className="space-y-1">
+                  <FieldLabel htmlFor={field.name}>Linha de pesquisa principal</FieldLabel>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={value => field.handleChange(value)}
+                  >
+                    <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                      <SelectValue placeholder="Selecione uma linha de pesquisa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {linhasPesquisa.map(linha => (
+                        <SelectItem key={linha} value={linha}>
+                          {linha}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldError errors={fieldErrors} />
+                </Field>
+              );
+            }}
+          />
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
@@ -162,7 +256,11 @@ export function CreateProfessorDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" className="bg-blue-600 font-medium text-white hover:bg-blue-700">
+            <Button
+              type="submit"
+              form="create-professor-form"
+              className="bg-blue-600 font-medium text-white hover:bg-blue-700"
+            >
               Salvar Cadastro
             </Button>
           </DialogFooter>

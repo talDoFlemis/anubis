@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useForm } from '@tanstack/react-form';
 import { toast } from 'sonner';
 import {
   AuthCallout,
@@ -12,44 +12,38 @@ import {
 } from '@/components/auth';
 import { GoogleLoginButton } from '@/components/google-login-button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
+import { toFieldErrors } from '@/shared/errors/fieldErrors';
 import { useEmailRegister } from '@/hooks/use-auth';
 import { AUTH_SIGN_IN_ROUTE } from '@/lib/auth-flow';
+import { signUpSchema, type SignUpFormData } from '@/features/auth/auth-form.schemas';
 
 export const Route = createFileRoute('/auth/sign-up')({
   component: SignUpPage,
 });
 
 function SignUpPage() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [universityOfOrigin, setUniversityOfOrigin] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const register = useEmailRegister();
   const navigate = useNavigate();
-
-  const handleSubmit = (event: React.SubmitEvent) => {
-    event.preventDefault();
-
-    register.mutate(
-      {
-        email,
-        password,
-        firstName,
-        lastName,
-        cpf,
-        universityOfOrigin,
-      },
-      {
+  const form = useForm({
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      cpf: '',
+      universityOfOrigin: '',
+      email: '',
+      password: '',
+    } satisfies SignUpFormData,
+    validators: { onSubmit: signUpSchema },
+    onSubmit: async ({ value }) => {
+      register.mutate(value, {
         onSuccess: () => {
           toast.success('Conta criada! Verifique seu email para confirmar o cadastro.');
           navigate({ to: AUTH_SIGN_IN_ROUTE });
         },
-      },
-    );
-  };
+      });
+    },
+  });
 
   return (
     <AuthPageLayout
@@ -77,64 +71,143 @@ function SignUpPage() {
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form
+        onSubmit={event => {
+          event.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-5"
+      >
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="firstName">Nome</Label>
-            <Input
-              id="firstName"
-              placeholder="Seu nome"
-              value={firstName}
-              onChange={event => setFirstName(event.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="lastName">Sobrenome</Label>
-            <Input
-              id="lastName"
-              placeholder="Seu sobrenome"
-              value={lastName}
-              onChange={event => setLastName(event.target.value)}
-              required
-            />
-          </div>
+          <form.Field name="firstName">
+            {field => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+              return (
+                <Field data-invalid={isInvalid} className="space-y-2">
+                  <FieldLabel htmlFor={field.name}>Nome</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id={field.name}
+                      placeholder="Seu nome"
+                      value={field.state.value}
+                      onChange={event => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      aria-invalid={isInvalid}
+                      required
+                    />
+                    <FieldError errors={fieldErrors} />
+                  </FieldContent>
+                </Field>
+              );
+            }}
+          </form.Field>
+          <form.Field name="lastName">
+            {field => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+              return (
+                <Field data-invalid={isInvalid} className="space-y-2">
+                  <FieldLabel htmlFor={field.name}>Sobrenome</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id={field.name}
+                      placeholder="Seu sobrenome"
+                      value={field.state.value}
+                      onChange={event => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      aria-invalid={isInvalid}
+                      required
+                    />
+                    <FieldError errors={fieldErrors} />
+                  </FieldContent>
+                </Field>
+              );
+            }}
+          </form.Field>
         </div>
 
-        <EmailField value={email} onChange={setEmail} />
+        <form.Field name="email">
+          {field => (
+            <EmailField
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cpf">CPF</Label>
-            <Input
-              id="cpf"
-              inputMode="numeric"
-              placeholder="Somente numeros"
-              value={cpf}
-              onChange={event => setCpf(event.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="universityOfOrigin">Universidade</Label>
-            <Input
-              id="universityOfOrigin"
-              placeholder="Ex.: UFRN"
-              value={universityOfOrigin}
-              onChange={event => setUniversityOfOrigin(event.target.value)}
-              required
-            />
-          </div>
+          <form.Field name="cpf">
+            {field => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+              return (
+                <Field data-invalid={isInvalid} className="space-y-2">
+                  <FieldLabel htmlFor={field.name}>CPF</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id={field.name}
+                      inputMode="numeric"
+                      placeholder="Somente numeros"
+                      value={field.state.value}
+                      onChange={event => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      aria-invalid={isInvalid}
+                      required
+                    />
+                    <FieldError errors={fieldErrors} />
+                  </FieldContent>
+                </Field>
+              );
+            }}
+          </form.Field>
+          <form.Field name="universityOfOrigin">
+            {field => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              const fieldErrors = toFieldErrors(field.state.meta.errors);
+
+              return (
+                <Field data-invalid={isInvalid} className="space-y-2">
+                  <FieldLabel htmlFor={field.name}>Universidade</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id={field.name}
+                      placeholder="Ex.: UFRN"
+                      value={field.state.value}
+                      onChange={event => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      aria-invalid={isInvalid}
+                      required
+                    />
+                    <FieldError errors={fieldErrors} />
+                  </FieldContent>
+                </Field>
+              );
+            }}
+          </form.Field>
         </div>
 
-        <PasswordField
-          id="password"
-          label="Senha"
-          value={password}
-          onChange={setPassword}
-          placeholder="Minimo 6 caracteres"
-          minLength={6}
-        />
+        <form.Field name="password">
+          {field => (
+            <PasswordField
+              id="password"
+              label="Senha"
+              value={field.state.value}
+              onChange={value => field.handleChange(value)}
+              onBlur={field.handleBlur}
+              placeholder="Minimo 6 caracteres"
+              minLength={6}
+              errors={field.state.meta.errors}
+              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+            />
+          )}
+        </form.Field>
 
         <AuthErrorMessage message={register.isError ? register.error.message : null} />
 
