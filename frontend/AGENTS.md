@@ -28,6 +28,8 @@ frontend/
 - **Stack**: React 19 + Vite 6 + TypeScript + Tailwind CSS 4
 - **Routing**: TanStack Router (File-based)
 - **State**: TanStack Query v5 (Server state) + React State (UI state)
+- **Forms**: TanStack Form v1 for route-local and feature-local forms
+- **Validation**: Zod for schema validation and cross-field rules
 - **UI Components**: Radix UI + Shadcn/ui pattern
 - **Package Manager**: pnpm
 
@@ -59,6 +61,26 @@ pnpm run format             # Prettier fix
   - `src/routes/_app.tsx`: Protected routes.
   - `src/routes/auth.tsx`: Auth-specific routes.
 - **Component Pattern**: Follow Shadcn/ui style for UI primitives in `src/components/ui/`.
+- **Forms Pattern**: Use `useForm` from `@tanstack/react-form` with Zod schemas for validation. Prefer `form.Field` render props and keep form state inside the form component unless multiple views must share the same state.
+- **Table Pattern**: Prefer the shared table wrapper in `src/components/table` and TanStack Table column definitions for feature tables. Keep column factories close to the feature using them.
+
+## **File Placement**
+
+- Prefer placing non-page code related to a feature inside `src/features/<feature_name>/`. Typical contents: feature-specific components, hooks, types, api clients, and form schemas.
+- Use `src/shared/` for cross-feature utilities, UI primitives, or domain-agnostic helpers that many features consume.
+- Keep pure UI primitives in `src/components/` (and `src/components/ui/` for Shadcn/Radix primitives). Feature-specific components may live under the feature's `components/` subfolder.
+- Put core libraries and low-level utilities in `src/lib/` (API client, session, formatting helpers).
+- Avoid placing non-route files inside `src/routes/`. Route folders should only contain route/page components and files directly required by those pages. If a file in `src/routes/` is not a route, move it to the appropriate `features/`, `shared/`, `components/`, or `lib/` location. Alternatively, to explicitly ignore a file from routing, prefix it with `-` (e.g., `-myfile.ts`) or match it with `routeFileIgnorePattern` in the config.
+
+Example feature layout:
+
+```
+src/features/<feature_name>/
+  ├── components/    # feature-specific UI
+  ├── hooks/         # feature data-fetching hooks
+  ├── types/         # feature types and zod schemas
+  └── api/           # feature-specific API adapters
+```
 
 ## Code Style
 
@@ -73,6 +95,7 @@ pnpm run format             # Prettier fix
 - `strict: true` is enabled.
 - Avoid `any`. Use specific types or `unknown`.
 - Explicit return types for hooks and shared utilities.
+- Prefer Zod schemas for input validation instead of custom error maps where feasible.
 
 ### Naming
 
