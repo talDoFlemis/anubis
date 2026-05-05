@@ -1,1 +1,0 @@
-ALTER TYPE "public"."role" ADD VALUE 'post-graduate-vice-coordinator';

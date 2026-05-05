@@ -1,1 +1,0 @@
--- Legacy refactor migration intentionally left as no-op.
