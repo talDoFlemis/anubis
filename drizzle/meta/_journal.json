@@ -5,78 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1773275474866,
-      "tag": "0000_harsh_ulik",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1773583189841,
-      "tag": "0001_add_cpf_and_candidates",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1774178282870,
-      "tag": "0002_add_accounts",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1779000000000,
-      "tag": "0003_auth_lifecycle_and_accounts_constraints",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1779100000000,
-      "tag": "0004_auth_security_columns",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1779200000000,
-      "tag": "0005_accounts_attached_emails",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1774352844640,
-      "tag": "0006_refactor_auth",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1774361858245,
-      "tag": "0007_make_simple_provider",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1774445927698,
-      "tag": "0008_add-vice-coordinator-role",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1774452268172,
-      "tag": "0009_quiet_slipstream",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1778002335294,
-      "tag": "0010_nostalgic_gargoyle",
+      "when": 1778010550111,
+      "tag": "0000_stale_tony_stark",
       "breakpoints": true
     }
   ]
