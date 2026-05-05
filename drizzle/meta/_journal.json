@@ -71,6 +71,13 @@
       "when": 1774452268172,
       "tag": "0009_quiet_slipstream",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778002335294,
+      "tag": "0010_nostalgic_gargoyle",
+      "breakpoints": true
     }
   ]
 }

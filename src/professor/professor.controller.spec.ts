@@ -1,0 +1,93 @@
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { ProfessorController } from './professor.controller';
+import { ProfessorService } from './professor.service';
+import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
+import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
+import { RolesGuard } from '../roles/roles.guard';
+
+describe('ProfessorController', () => {
+  let controller: ProfessorController;
+  let professorService: ProfessorServiceMock;
+
+  type ProfessorServiceMock = {
+    create: jest.Mock;
+    findOne: jest.Mock;
+    findByDepartment: jest.Mock;
+    update: jest.Mock;
+    remove: jest.Mock;
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [ProfessorController],
+      providers: [
+        {
+          provide: ProfessorService,
+          useValue: {
+            create: jest.fn(),
+            findOne: jest.fn(),
+            findByDepartment: jest.fn(),
+            update: jest.fn(),
+            remove: jest.fn(),
+          },
+        },
+      ],
+    })
+      .overrideGuard(SessionAuthGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .overrideGuard(SessionLifecycleGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .compile();
+
+    controller = module.get(ProfessorController);
+    professorService = module.get(ProfessorService);
+  });
+
+  it('calls create on service', async () => {
+    professorService.create.mockResolvedValue({} as never);
+
+    await controller.create({
+      email: 'prof@ufc.br',
+      firstName: 'Maria',
+      department: 'Departamento de Computacao',
+      institution: 'UFC',
+    });
+
+    expect(professorService.create).toHaveBeenCalled();
+  });
+
+  it('calls findOne on service', async () => {
+    professorService.findOne.mockResolvedValue({} as never);
+
+    await controller.findOne('user-1');
+
+    expect(professorService.findOne).toHaveBeenCalledWith('user-1');
+  });
+
+  it('calls findByDepartment on service', async () => {
+    professorService.findByDepartment.mockResolvedValue([] as never);
+
+    await controller.findByDepartment('Departamento de Computacao');
+
+    expect(professorService.findByDepartment).toHaveBeenCalledWith('Departamento de Computacao');
+  });
+
+  it('calls update on service', async () => {
+    professorService.update.mockResolvedValue({} as never);
+
+    await controller.update('user-1', { institution: 'UFC' });
+
+    expect(professorService.update).toHaveBeenCalledWith('user-1', { institution: 'UFC' });
+  });
+
+  it('calls remove on service', async () => {
+    professorService.remove.mockResolvedValue({} as never);
+
+    await controller.remove('user-1');
+
+    expect(professorService.remove).toHaveBeenCalledWith('user-1');
+  });
+});

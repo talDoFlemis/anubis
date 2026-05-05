@@ -1,17 +1,18 @@
-import type { Config } from 'jest';
+import { Config } from 'jest';
 
 const config: Config = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',
-  testRegex: '.*\\.integration-spec\\.ts$',
+  testRegex: '.*\\.spec\\.ts$',
+  testPathIgnorePatterns: ['/node_modules/', '\\.integration-spec\\.ts$'],
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
+  collectCoverageFrom: ['**/*.(t|j)s'],
+  coverageDirectory: '../coverage',
   testEnvironment: 'node',
-  globalSetup: '<rootDir>/database/testing/global-setup.ts',
-  globalTeardown: '<rootDir>/database/testing/global-teardown.ts',
-  testTimeout: 120_000,
   moduleNameMapper: {
+    '^src/(.*)$': '<rootDir>/$1',
     '^@/(.*)$': '<rootDir>/$1',
     '^@database/(.*)$': '<rootDir>/database/$1',
     '^@users/(.*)$': '<rootDir>/users/$1',

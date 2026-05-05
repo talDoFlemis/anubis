@@ -1,7 +1,8 @@
-import { Exclude } from 'class-transformer';
+import { Exclude, plainToInstance } from 'class-transformer';
 import { AuthProvidersEnum } from '../../auth/auth-providers.enum';
 import { RoleEnum } from '../../roles/roles.enum';
 import { StatusEnum } from '../../statuses/statuses.enum';
+import { UserSelect } from 'src/database/schema/users';
 
 export class User {
   id: string;
@@ -22,4 +23,13 @@ export class User {
   forgotPasswordTokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
+
+  static toDomain(userRow: UserSelect): User {
+    return plainToInstance(User, {
+      ...userRow,
+      role: userRow.role as RoleEnum,
+      status: userRow.status as StatusEnum,
+      authProvider: userRow.authProvider as AuthProvidersEnum,
+    });
+  }
 }
