@@ -1,8 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { AuthProvidersEnum } from '../../auth/auth-providers.enum';
 import { RoleEnum } from '../../roles/roles.enum';
 import { StatusEnum } from '../../statuses/statuses.enum';
+import { IsCpf } from '../../common/validators/is-cpf.validator';
+import { normalizeCpf } from '../../common/utils/normalize-cpf';
 
 export class CreateProfessorDto {
   @ApiProperty({ example: 'prof@ufc.br' })
@@ -17,7 +20,8 @@ export class CreateProfessorDto {
 
   @ApiPropertyOptional({ example: '12345678901' })
   @IsOptional()
-  @IsString()
+  @Transform(({ value }) => normalizeCpf(value))
+  @IsCpf()
   cpf?: string | null;
 
   @ApiProperty({ example: 'Maria' })
