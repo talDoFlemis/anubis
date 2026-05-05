@@ -46,4 +46,5 @@ CREATE TABLE "users" (
 --> statement-breakpoint
 ALTER TABLE "candidates" ADD CONSTRAINT "candidates_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "professor" ADD CONSTRAINT "professor_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "IDX_session_expire" ON "session" USING btree ("expire");
+CREATE INDEX "IDX_session_expire" ON "session" USING btree ("expire");--> statement-breakpoint
+CREATE UNIQUE INDEX "users_auth_provider_subject_unique" ON "users" USING btree ("auth_provider","provider_subject");

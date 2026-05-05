@@ -1,5 +1,5 @@
 {
-  "id": "06147f1a-fb4d-446e-80e0-a1aa873e64ee",
+  "id": "aeb22aab-4477-4ad8-af44-bb89ed30755e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -281,7 +281,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "users_auth_provider_subject_unique": {
+          "name": "users_auth_provider_subject_unique",
+          "columns": [
+            {
+              "expression": "auth_provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "provider_subject",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
