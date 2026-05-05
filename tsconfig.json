@@ -13,8 +13,13 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
+    "baseUrl": ".",
     "paths": {
-        "*": ["./*"]
+      "*": ["./*"],
+      "@/*": ["./src/*"],
+      "@database/*": ["./src/database/*"],
+      "@users/*": ["./src/users/*"],
+      "@professors/*": ["./src/professors/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -22,6 +27,7 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "types": ["jest", "node"]
   }
 }

@@ -14,8 +14,9 @@ import { SessionModule } from './session/session.module';
 import { MailModule } from './mail/mail.module';
 import { HealthModule } from './health/health.module';
 import { CandidateModule } from './candidate/candidate.module';
-import { LoggingModule } from './common/logging.module';
 import { SystemModule } from './system/system.module';
+import { ProfessorModule } from './professor/professor.module';
+import { LoggingModule } from './common/logging.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { SystemModule } from './system/system.module';
     MailModule,
     HealthModule,
     SystemModule,
+    ProfessorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
