@@ -1,17 +1,15 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { MailService } from '../mail/mail.service';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { UsersService } from '../users/users.service';
+import { Professor } from './domain/professor';
 import { CreateProfessorDto } from './dto/create-professor.dto';
 import { UpdateProfessorDto } from './dto/update-professor.dto';
-import { Professor } from './domain/professor';
 import { ProfessorRepository } from './infraestructure/persistence/professor.repository';
 
 @Injectable()
@@ -19,18 +17,19 @@ export class ProfessorService {
   constructor(
     private readonly usersService: UsersService,
     private readonly professorRepository: ProfessorRepository,
+    private readonly mailService: MailService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     @InjectPinoLogger(ProfessorService.name)
     private readonly logger: PinoLogger,
   ) {}
 
   async create(dto: CreateProfessorDto): Promise<Professor> {
-    const email = dto.email ?? null;
+    const email = dto.email.toLowerCase().trim();
     const cpf = dto.cpf ?? null;
-    const role = dto.role ?? RoleEnum.professor;
     const status = dto.status ?? StatusEnum.active;
-    const authProvider = dto.authProvider ?? AuthProvidersEnum.email;
 
-    this.logger.debug({ email, cpf, role }, 'Creating professor');
+    this.logger.debug({ email, cpf }, 'Creating professor');
 
     if (email) {
       const existingEmail = await this.usersService.findByEmail(email);
@@ -46,25 +45,44 @@ export class ProfessorService {
       }
     }
 
-    if (dto.password && authProvider !== AuthProvidersEnum.email) {
-      throw new BadRequestException('Senha so pode ser informada para authProvider email.');
-    }
-
-    return this.professorRepository.create({
-      authProvider,
-      providerSubject: dto.providerSubject ?? null,
+    const professor = await this.professorRepository.create({
+      authProvider: AuthProvidersEnum.email,
+      providerSubject: email,
       email,
-      password: dto.password ?? null,
       cpf,
       firstName: dto.firstName ?? null,
       lastName: dto.lastName ?? null,
-      role,
+      role: RoleEnum.professor,
       status,
       department: dto.department,
       institution: dto.institution,
-      onboardingCompleted: dto.password ? false : true,
-      mustChangePassword: dto.password ? true : false,
+      onboardingCompleted: true,
+      mustChangePassword: true,
     });
+
+    const nextConfirmEmailTokenVersion = professor.confirmEmailTokenVersion + 1;
+    await this.usersService.update(professor.id, {
+      confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
+    });
+
+    const hash = await this.jwtService.signAsync(
+      {
+        confirmEmailUserId: professor.id,
+        confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
+      },
+      {
+        secret: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_SECRET'),
+        expiresIn: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_EXPIRES_IN'),
+      },
+    );
+
+    await this.mailService.send({
+      to: email,
+      title: 'Confirme seu email - Anubis',
+      body: this.composeConfirmEmailBody(hash),
+    });
+
+    return professor;
   }
 
   async findOne(id: string): Promise<Professor> {
@@ -87,7 +105,8 @@ export class ProfessorService {
     this.logger.debug({ id }, 'Updating professor');
 
     if (dto.email) {
-      const existingEmail = await this.usersService.findByEmail(dto.email);
+      const normalizedEmail = dto.email.toLowerCase().trim();
+      const existingEmail = await this.usersService.findByEmail(normalizedEmail);
       if (existingEmail && existingEmail.id !== id) {
         throw new ConflictException('Este email ja esta cadastrado.');
       }
@@ -100,25 +119,14 @@ export class ProfessorService {
       }
     }
 
-    const effectiveProvider = dto.authProvider ?? AuthProvidersEnum.email;
-    if (dto.password && effectiveProvider !== AuthProvidersEnum.email) {
-      throw new BadRequestException('Senha so pode ser informada para authProvider email.');
-    }
-
     const professor = await this.professorRepository.update(id, {
-      authProvider: dto.authProvider,
-      providerSubject: dto.providerSubject,
-      email: dto.email,
-      password: dto.password,
+      email: dto.email?.toLowerCase().trim() ?? dto.email,
       cpf: dto.cpf,
       firstName: dto.firstName,
       lastName: dto.lastName,
-      role: dto.role,
       status: dto.status,
       department: dto.department,
       institution: dto.institution,
-      onboardingCompleted: dto.password ? false : undefined,
-      mustChangePassword: dto.password ? true : undefined,
     });
 
     if (!professor) {
@@ -137,5 +145,12 @@ export class ProfessorService {
     }
 
     await this.professorRepository.remove(id);
+  }
+
+  private composeConfirmEmailBody(hash: string): string {
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+    const confirmUrl = `${frontendUrl}/auth/onboarding/professor?hash=${hash}`;
+
+    return `<p>Voce foi cadastrado(a) na plataforma do MDCC. Clique no link abaixo para concluir o seu cadastro:</p><p><a href="${confirmUrl}">Confirmar email</a></p>`;
   }
 }

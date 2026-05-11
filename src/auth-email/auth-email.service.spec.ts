@@ -273,4 +273,75 @@ describe('AuthEmailService', () => {
     );
     expect(sessionService.deleteByUserId).toHaveBeenCalledWith('user-1');
   });
+
+  it('completes professor onboarding by setting password', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      password: null,
+      mustChangePassword: true,
+      confirmEmailTokenVersion: 1,
+    });
+    jest.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+
+    await service.completeProfessorOnboarding({ hash: 'confirm-token', password: 'new-pass' });
+
+    expect(usersService.update).toHaveBeenCalledWith('user-1', {
+      password: 'new-hash',
+      mustChangePassword: false,
+      bootstrapPasswordExpiresAt: null,
+      confirmEmailTokenVersion: 2,
+    });
+  });
+
+  it('rejects professor onboarding for non-email provider', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      authProvider: AuthProvidersEnum.google,
+      providerSubject: 'google-sub',
+      password: null,
+      mustChangePassword: true,
+      confirmEmailTokenVersion: 1,
+    });
+
+    await expect(
+      service.completeProfessorOnboarding({ hash: 'confirm-token', password: 'new-pass' }),
+    ).rejects.toThrow('Conta cadastrada com outro provedor. Use seu provedor original.');
+  });
+
+  it('rejects professor onboarding for mismatched token version', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      password: null,
+      mustChangePassword: true,
+      confirmEmailTokenVersion: 0,
+    });
+
+    await expect(
+      service.completeProfessorOnboarding({ hash: 'confirm-token', password: 'new-pass' }),
+    ).rejects.toThrow('Link de confirmacao invalido ou expirado.');
+  });
+
+  it('rejects professor onboarding when user is missing', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue(null);
+
+    await expect(
+      service.completeProfessorOnboarding({ hash: 'confirm-token', password: 'new-pass' }),
+    ).rejects.toThrow('Usuario nao encontrado.');
+  });
 });

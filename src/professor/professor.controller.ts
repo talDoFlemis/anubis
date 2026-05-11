@@ -11,28 +11,27 @@ import {
   Post,
   Query,
   UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
-  ApiForbiddenResponse,
-  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { Roles } from '../roles/roles.decorator';
 import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
-import { ProfessorService } from './professor.service';
+import { StatusEnum } from '../statuses/statuses.enum';
+import { Professor } from './domain/professor';
 import { CreateProfessorDto } from './dto/create-professor.dto';
 import { UpdateProfessorDto } from './dto/update-professor.dto';
-import { Professor } from './domain/professor';
-import { StatusEnum } from '../statuses/statuses.enum';
+import { ProfessorService } from './professor.service';
 
 @ApiTags('Professors')
 @ApiCookieAuth()
