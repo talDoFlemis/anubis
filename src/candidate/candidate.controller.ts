@@ -17,24 +17,17 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { STAFF_CANDIDATE_ROLES } from 'src/common/enums/staff-candidates';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
+import { PaginatedResult } from '../common/dto/paginated-response.dto';
 import { Roles } from '../roles/roles.decorator';
-import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
 import { User } from '../users/domain/user';
 import { CandidateService } from './candidate.service';
 import { CandidateResponseDto, PaginatedCandidateResponseDto } from './dto/candidate-response.dto';
 import { FindCandidatesDto } from './dto/find-candidates.dto';
-import { PaginatedResult } from '../common/dto/paginated-response.dto';
-
-const STAFF_CANDIDATE_ROLES = [
-  RoleEnum.professor,
-  RoleEnum.mdccSecretary,
-  RoleEnum.postGraduateCoordinator,
-  RoleEnum.postGraduateViceCoordinator,
-] as const;
 
 @ApiTags('Candidates')
 @ApiCookieAuth()

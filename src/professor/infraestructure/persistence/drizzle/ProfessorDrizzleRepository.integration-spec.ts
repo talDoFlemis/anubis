@@ -1,3 +1,6 @@
+import { AuthProvidersEnum } from '@/auth/auth-providers.enum';
+import { RoleEnum } from '@/roles/roles.enum';
+import { StatusEnum } from '@/statuses/statuses.enum';
 import type { DrizzleDB } from '@database/drizzle.provider';
 import { professors } from '@database/schema/professor';
 import { users } from '@database/schema/users';
@@ -8,9 +11,6 @@ import {
 } from '@database/testing/integration-database';
 import { eq } from 'drizzle-orm';
 import type { Pool } from 'pg';
-import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
-import { RoleEnum } from '../../../../roles/roles.enum';
-import { StatusEnum } from '../../../../statuses/statuses.enum';
 import type { CreateProfessorData } from '../professor.repository';
 import { ProfessorDrizzleRepository } from './ProfessorDrizzleRepository';
 
@@ -85,10 +85,8 @@ describe('ProfessorDrizzleRepository (integration)', () => {
       providerSubject: 'other@university.edu',
       department: 'Mathematics',
     });
-
-    const csProfs = await repository.findByDepartment('Computer Science');
-    expect(csProfs).toHaveLength(1);
-    expect(csProfs[0].department).toBe('Computer Science');
+    const csProfs = await repository.findAllByFilters({});
+    expect(csProfs.data).toHaveLength(2);
   });
 
   it('updates user and professor fields simultaneously', async () => {

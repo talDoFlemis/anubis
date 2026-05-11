@@ -13,6 +13,7 @@ const config: Config = {
   testTimeout: 120_000,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^src/(.*)$': '<rootDir>/$1',
     '^@database/(.*)$': '<rootDir>/database/$1',
     '^@users/(.*)$': '<rootDir>/users/$1',
     '^@professors/(.*)$': '<rootDir>/professors/$1',

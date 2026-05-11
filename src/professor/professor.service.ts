@@ -11,6 +11,9 @@ import { Professor } from './domain/professor';
 import { CreateProfessorDto } from './dto/create-professor.dto';
 import { UpdateProfessorDto } from './dto/update-professor.dto';
 import { ProfessorRepository } from './infraestructure/persistence/professor.repository';
+import type { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
+import type { ProfessorItemDto as ProfessorItemDto } from './dto/professor-response.dto';
+import { FindProfessorsDto } from './dto/find-professor.dto';
 
 @Injectable()
 export class ProfessorService {
@@ -96,9 +99,9 @@ export class ProfessorService {
     return professor;
   }
 
-  findByDepartment(department: string): Promise<Professor[]> {
-    this.logger.debug({ department }, 'Fetching professors by department');
-    return this.professorRepository.findByDepartment(department);
+  async findAll(filters: FindProfessorsDto): Promise<PaginatedResponseDto<ProfessorItemDto>> {
+    this.logger.debug({ filters }, 'Fetching professors by filters');
+    return this.professorRepository.findAllByFilters(filters);
   }
 
   async update(id: string, dto: UpdateProfessorDto): Promise<Professor> {
