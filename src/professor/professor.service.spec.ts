@@ -1,6 +1,8 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { getLoggerToken } from 'nestjs-pino';
 import { ProfessorService } from './professor.service';
 import { UsersService } from '../users/users.service';
@@ -8,17 +10,20 @@ import { ProfessorRepository } from './infraestructure/persistence/professor.rep
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
+import { MailService } from '../mail/mail.service';
 import type { Professor } from './domain/professor';
 
 describe('ProfessorService', () => {
   let service: ProfessorService;
   let usersService: jest.Mocked<UsersService>;
   let professorRepository: jest.Mocked<ProfessorRepository>;
+  let mailService: jest.Mocked<MailService>;
+  let jwtService: jest.Mocked<JwtService>;
 
   const professor: Professor = {
     id: 'user-1',
     authProvider: AuthProvidersEnum.email,
-    providerSubject: null,
+    providerSubject: 'prof@ufc.br',
     email: 'prof@ufc.br',
     password: null,
     cpf: '12345678901',
@@ -27,7 +32,7 @@ describe('ProfessorService', () => {
     role: RoleEnum.professor,
     status: StatusEnum.active,
     onboardingCompleted: true,
-    mustChangePassword: false,
+    mustChangePassword: true,
     bootstrapPasswordExpiresAt: null,
     confirmEmailTokenVersion: 0,
     forgotPasswordTokenVersion: 0,
@@ -47,6 +52,7 @@ describe('ProfessorService', () => {
           useValue: {
             findByEmail: jest.fn(),
             findByCpf: jest.fn(),
+            update: jest.fn(),
           },
         },
         {
@@ -57,6 +63,31 @@ describe('ProfessorService', () => {
             findByDepartment: jest.fn(),
             update: jest.fn(),
             remove: jest.fn(),
+          },
+        },
+        {
+          provide: MailService,
+          useValue: {
+            send: jest.fn(),
+          },
+        },
+        {
+          provide: JwtService,
+          useValue: {
+            signAsync: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            getOrThrow: jest.fn((key: string) => {
+              const map: Record<string, string> = {
+                AUTH_CONFIRM_EMAIL_SECRET: 'confirm-secret',
+                AUTH_CONFIRM_EMAIL_EXPIRES_IN: '1d',
+                FRONTEND_URL: 'http://localhost:3000',
+              };
+              return map[key] ?? key;
+            }),
           },
         },
         {
@@ -74,20 +105,48 @@ describe('ProfessorService', () => {
     service = module.get(ProfessorService);
     usersService = module.get(UsersService);
     professorRepository = module.get(ProfessorRepository);
+    mailService = module.get(MailService);
+    jwtService = module.get(JwtService);
   });
 
   it('creates professor when unique constraints pass', async () => {
     usersService.findByEmail.mockResolvedValue(null);
     usersService.findByCpf.mockResolvedValue(null);
     professorRepository.create.mockResolvedValue(professor);
+    usersService.update.mockResolvedValue(professor as never);
+    jwtService.signAsync.mockResolvedValue('confirm-token');
 
     await expect(
       service.create({
         email: 'prof@ufc.br',
         department: 'Departamento de Computacao',
         institution: 'UFC',
-      }),
+      } as never),
     ).resolves.toEqual(professor);
+
+    expect(professorRepository.create.mock.calls).toEqual([
+      [
+        expect.objectContaining({
+          authProvider: AuthProvidersEnum.email,
+          providerSubject: 'prof@ufc.br',
+          onboardingCompleted: true,
+          mustChangePassword: true,
+        }),
+      ],
+    ]);
+    expect(usersService.update.mock.calls).toEqual([['user-1', { confirmEmailTokenVersion: 1 }]]);
+    const mailPayload = mailService.send.mock.calls[0]?.[0] as {
+      to: string;
+      title: string;
+      body: string;
+    };
+    expect(mailPayload).toEqual(
+      expect.objectContaining({
+        to: 'prof@ufc.br',
+        title: 'Confirme seu email - Anubis',
+      }),
+    );
+    expect(mailPayload.body).toContain('/auth/onboarding/professor?hash=');
   });
 
   it('rejects duplicate email on create', async () => {
@@ -98,23 +157,33 @@ describe('ProfessorService', () => {
         email: 'prof@ufc.br',
         department: 'Departamento de Computacao',
         institution: 'UFC',
-      }),
+      } as never),
     ).rejects.toThrow(ConflictException);
   });
 
-  it('rejects password with non-email provider on create', async () => {
+  it('normalizes email on create', async () => {
     usersService.findByEmail.mockResolvedValue(null);
     usersService.findByCpf.mockResolvedValue(null);
+    professorRepository.create.mockResolvedValue(professor);
+    usersService.update.mockResolvedValue(professor as never);
+    jwtService.signAsync.mockResolvedValue('confirm-token');
 
     await expect(
       service.create({
-        email: 'prof@ufc.br',
-        password: 'Senha@1234',
-        authProvider: AuthProvidersEnum.google,
+        email: '  Prof@Ufc.br ',
         department: 'Departamento de Computacao',
         institution: 'UFC',
-      }),
-    ).rejects.toThrow(BadRequestException);
+      } as never),
+    ).resolves.toEqual(professor);
+
+    expect(professorRepository.create.mock.calls).toEqual([
+      [
+        expect.objectContaining({
+          email: 'prof@ufc.br',
+          providerSubject: 'prof@ufc.br',
+        }),
+      ],
+    ]);
   });
 
   it('finds professor by id', async () => {
@@ -150,18 +219,6 @@ describe('ProfessorService', () => {
         email: 'prof@ufc.br',
       }),
     ).rejects.toThrow(ConflictException);
-  });
-
-  it('rejects password with non-email provider on update', async () => {
-    usersService.findByEmail.mockResolvedValue(null);
-    usersService.findByCpf.mockResolvedValue(null);
-
-    await expect(
-      service.update('user-1', {
-        password: 'Senha@1234',
-        authProvider: AuthProvidersEnum.google,
-      }),
-    ).rejects.toThrow(BadRequestException);
   });
 
   it('removes professor when found', async () => {

@@ -7,25 +7,24 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { CandidateService } from '../candidate/candidate.service';
+import { comparePassword, hashPassword } from 'src/utils/password';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { buildLoginResponse } from '../auth/login-response.builder';
+import { CandidateService } from '../candidate/candidate.service';
 import { MailService } from '../mail/mail.service';
+import { RoleEnum } from '../roles/roles.enum';
 import { SessionService } from '../session/session.service';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { User } from '../users/domain/user';
 import { UsersService } from '../users/users.service';
-import { RoleEnum } from '../roles/roles.enum';
 import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthRegisterDto } from './dto/auth-register.dto';
 import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
+import { CompleteProfessorOnboardingDto } from './dto/complete-professor-onboarding.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
-
-const BCRYPT_SALT_ROUNDS = 12;
 
 @Injectable()
 export class AuthEmailService {
@@ -60,8 +59,7 @@ export class AuthEmailService {
         );
       }
 
-      const isValidPassword = await bcrypt.compare(loginDto.password, user.password ?? '');
-
+      const isValidPassword = await comparePassword(loginDto.password, user.password ?? '');
       if (!isValidPassword) {
         throw new UnauthorizedException('E-mail ou senha invalidos.');
       }
@@ -118,7 +116,7 @@ export class AuthEmailService {
         throw new ConflictException('Este CPF ja esta cadastrado.');
       }
 
-      const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
+      const hashedPassword = await hashPassword(dto.password);
       const user = await this.usersService.create({
         email: normalizedEmail,
         password: hashedPassword,
@@ -191,6 +189,37 @@ export class AuthEmailService {
 
     await this.usersService.update(user.id, {
       status: StatusEnum.active,
+      confirmEmailTokenVersion: token.confirmEmailTokenVersion + 1,
+    });
+  }
+
+  async completeProfessorOnboarding(dto: CompleteProfessorOnboardingDto): Promise<void> {
+    const token = await this.verifyConfirmToken(dto.hash);
+    const user = await this.usersService.findById(token.confirmEmailUserId);
+
+    if (!user) {
+      throw new NotFoundException('Usuario nao encontrado.');
+    }
+
+    if (user.authProvider !== AuthProvidersEnum.email) {
+      throw new BadRequestException(
+        'Conta cadastrada com outro provedor. Use seu provedor original.',
+      );
+    }
+
+    if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
+      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
+    }
+
+    if (user.password && !user.mustChangePassword) {
+      return;
+    }
+
+    const hashedPassword = await hashPassword(dto.password);
+    await this.usersService.update(user.id, {
+      password: hashedPassword,
+      mustChangePassword: false,
+      bootstrapPasswordExpiresAt: null,
       confirmEmailTokenVersion: token.confirmEmailTokenVersion + 1,
     });
   }
@@ -275,7 +304,7 @@ export class AuthEmailService {
       throw new BadRequestException('Link de redefinicao de senha invalido ou expirado.');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
+    const hashedPassword = await hashPassword(dto.password);
     await this.usersService.update(user.id, {
       password: hashedPassword,
       mustChangePassword: false,

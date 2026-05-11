@@ -11,28 +11,30 @@ import {
   Post,
   Query,
   UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
-  ApiForbiddenResponse,
-  ApiCreatedResponse,
 } from '@nestjs/swagger';
+import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { Roles } from '../roles/roles.decorator';
 import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
-import { ProfessorService } from './professor.service';
-import { CreateProfessorDto } from './dto/create-professor.dto';
-import { UpdateProfessorDto } from './dto/update-professor.dto';
-import { Professor } from './domain/professor';
 import { StatusEnum } from '../statuses/statuses.enum';
+import { Professor } from './domain/professor';
+import { CreateProfessorDto } from './dto/create-professor.dto';
+import { FindProfessorsDto } from './dto/find-professor.dto';
+import { PaginatedProfessorResponseDto, ProfessorItemDto } from './dto/professor-response.dto';
+import { UpdateProfessorDto } from './dto/update-professor.dto';
+import { ProfessorService } from './professor.service';
 
 @ApiTags('Professors')
 @ApiCookieAuth()
@@ -71,11 +73,12 @@ export class ProfessorController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'List professors by department' })
-  @ApiOkResponse({ type: Professor, isArray: true })
+  @ApiOperation({ summary: 'List professors using optional filters' })
+  @ApiOkResponse({ type: PaginatedProfessorResponseDto })
   @ApiUnauthorizedResponse({ description: 'No active session' })
-  findByDepartment(@Query('department') department: string): Promise<Professor[]> {
-    return this.professorService.findByDepartment(department);
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  findAll(@Query() filters: FindProfessorsDto): Promise<PaginatedResponseDto<ProfessorItemDto>> {
+    return this.professorService.findAll(filters);
   }
 
   @Patch(':id')

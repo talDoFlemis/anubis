@@ -22,6 +22,7 @@ import { User } from '../users/domain/user';
 import { AuthEmailGuard } from './auth-email.guard';
 import { buildLoginResponse } from 'src/auth/login-response.builder';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
+import { CompleteProfessorOnboardingDto } from './dto/complete-professor-onboarding.dto';
 
 @ApiTags('Auth', 'Email Auth')
 @Controller({ path: 'auth/provider/email', version: '1' })
@@ -67,6 +68,16 @@ export class AuthEmailController {
   @ApiNotFoundResponse({ description: 'User associated with hash not found' })
   async confirmEmail(@Body() dto: AuthConfirmEmailDto): Promise<void> {
     await this.authEmailService.confirmEmail(dto);
+  }
+
+  @Post('onboarding/professor')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Complete professor onboarding by setting password' })
+  @ApiNoContentResponse({ description: 'Professor onboarding completed' })
+  @ApiBadRequestResponse({ description: 'Invalid or expired confirmation hash' })
+  @ApiNotFoundResponse({ description: 'User associated with hash not found' })
+  async completeProfessorOnboarding(@Body() dto: CompleteProfessorOnboardingDto): Promise<void> {
+    await this.authEmailService.completeProfessorOnboarding(dto);
   }
 
   @Post('confirm/new')

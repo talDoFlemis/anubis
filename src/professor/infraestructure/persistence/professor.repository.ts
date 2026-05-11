@@ -1,5 +1,8 @@
+import type { PaginatedResponseDto } from '@/common/dto/paginated-response.dto';
+import type { Professor } from '@/professor/domain/professor';
+import type { FindProfessorsDto } from '@/professor/dto/find-professor.dto';
+import type { ProfessorItemDto } from '@/professor/dto/professor-response.dto';
 import type { User } from '@/users/domain/user';
-import type { Professor } from '../../domain/professor';
 import type {
   CreateUserData,
   UpdateUserData,
@@ -34,7 +37,9 @@ export abstract class ProfessorRepository {
   /**
    * Retrieves a Professor by their academic department.
    */
-  abstract findByDepartment(department: string): Promise<Professor[]>;
+  abstract findAllByFilters(
+    filters: FindProfessorsDto,
+  ): Promise<PaginatedResponseDto<ProfessorItemDto>>;
 
   /**
    * Updates Professor and/or User fields.

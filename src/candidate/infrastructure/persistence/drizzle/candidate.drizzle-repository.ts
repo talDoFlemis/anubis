@@ -1,19 +1,16 @@
+import { buildPaginatedResult, type PaginatedResult } from '@/common/dto/paginated-response.dto';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, gte, ilike, lte, sql, type SQL } from 'drizzle-orm';
 import { DRIZZLE_TX } from '../../../../database/drizzle.constants';
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import { candidates } from '../../../../database/schema/candidates';
 import { users } from '../../../../database/schema/users';
+import { RoleEnum } from '../../../../roles/roles.enum';
+import { StatusEnum } from '../../../../statuses/statuses.enum';
 import { Candidate } from '../../../domain/candidate';
 import { CandidateProfile } from '../../../domain/candidate-profile';
 import { FindCandidatesDto } from '../../../dto/find-candidates.dto';
 import { CandidateRepository } from '../candidate.repository';
-import {
-  buildPaginatedResult,
-  type PaginatedResult,
-} from '../../../../common/dto/paginated-response.dto';
-import { RoleEnum } from '../../../../roles/roles.enum';
-import { StatusEnum } from '../../../../statuses/statuses.enum';
 
 type CandidateRow = typeof candidates.$inferSelect;
 

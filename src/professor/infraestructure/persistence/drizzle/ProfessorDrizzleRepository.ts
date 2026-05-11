@@ -1,10 +1,14 @@
-import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { buildPaginatedResult, PaginatedResponseDto } from '@/common/dto/paginated-response.dto';
+import { FindProfessorsDto } from '@/professor/dto/find-professor.dto';
+import { ProfessorItemDto } from '@/professor/dto/professor-response.dto';
 import { DRIZZLE_TX } from '@database/drizzle.constants';
 import type { DrizzleDB } from '@database/drizzle.provider';
 import { professors } from '@database/schema/professor';
 import { users } from '@database/schema/users';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { User } from '@users/domain/user';
+import { and, eq, ilike, SQL, sql } from 'drizzle-orm';
+import { StatusEnum } from 'src/statuses/statuses.enum';
 import { Professor } from '../../../domain/professor';
 import type {
   CreateProfessorData,
@@ -77,17 +81,64 @@ export class ProfessorDrizzleRepository extends ProfessorRepository {
     return Professor.fromRows(row.user, row.professor);
   }
 
-  async findByDepartment(department: string): Promise<Professor[]> {
+  async findAllByFilters(
+    filters: FindProfessorsDto,
+  ): Promise<PaginatedResponseDto<ProfessorItemDto>> {
+    const conditions: SQL[] = [];
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
+    const offset = (page - 1) * limit;
+
+    if (filters.email) {
+      conditions.push(ilike(users.email, `%${filters.email}%`));
+    }
+    if (filters.firstName) {
+      conditions.push(ilike(users.firstName, `%${filters.firstName}%`));
+    }
+    if (filters.lastName) {
+      conditions.push(ilike(users.lastName, `%${filters.lastName}%`));
+    }
+
     const rows = await this.db
       .select({
-        user: users,
-        professor: professors,
+        userId: professors.userId,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        status: users.status,
+        department: professors.department,
+        institution: professors.institution,
       })
       .from(professors)
       .innerJoin(users, eq(users.id, professors.userId))
-      .where(eq(professors.department, department));
+      .where(conditions.length ? and(...conditions) : undefined)
+      .limit(limit)
+      .offset(offset);
 
-    return rows.map(row => Professor.fromRows(row.user, row.professor));
+    // Count must respect same filters as the query
+    const [totalRow] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(professors)
+      .innerJoin(users, eq(users.id, professors.userId))
+      .where(conditions.length ? and(...conditions) : undefined);
+
+    return buildPaginatedResult({
+      data: rows.map(
+        row =>
+          new ProfessorItemDto({
+            id: row.userId,
+            email: row.email!,
+            firstName: row.firstName,
+            lastName: row.lastName,
+            status: row.status as StatusEnum,
+            department: row.department,
+            institution: row.institution,
+          }),
+      ),
+      page,
+      limit,
+      total: totalRow?.count ?? 0,
+    });
   }
 
   async update(id: User['id'], data: UpdateProfessorData): Promise<NullableProfessor> {

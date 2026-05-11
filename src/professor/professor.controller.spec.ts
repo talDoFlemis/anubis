@@ -13,7 +13,7 @@ describe('ProfessorController', () => {
   type ProfessorServiceMock = {
     create: jest.Mock;
     findOne: jest.Mock;
-    findByDepartment: jest.Mock;
+    findAll: jest.Mock;
     update: jest.Mock;
     remove: jest.Mock;
   };
@@ -27,7 +27,7 @@ describe('ProfessorController', () => {
           useValue: {
             create: jest.fn(),
             findOne: jest.fn(),
-            findByDepartment: jest.fn(),
+            findAll: jest.fn(),
             update: jest.fn(),
             remove: jest.fn(),
           },
@@ -68,11 +68,15 @@ describe('ProfessorController', () => {
   });
 
   it('calls findByDepartment on service', async () => {
-    professorService.findByDepartment.mockResolvedValue([] as never);
+    professorService.findAll.mockResolvedValue([] as never);
 
-    await controller.findByDepartment('Departamento de Computacao');
+    const filters = {
+      page: 1,
+      limit: 20,
+    };
+    await controller.findAll(filters);
 
-    expect(professorService.findByDepartment).toHaveBeenCalledWith('Departamento de Computacao');
+    expect(professorService.findAll).toHaveBeenCalledWith(filters);
   });
 
   it('calls update on service', async () => {
