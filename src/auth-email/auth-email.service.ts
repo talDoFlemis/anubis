@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { CandidateService } from '../candidate/candidate.service';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
@@ -24,8 +23,7 @@ import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthRegisterDto } from './dto/auth-register.dto';
 import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
-
-const BCRYPT_SALT_ROUNDS = 12;
+import { comparePassword, hashPassword } from 'src/utils/password';
 
 @Injectable()
 export class AuthEmailService {
@@ -60,8 +58,7 @@ export class AuthEmailService {
         );
       }
 
-      const isValidPassword = await bcrypt.compare(loginDto.password, user.password ?? '');
-
+      const isValidPassword = await comparePassword(loginDto.password, user.password ?? '');
       if (!isValidPassword) {
         throw new UnauthorizedException('E-mail ou senha invalidos.');
       }
@@ -118,7 +115,7 @@ export class AuthEmailService {
         throw new ConflictException('Este CPF ja esta cadastrado.');
       }
 
-      const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
+      const hashedPassword = await hashPassword(dto.password);
       const user = await this.usersService.create({
         email: normalizedEmail,
         password: hashedPassword,
@@ -275,7 +272,7 @@ export class AuthEmailService {
       throw new BadRequestException('Link de redefinicao de senha invalido ou expirado.');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
+    const hashedPassword = await hashPassword(dto.password);
     await this.usersService.update(user.id, {
       password: hashedPassword,
       mustChangePassword: false,
