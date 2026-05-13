@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
@@ -143,6 +141,18 @@ describe('AuthEmailService', () => {
     await expect(
       service.validateLogin({ email: 'user@example.com', password: 'secret' }),
     ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects email login when user is disabled', async () => {
+    usersService.findByEmail.mockResolvedValue({
+      ...baseUser,
+      status: StatusEnum.disabled,
+    });
+    jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
+
+    await expect(
+      service.validateLogin({ email: 'user@example.com', password: 'secret' }),
+    ).rejects.toThrow('Usuario desativado. Entre em contato com a secretaria do programa.');
   });
 
   it('registers candidate with email provider metadata', async () => {
@@ -294,6 +304,7 @@ describe('AuthEmailService', () => {
       mustChangePassword: false,
       bootstrapPasswordExpiresAt: null,
       confirmEmailTokenVersion: 2,
+      status: StatusEnum.active,
     });
   });
 

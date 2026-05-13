@@ -1,13 +1,20 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { MailModule } from '../mail/mail.module';
+import { SessionModule } from '../session/session.module';
 import { UsersModule } from '../users/users.module';
 import { ProfessorDrizzlePersistenceModule } from './infraestructure/persistence/drizzle/ProfessorDrizzlePersistenceModule';
 import { ProfessorController } from './professor.controller';
 import { ProfessorService } from './professor.service';
 
 @Module({
-  imports: [ProfessorDrizzlePersistenceModule, UsersModule, MailModule, JwtModule.register({})],
+  imports: [
+    ProfessorDrizzlePersistenceModule,
+    UsersModule,
+    MailModule,
+    SessionModule,
+    JwtModule.register({}),
+  ],
   providers: [ProfessorService],
   exports: [ProfessorService],
   controllers: [ProfessorController],

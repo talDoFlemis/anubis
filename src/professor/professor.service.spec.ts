@@ -1,6 +1,6 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { getLoggerToken } from 'nestjs-pino';
@@ -11,6 +11,7 @@ import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { MailService } from '../mail/mail.service';
+import { SessionService } from '../session/session.service';
 import type { Professor } from './domain/professor';
 
 describe('ProfessorService', () => {
@@ -19,6 +20,8 @@ describe('ProfessorService', () => {
   let professorRepository: jest.Mocked<ProfessorRepository>;
   let mailService: jest.Mocked<MailService>;
   let jwtService: jest.Mocked<JwtService>;
+  let deleteByUserIdMock: jest.Mock;
+  let professorUpdateMock: jest.Mock;
 
   const professor: Professor = {
     id: 'user-1',
@@ -44,6 +47,9 @@ describe('ProfessorService', () => {
   };
 
   beforeEach(async () => {
+    deleteByUserIdMock = jest.fn();
+    professorUpdateMock = jest.fn();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProfessorService,
@@ -56,12 +62,18 @@ describe('ProfessorService', () => {
           },
         },
         {
+          provide: SessionService,
+          useValue: {
+            deleteByUserId: deleteByUserIdMock,
+          },
+        },
+        {
           provide: ProfessorRepository,
           useValue: {
             create: jest.fn(),
             findById: jest.fn(),
-            findByDepartment: jest.fn(),
-            update: jest.fn(),
+            findAllByFilters: jest.fn(),
+            update: professorUpdateMock,
             remove: jest.fn(),
           },
         },
@@ -232,5 +244,96 @@ describe('ProfessorService', () => {
     professorRepository.findById.mockResolvedValue(null);
 
     await expect(service.remove('user-1')).rejects.toThrow(NotFoundException);
+  });
+
+  it('disables professor account and revokes sessions', async () => {
+    professorRepository.findById.mockResolvedValue({
+      ...professor,
+      status: StatusEnum.active,
+    });
+    professorRepository.update.mockResolvedValue({
+      ...professor,
+      status: StatusEnum.disabled,
+    });
+
+    await expect(
+      service.disableAccount({ professorId: 'user-1', actorUserId: 'sec-1' }),
+    ).resolves.toEqual({
+      ...professor,
+      status: StatusEnum.disabled,
+    });
+
+    expect(deleteByUserIdMock).toHaveBeenCalledWith('user-1');
+    expect(professorUpdateMock).toHaveBeenCalledWith('user-1', {
+      status: StatusEnum.disabled,
+    });
+  });
+
+  it('returns existing professor when already disabled', async () => {
+    professorRepository.findById.mockResolvedValue({
+      ...professor,
+      status: StatusEnum.disabled,
+    });
+
+    await expect(
+      service.disableAccount({ professorId: 'user-1', actorUserId: 'sec-1' }),
+    ).resolves.toEqual({
+      ...professor,
+      status: StatusEnum.disabled,
+    });
+
+    expect(professorUpdateMock).not.toHaveBeenCalled();
+    expect(deleteByUserIdMock).toHaveBeenCalledWith('user-1');
+  });
+
+  it('enables professor account when disabled', async () => {
+    professorRepository.findById.mockResolvedValue({
+      ...professor,
+      status: StatusEnum.disabled,
+    });
+    professorRepository.update.mockResolvedValue({
+      ...professor,
+      status: StatusEnum.active,
+    });
+
+    await expect(
+      service.enableAccount({ professorId: 'user-1', actorUserId: 'sec-1' }),
+    ).resolves.toEqual({
+      ...professor,
+      status: StatusEnum.active,
+    });
+
+    expect(professorUpdateMock).toHaveBeenCalledWith('user-1', {
+      status: StatusEnum.active,
+    });
+  });
+
+  it('rejects enable when professor is inactive', async () => {
+    professorRepository.findById.mockResolvedValue({
+      ...professor,
+      status: StatusEnum.inactive,
+    });
+
+    await expect(
+      service.enableAccount({ professorId: 'user-1', actorUserId: 'sec-1' }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(professorUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it('returns existing professor when already active', async () => {
+    professorRepository.findById.mockResolvedValue({
+      ...professor,
+      status: StatusEnum.active,
+    });
+
+    await expect(
+      service.enableAccount({ professorId: 'user-1', actorUserId: 'sec-1' }),
+    ).resolves.toEqual({
+      ...professor,
+      status: StatusEnum.active,
+    });
+
+    expect(professorUpdateMock).not.toHaveBeenCalled();
   });
 });

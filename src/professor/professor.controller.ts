@@ -25,6 +25,8 @@ import {
 import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/domain/user';
 import { Roles } from '../roles/roles.decorator';
 import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
@@ -92,6 +94,44 @@ export class ProfessorController {
     @Body() updateProfessorDto: UpdateProfessorDto,
   ): Promise<Professor> {
     return this.professorService.update(id, updateProfessorDto);
+  }
+
+  @Patch(':id/disable')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Disable a professor account' })
+  @ApiOkResponse({ type: Professor })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  @ApiNotFoundResponse({ description: 'Professor not found' })
+  @UseGuards(RolesGuard)
+  @Roles(RoleEnum.mdccSecretary)
+  disableAccount(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() user: User,
+  ): Promise<Professor> {
+    return this.professorService.disableAccount({
+      professorId: id,
+      actorUserId: user.id,
+    });
+  }
+
+  @Patch(':id/enable')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Enable a professor account' })
+  @ApiOkResponse({ type: Professor })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  @ApiNotFoundResponse({ description: 'Professor not found' })
+  @UseGuards(RolesGuard)
+  @Roles(RoleEnum.mdccSecretary)
+  enableAccount(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @CurrentUser() user: User,
+  ): Promise<Professor> {
+    return this.professorService.enableAccount({
+      professorId: id,
+      actorUserId: user.id,
+    });
   }
 
   @Delete(':id')

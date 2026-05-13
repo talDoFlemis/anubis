@@ -75,6 +75,12 @@ export class AuthEmailService {
         }
       }
 
+      if (user.status === StatusEnum.disabled) {
+        throw new UnauthorizedException(
+          'Usuario desativado. Entre em contato com a secretaria do programa.',
+        );
+      }
+
       if (user.status !== StatusEnum.active) {
         throw new UnauthorizedException(
           'Usuario inativo. Verifique seu e-mail para ativar sua conta ou entre em contato com um administrador.',
@@ -218,6 +224,7 @@ export class AuthEmailService {
     const hashedPassword = await hashPassword(dto.password);
     await this.usersService.update(user.id, {
       password: hashedPassword,
+      status: StatusEnum.active,
       mustChangePassword: false,
       bootstrapPasswordExpiresAt: null,
       confirmEmailTokenVersion: token.confirmEmailTokenVersion + 1,
