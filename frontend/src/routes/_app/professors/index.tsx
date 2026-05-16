@@ -16,6 +16,7 @@ export const Route = createFileRoute('/_app/professors/')({
 export function GestaoDocentesScreen() {
   const {
     professors,
+    loading,
     totalProfessors,
     searchQuery,
     currentPage,
@@ -32,6 +33,7 @@ export function GestaoDocentesScreen() {
     handleOpenResendInvite,
     handleCloseResendInvite,
     handleResendInvite,
+    isResendingInvite,
     handleOpenProfessorActions,
     handleCloseProfessorActions,
     handleToggleProfessorStatus,
@@ -44,6 +46,7 @@ export function GestaoDocentesScreen() {
         <ProfessorsHeader />
 
         <ProfessorsTable
+          loading={loading}
           professors={professors}
           totalProfessors={totalProfessors}
           onOpenCreateProfessorDialog={handleOpenCreateProfessorDialog}
@@ -62,6 +65,7 @@ export function GestaoDocentesScreen() {
         professor={professorToResendInvite}
         onClose={handleCloseResendInvite}
         onConfirm={handleResendInvite}
+        isLoading={isResendingInvite}
       />
 
       <CreateProfessorDialog

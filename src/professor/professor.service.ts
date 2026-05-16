@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { randomBytes } from 'crypto';
 import type { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
+import { hashPassword } from 'src/utils/password';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { MailService } from '../mail/mail.service';
 import { RoleEnum } from '../roles/roles.enum';
@@ -54,11 +56,15 @@ export class ProfessorService {
       }
     }
 
+    const randomPassword = randomBytes(32).toString('hex');
+    const hashedPassword = await hashPassword(randomPassword);
+
     const professor = await this.professorRepository.create({
       authProvider: AuthProvidersEnum.email,
       providerSubject: email,
       email,
       cpf,
+      password: hashedPassword,
       firstName: dto.firstName ?? null,
       lastName: dto.lastName ?? null,
       role: RoleEnum.professor,

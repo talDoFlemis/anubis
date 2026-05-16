@@ -1,3 +1,4 @@
+import { Skeleton } from '@/components/ui/skeleton';
 import type { ReactNode } from 'react';
 
 import {
@@ -41,6 +42,7 @@ interface TableProps<TData> {
   itemLabel?: string;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  loading?: boolean;
   emptyState?: ReactNode;
   rowClassName?: (row: Row<TData>) => string;
   pageSizeOptions?: number[];
@@ -57,6 +59,7 @@ export function Table<TData>({
   totalItems,
   currentPage,
   pageSize,
+  loading = false,
   itemLabel = 'ITENS',
   onPageChange,
   onPageSizeChange,
@@ -103,7 +106,32 @@ export function Table<TData>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length > 0 ? (
+            {loading ? (
+              Array.from({ length: Math.min(pageSize, 10) }).map((_, rowIndex) => (
+                <TableRow key={`skeleton-row-${rowIndex}`}>
+                  {table.getAllColumns().map((column, colIndex) => {
+                    const isAction = column.id === 'acoes' || column.id === 'actions';
+                    // Vary the width slightly to make it look like real text
+                    const widthClass = isAction
+                      ? 'w-8 ml-auto'
+                      : (rowIndex + colIndex) % 3 === 0
+                        ? 'w-[60%]'
+                        : (rowIndex + colIndex) % 2 === 0
+                          ? 'w-[85%]'
+                          : 'w-[70%]';
+
+                    return (
+                      <TableCell
+                        key={column.id}
+                        className={column.id === 'nome' ? 'font-medium' : ''}
+                      >
+                        <Skeleton className={`h-4 ${widthClass}`} />
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map(row => (
                 <TableRow key={row.id} className={rowClassName?.(row)}>
                   {row.getVisibleCells().map(cell => (

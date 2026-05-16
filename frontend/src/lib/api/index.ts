@@ -20,12 +20,15 @@ export type { CandidateProfile } from './candidates';
  */
 export { authApi as auth } from './auth';
 export { candidatesApi as candidates } from './candidates';
+export { professorsApi as professors } from './professors';
 
 // Re-compose the legacy `api` namespace so existing `api.auth.*` calls keep working.
 import { authApi } from './auth';
 import { candidatesApi } from './candidates';
+import { professorsApi } from './professors';
 
 export const api = {
   auth: authApi,
   candidates: candidatesApi,
+  professors: professorsApi,
 } as const;

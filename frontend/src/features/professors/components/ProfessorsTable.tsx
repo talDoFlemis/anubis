@@ -1,30 +1,31 @@
 import { MoreVertical, Search, UserPlus } from 'lucide-react';
 
 import { Table } from '@/components/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { Professor, ProfessorStatus } from '@/lib/mock-professors-management';
+import type { ProfessorItem } from '@/lib/api/professors';
 import type { ColumnDef } from '@tanstack/react-table';
 
 interface ProfessorsTableProps {
-  professors: Professor[];
+  professors: ProfessorItem[];
+  loading: boolean;
   searchQuery: string;
   totalProfessors: number;
   currentPage: number;
   pageSize: number;
   onOpenCreateProfessorDialog: () => void;
   onSearchQueryChange: (value: string) => void;
-  onOpenResendInvite: (professor: Professor) => void;
-  onOpenProfessorActions: (professor: Professor) => void;
+  onOpenResendInvite: (professor: ProfessorItem) => void;
+  onOpenProfessorActions: (professor: ProfessorItem) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
 }
 
-function renderBadgeStatus(status: ProfessorStatus) {
+function renderBadgeStatus(status: string) {
   switch (status) {
-    case 'Verificado':
+    case 'active':
       return (
         <Badge
           variant="outline"
@@ -33,7 +34,7 @@ function renderBadgeStatus(status: ProfessorStatus) {
           Verificado
         </Badge>
       );
-    case 'Pendente':
+    case 'inactive':
       return (
         <Badge
           variant="outline"
@@ -42,7 +43,7 @@ function renderBadgeStatus(status: ProfessorStatus) {
           Pendente
         </Badge>
       );
-    case 'Desativado':
+    case 'pending':
       return (
         <Badge
           variant="outline"
@@ -52,6 +53,7 @@ function renderBadgeStatus(status: ProfessorStatus) {
         </Badge>
       );
   }
+  return null;
 }
 
 function renderAvatarInitials(nome: string) {
@@ -59,27 +61,26 @@ function renderAvatarInitials(nome: string) {
 }
 
 function createProfessorColumns(
-  onOpenResendInvite: (professor: Professor) => void,
-): ColumnDef<Professor>[] {
+  onOpenResendInvite: (professor: ProfessorItem) => void,
+): ColumnDef<ProfessorItem>[] {
   return [
     {
-      accessorKey: 'nome',
+      accessorKey: 'name',
       header: 'NOME DO DOCENTE',
       cell: ({ row }) => {
         const professor = row.original;
 
         return (
           <div className="flex items-center space-x-4">
-            <Avatar className={`h-10 w-10 ${professor.status === 'Desativado' ? 'grayscale' : ''}`}>
-              <AvatarImage src={professor.avatarUrl} />
+            <Avatar className={`h-10 w-10 ${professor.status === 'disabled' ? 'grayscale' : ''}`}>
               <AvatarFallback className="bg-slate-100 text-sm font-semibold text-slate-600">
-                {renderAvatarInitials(professor.nome)}
+                {renderAvatarInitials(professor.name)}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-900">{professor.nome}</span>
+              <span className="text-sm font-bold text-slate-900">{professor.name}</span>
               <span className="mt-0.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-                {professor.tipo}
+                {professor.department}
               </span>
             </div>
           </div>
@@ -100,7 +101,7 @@ function createProfessorColumns(
         return (
           <div className="flex flex-col items-start gap-1">
             {renderBadgeStatus(professor.status)}
-            {professor.status === 'Pendente' && (
+            {professor.status === 'inactive' && (
               <button
                 onClick={() => onOpenResendInvite(professor)}
                 className="mt-1 text-[10px] font-bold tracking-wider text-blue-600 uppercase transition-colors hover:text-blue-800"
@@ -116,8 +117,8 @@ function createProfessorColumns(
 }
 
 function createProfessorQuickActions(
-  onOpenProfessorActions: (professor: Professor) => void,
-): ColumnDef<Professor>[] {
+  onOpenProfessorActions: (professor: ProfessorItem) => void,
+): ColumnDef<ProfessorItem>[] {
   return [
     {
       id: 'acoes',
@@ -140,6 +141,7 @@ function createProfessorQuickActions(
 
 export function ProfessorsTable({
   professors,
+  loading: isLoading,
   searchQuery,
   totalProfessors,
   currentPage,
@@ -177,6 +179,7 @@ export function ProfessorsTable({
       </div>
 
       <Table
+        loading={isLoading}
         data={professors}
         columns={columns}
         quickActions={quickActions}
@@ -187,7 +190,7 @@ export function ProfessorsTable({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
         rowClassName={row =>
-          `group ${row.original.status === 'Desativado' ? 'bg-slate-50/50 opacity-60' : ''}`
+          `group ${row.original.status === 'disabled' ? 'bg-slate-50/50 opacity-60' : ''}`
         }
       />
     </>
