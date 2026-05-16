@@ -1,0 +1,13 @@
+packages:
+  - '!frontend'
+  - '!frontend/**'
+
+allowBuilds:
+  '@nestjs/core': true
+  '@scarf/scarf': true
+  bcrypt: true
+  protobufjs: true
+  cpu-features: false
+  esbuild: false
+  ssh2: false
+  unrs-resolver: false
