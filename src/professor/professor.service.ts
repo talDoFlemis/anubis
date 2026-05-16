@@ -2,11 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import type { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { MailService } from '../mail/mail.service';
@@ -23,6 +23,7 @@ import { ProfessorRepository } from './infraestructure/persistence/professor.rep
 
 @Injectable()
 export class ProfessorService {
+  private readonly logger = new Logger(ProfessorService.name);
   constructor(
     private readonly usersService: UsersService,
     private readonly professorRepository: ProfessorRepository,
@@ -30,8 +31,6 @@ export class ProfessorService {
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    @InjectPinoLogger(ProfessorService.name)
-    private readonly logger: PinoLogger,
   ) {}
 
   async create(dto: CreateProfessorDto): Promise<Professor> {
@@ -257,7 +256,7 @@ export class ProfessorService {
     professorUserId: string;
     secretaryUserId: string;
   }): void {
-    this.logger.info(
+    this.logger.log(
       {
         action: params.action,
         professorUserId: params.professorUserId,
