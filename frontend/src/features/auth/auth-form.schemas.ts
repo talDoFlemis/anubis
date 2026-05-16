@@ -21,7 +21,7 @@ export const forgotPasswordSchema = z.object({
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Informe a senha atual.'),
-    password: z.string().min(6, 'A nova senha deve ter no minimo 6 caracteres.'),
+    password: z.string().min(8, 'A nova senha deve ter no minimo 8 caracteres.'),
     confirmPassword: z.string().min(1, 'Confirme a nova senha.'),
   })
   .refine(values => values.password === values.confirmPassword, {
@@ -31,13 +31,15 @@ export const changePasswordSchema = z
 
 export const resetPasswordSchema = z
   .object({
-    password: z.string().min(6, 'A nova senha deve ter no minimo 6 caracteres.'),
+    password: z.string().min(8, 'A nova senha deve ter no minimo 8 caracteres.'),
     confirmPassword: z.string().min(1, 'Confirme a nova senha.'),
   })
   .refine(values => values.password === values.confirmPassword, {
     path: ['confirmPassword'],
     message: 'As senhas nao coincidem.',
   });
+
+export const professorOnboardingSchema = resetPasswordSchema;
 
 export const onboardingSchema = z.object({
   firstName: z.string().trim().min(1, 'Informe o nome.'),
@@ -53,4 +55,5 @@ export type SignUpFormData = z.infer<typeof signUpSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+export type ProfessorOnboardingFormData = z.infer<typeof professorOnboardingSchema>;
 export type OnboardingFormData = z.infer<typeof onboardingSchema>;

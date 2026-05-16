@@ -206,15 +206,4 @@
     );
   }
 
-  .anubis-editorial-grid {
-    display: grid;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 1024px) {
-    .anubis-editorial-grid {
-      grid-template-columns: minmax(0, 1.08fr) minmax(21rem, 0.92fr);
-      align-items: stretch;
-    }
-  }
 }

@@ -9,6 +9,7 @@ export const AUTH_CONFIRM_EMAIL_ROUTE = '/auth/confirm-email';
 export const AUTH_FORGOT_PASSWORD_ROUTE = '/auth/forgot-password';
 export const AUTH_CHANGE_PASSWORD_ROUTE = '/auth/change-password';
 export const AUTH_RESET_PASSWORD_ROUTE = '/auth/reset-password';
+export const AUTH_PROFESSOR_ONBOARDING_ROUTE = '/auth/onboarding/professor';
 export const AUTH_HOME_ROUTE = '/';
 
 export type AuthLifecycleRoute = typeof AUTH_ONBOARDING_ROUTE | typeof AUTH_CHANGE_PASSWORD_ROUTE;

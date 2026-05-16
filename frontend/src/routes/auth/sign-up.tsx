@@ -50,17 +50,6 @@ function SignUpPage() {
       eyebrow="Cadastro"
       title="Abra sua candidatura em uma mesa de leitura clara e guiada."
       description="O cadastro inicial registra seus dados essenciais de candidato e prepara o percurso para confirmacao de email, autenticacao e etapas seguintes."
-      asideTitle="Uma entrada pensada para candidatos, sem ruido e sem excesso."
-      asideDescription="O formulario organiza apenas o necessario para abrir sua conta. Professores e demais perfis continuam por fluxos internos da equipe."
-      metrics={[
-        { label: 'Perfil', value: 'Candidato' },
-        { label: 'Passo inicial', value: 'Conta' },
-        { label: 'Confirmacao', value: 'Por email' },
-      ]}
-      notes={[
-        'A conta e liberada apos a confirmacao do email informado neste formulario.',
-        'Se preferir, voce tambem pode iniciar com Google e complementar seus dados de candidato logo apos a autenticacao.',
-      ]}
       footer={
         <>
           Ja possui acesso?{' '}

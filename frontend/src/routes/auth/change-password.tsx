@@ -50,14 +50,6 @@ function ChangePasswordPage() {
       eyebrow="Atualizacao obrigatoria"
       title="Defina uma nova senha para continuar no ambiente do candidato."
       description="Seu acesso atual e temporario. Troque a senha agora para seguir com um credencial permanente e segura."
-      asideTitle="Uma unica etapa separa o acesso temporario da continuidade do processo."
-      asideDescription="Troque a senha antes de prosseguir para a area inicial. Depois disso, o fluxo volta ao percurso normal do candidato."
-      metrics={[
-        { label: 'Estado atual', value: 'Temporario' },
-        { label: 'Acao', value: 'Nova senha' },
-        { label: 'Destino', value: 'Home' },
-      ]}
-      notes={['Use a senha temporaria recebida anteriormente para autorizar a troca nesta etapa.']}
       compact
     >
       <form
@@ -90,8 +82,8 @@ function ChangePasswordPage() {
               value={field.state.value}
               onChange={value => field.handleChange(value)}
               onBlur={field.handleBlur}
-              placeholder="Minimo 6 caracteres"
-              minLength={6}
+              placeholder="Minimo 8 caracteres"
+              minLength={8}
               errors={field.state.meta.errors}
               isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
             />
@@ -107,7 +99,7 @@ function ChangePasswordPage() {
               onChange={value => field.handleChange(value)}
               onBlur={field.handleBlur}
               placeholder="Repita a nova senha"
-              minLength={6}
+              minLength={8}
               errors={field.state.meta.errors}
               isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
             />

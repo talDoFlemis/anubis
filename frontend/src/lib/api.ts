@@ -214,6 +214,11 @@ export interface UpdateUserData {
   oldPassword?: string;
 }
 
+export interface ProfessorOnboardingData {
+  hash: string;
+  password: string;
+}
+
 export const api = {
   auth: {
     me: async () => normalizeUser(await request('/auth/me')),
@@ -241,6 +246,12 @@ export const api = {
         method: 'POST',
         body: data,
       }).then(normalizeUser),
+
+    completeProfessorOnboarding: (data: ProfessorOnboardingData) =>
+      request<void>('/auth/onboarding/professor', {
+        method: 'POST',
+        body: data,
+      }),
 
     confirmEmail: (data: { hash: string }) =>
       request<void>('/auth/provider/email/confirm', {

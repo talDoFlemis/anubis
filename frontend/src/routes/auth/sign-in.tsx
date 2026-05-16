@@ -33,17 +33,6 @@ function SignInPage() {
       eyebrow="Acesso"
       title="Entre para acompanhar sua jornada seletiva."
       description="Consulte documentos, acompanhe prazos e retome seu processo com a mesma clareza editorial presente em cada etapa do Anubis."
-      asideTitle="Cada candidatura, documento e prazo em um unico fluxo de leitura."
-      asideDescription="O ambiente de acesso organiza o essencial: continuidade do processo, recuperacao de senha e autenticacao institucional sem ruido visual."
-      metrics={[
-        { label: 'Ambiente', value: 'MDCC/UFC' },
-        { label: 'Curadoria', value: '1 fluxo' },
-        { label: 'Entrada', value: 'Google + email' },
-      ]}
-      notes={[
-        'Use seu email e senha quando ja tiver configurado o acesso institucional ou continue com Google para entrar com a conta vinculada.',
-        'Se este for seu primeiro acesso com Google, voce pode ser conduzido para concluir o cadastro antes de chegar a area inicial.',
-      ]}
       footer={
         <>
           Candidatos ainda nao cadastrados podem{' '}
