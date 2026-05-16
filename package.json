@@ -23,7 +23,8 @@
     "test:integration": "jest --config jest.integration.config.ts --runInBand",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "ts-node -r tsconfig-paths/register scripts/seed/seed-professors.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
