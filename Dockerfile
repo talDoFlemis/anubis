@@ -7,7 +7,7 @@ USER node
 
 WORKDIR /app
 
-COPY --chown=node:node package.json pnpm-lock.yaml ./
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/home/node/.local/share/pnpm/store pnpm install --frozen-lockfile
 
 # Stage 2: Build
@@ -20,7 +20,7 @@ USER node
 WORKDIR /app
 
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
-COPY --chown=node:node package.json pnpm-lock.yaml tsconfig.json tsconfig.build.json nest-cli.json ./
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY --chown=node:node src ./src
 
 RUN pnpm build
@@ -34,7 +34,7 @@ USER node
 
 WORKDIR /app
 
-COPY --chown=node:node package.json pnpm-lock.yaml ./
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/home/node/.local/share/pnpm/store pnpm install --frozen-lockfile --prod
 
 # Stage 4: Runtime
