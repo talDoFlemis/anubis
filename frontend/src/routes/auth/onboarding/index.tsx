@@ -10,7 +10,7 @@ import { getPostAuthPath } from '@/lib/auth-flow';
 import { onboardingSchema, type OnboardingFormData } from '@/features/auth/auth-form.schemas';
 import { toFieldErrors } from '@/shared/errors/fieldErrors';
 
-export const Route = createFileRoute('/auth/onboarding')({
+export const Route = createFileRoute('/auth/onboarding/')({
   component: CandidateOnboardingPage,
 });
 
@@ -54,17 +54,6 @@ function CandidateOnboardingPage() {
       eyebrow="Concluir cadastro"
       title="Feche seu perfil academico antes de entrar na area do candidato."
       description="Precisamos registrar os dados complementares do candidato para liberar o acompanhamento do processo e personalizar as proximas etapas."
-      asideTitle="Concluir agora evita ruído depois."
-      asideDescription="Este e o fechamento do seu cadastro inicial. Ao confirmar as informacoes, o sistema libera a experiencia completa da area do candidato."
-      metrics={[
-        { label: 'Etapa', value: 'Perfil' },
-        { label: 'Campos', value: 'Basicos + opcionais' },
-        { label: 'Saida', value: 'Home do candidato' },
-      ]}
-      notes={[
-        'IRA e POSCOMP sao opcionais nesta etapa, mas ajudam a consolidar seu perfil academico desde o inicio.',
-        'Se voce entrou com uma conta incorreta, saia agora e reinicie a autenticacao antes de concluir este formulario.',
-      ]}
       compact
     >
       <form

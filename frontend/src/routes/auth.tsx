@@ -10,6 +10,7 @@ const PUBLIC_HASH_AUTH_PATHS = new Set([
   '/auth/confirm-email',
   '/auth/confirm-new-email',
   '/auth/reset-password',
+  '/auth/onboarding/professor',
 ]);
 
 export const Route = createFileRoute('/auth')({

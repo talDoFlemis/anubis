@@ -32,16 +32,6 @@ function ForgotPasswordPage() {
       eyebrow="Recuperacao"
       title="Peça um novo acesso sem perder o ritmo da candidatura."
       description="Informe o email da conta para receber o link de redefinicao e retomar sua entrada com seguranca."
-      asideTitle="A recuperacao tambem segue o mesmo fio editorial."
-      asideDescription="O processo evita friccao: um unico campo, uma unica acao primaria e continuidade clara para a proxima etapa."
-      metrics={[
-        { label: 'Canal', value: 'Email' },
-        { label: 'Tempo', value: 'Poucos minutos' },
-        { label: 'Acao', value: '1 link seguro' },
-      ]}
-      notes={[
-        'Se o endereco existir e estiver apto para o fluxo de senha, voce recebera o link de recuperacao na caixa de entrada.',
-      ]}
       compact
       footer={
         <Link to={AUTH_HOME_ROUTE} className="text-primary underline-offset-4 hover:underline">

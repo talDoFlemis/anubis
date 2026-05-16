@@ -15,12 +15,13 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
-import { Route as AuthOnboardingRouteImport } from './routes/auth/onboarding'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthConfirmNewEmailRouteImport } from './routes/auth/confirm-new-email'
 import { Route as AuthConfirmEmailRouteImport } from './routes/auth/confirm-email'
 import { Route as AuthChangePasswordRouteImport } from './routes/auth/change-password'
+import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
 import { Route as AppProfessorsIndexRouteImport } from './routes/_app/professors/index'
+import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -51,11 +52,6 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
@@ -76,10 +72,20 @@ const AuthChangePasswordRoute = AuthChangePasswordRouteImport.update({
   path: '/change-password',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthOnboardingIndexRoute = AuthOnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AppProfessorsIndexRoute = AppProfessorsIndexRouteImport.update({
   id: '/professors/',
   path: '/professors/',
   getParentRoute: () => AppRoute,
+} as any)
+const AuthOnboardingProfessorRoute = AuthOnboardingProfessorRouteImport.update({
+  id: '/onboarding/professor',
+  path: '/onboarding/professor',
+  getParentRoute: () => AuthRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -89,11 +95,12 @@ export interface FileRoutesByFullPath {
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
-  '/auth/onboarding': typeof AuthOnboardingRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/professors/': typeof AppProfessorsIndexRoute
+  '/auth/onboarding/': typeof AuthOnboardingIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
@@ -101,12 +108,13 @@ export interface FileRoutesByTo {
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
-  '/auth/onboarding': typeof AuthOnboardingRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/': typeof AppIndexRoute
+  '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/professors': typeof AppProfessorsIndexRoute
+  '/auth/onboarding': typeof AuthOnboardingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,12 +124,13 @@ export interface FileRoutesById {
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
-  '/auth/onboarding': typeof AuthOnboardingRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/_app/': typeof AppIndexRoute
+  '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/_app/professors/': typeof AppProfessorsIndexRoute
+  '/auth/onboarding/': typeof AuthOnboardingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,11 +141,12 @@ export interface FileRouteTypes {
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
     | '/auth/forgot-password'
-    | '/auth/onboarding'
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/auth/onboarding/professor'
     | '/professors/'
+    | '/auth/onboarding/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -144,12 +154,13 @@ export interface FileRouteTypes {
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
     | '/auth/forgot-password'
-    | '/auth/onboarding'
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/'
+    | '/auth/onboarding/professor'
     | '/professors'
+    | '/auth/onboarding'
   id:
     | '__root__'
     | '/_app'
@@ -158,12 +169,13 @@ export interface FileRouteTypes {
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
     | '/auth/forgot-password'
-    | '/auth/onboarding'
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/_app/'
+    | '/auth/onboarding/professor'
     | '/_app/professors/'
+    | '/auth/onboarding/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -215,13 +227,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthResetPasswordRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/auth/onboarding': {
-      id: '/auth/onboarding'
-      path: '/onboarding'
-      fullPath: '/auth/onboarding'
-      preLoaderRoute: typeof AuthOnboardingRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/auth/forgot-password': {
       id: '/auth/forgot-password'
       path: '/forgot-password'
@@ -250,12 +255,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthChangePasswordRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/auth/onboarding/': {
+      id: '/auth/onboarding/'
+      path: '/onboarding'
+      fullPath: '/auth/onboarding/'
+      preLoaderRoute: typeof AuthOnboardingIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_app/professors/': {
       id: '/_app/professors/'
       path: '/professors'
       fullPath: '/professors/'
       preLoaderRoute: typeof AppProfessorsIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/auth/onboarding/professor': {
+      id: '/auth/onboarding/professor'
+      path: '/onboarding/professor'
+      fullPath: '/auth/onboarding/professor'
+      preLoaderRoute: typeof AuthOnboardingProfessorRouteImport
+      parentRoute: typeof AuthRoute
     }
   }
 }
@@ -277,10 +296,11 @@ interface AuthRouteChildren {
   AuthConfirmEmailRoute: typeof AuthConfirmEmailRoute
   AuthConfirmNewEmailRoute: typeof AuthConfirmNewEmailRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
-  AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
+  AuthOnboardingProfessorRoute: typeof AuthOnboardingProfessorRoute
+  AuthOnboardingIndexRoute: typeof AuthOnboardingIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -288,10 +308,11 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthConfirmEmailRoute: AuthConfirmEmailRoute,
   AuthConfirmNewEmailRoute: AuthConfirmNewEmailRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
-  AuthOnboardingRoute: AuthOnboardingRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
+  AuthOnboardingProfessorRoute: AuthOnboardingProfessorRoute,
+  AuthOnboardingIndexRoute: AuthOnboardingIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

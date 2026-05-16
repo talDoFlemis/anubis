@@ -70,14 +70,6 @@ function ResetPasswordPage() {
       eyebrow="Nova senha"
       title="Defina uma nova senha para retomar seu acesso."
       description="Escolha uma senha nova e confirme abaixo. Assim que o envio for concluido, voce podera entrar novamente no Anubis."
-      asideTitle="A redefinicao fecha o ciclo com uma unica decisao clara."
-      asideDescription="Sem menus paralelos, sem etapas ambíguas: informe a nova senha, confirme e retorne ao ambiente de candidatura."
-      metrics={[
-        { label: 'Passo', value: 'Senha' },
-        { label: 'Seguranca', value: 'Confirmacao' },
-        { label: 'Retorno', value: 'Login' },
-      ]}
-      notes={['Depois de salvar, use a nova senha no proximo acesso.']}
       compact
       status={
         <AuthCallout
@@ -108,8 +100,8 @@ function ResetPasswordPage() {
               value={field.state.value}
               onChange={value => field.handleChange(value)}
               onBlur={field.handleBlur}
-              placeholder="Minimo 6 caracteres"
-              minLength={6}
+              placeholder="Minimo 8 caracteres"
+              minLength={8}
               errors={field.state.meta.errors}
               isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
             />
@@ -125,7 +117,7 @@ function ResetPasswordPage() {
               onChange={value => field.handleChange(value)}
               onBlur={field.handleBlur}
               placeholder="Repita a nova senha"
-              minLength={6}
+              minLength={8}
               errors={field.state.meta.errors}
               isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
             />

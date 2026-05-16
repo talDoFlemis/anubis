@@ -80,6 +80,12 @@ export function useCompleteCandidateOnboarding() {
   });
 }
 
+export function useCompleteProfessorOnboarding() {
+  return useMutation({
+    mutationFn: api.auth.completeProfessorOnboarding,
+  });
+}
+
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
