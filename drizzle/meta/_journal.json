@@ -8,6 +8,13 @@
       "when": 1778011574534,
       "tag": "0000_new_microbe",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778624791827,
+      "tag": "0001_spotty_baron_zemo",
+      "breakpoints": true
     }
   ]
 }

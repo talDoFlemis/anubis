@@ -16,6 +16,8 @@ describe('ProfessorController', () => {
     findAll: jest.Mock;
     update: jest.Mock;
     remove: jest.Mock;
+    disableAccount: jest.Mock;
+    enableAccount: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -30,6 +32,8 @@ describe('ProfessorController', () => {
             findAll: jest.fn(),
             update: jest.fn(),
             remove: jest.fn(),
+            disableAccount: jest.fn(),
+            enableAccount: jest.fn(),
           },
         },
       ],
@@ -93,5 +97,27 @@ describe('ProfessorController', () => {
     await controller.remove('user-1');
 
     expect(professorService.remove).toHaveBeenCalledWith('user-1');
+  });
+
+  it('calls disableAccount on service', async () => {
+    professorService.disableAccount.mockResolvedValue({} as never);
+
+    await controller.disableAccount('user-1', { id: 'sec-1' } as never);
+
+    expect(professorService.disableAccount).toHaveBeenCalledWith({
+      professorId: 'user-1',
+      actorUserId: 'sec-1',
+    });
+  });
+
+  it('calls enableAccount on service', async () => {
+    professorService.enableAccount.mockResolvedValue({} as never);
+
+    await controller.enableAccount('user-1', { id: 'sec-1' } as never);
+
+    expect(professorService.enableAccount).toHaveBeenCalledWith({
+      professorId: 'user-1',
+      actorUserId: 'sec-1',
+    });
   });
 });

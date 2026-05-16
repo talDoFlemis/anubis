@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { BadRequestException, ConflictException } from '@nestjs/common';
@@ -117,6 +116,7 @@ describe('AuthService', () => {
   });
 
   it('creates onboarding-incomplete candidate on first social signup', async () => {
+    // ARRANGE
     usersService.findByAuthProvider.mockResolvedValue(null);
     usersService.findByEmail.mockResolvedValue(null);
     usersService.create.mockResolvedValue({
@@ -135,14 +135,17 @@ describe('AuthService', () => {
       password: null,
       onboardingCompleted: false,
     });
+    const userCreateSpy = jest.spyOn(usersService, 'create');
 
+    // ACT
     const result = await service.validateSocialLogin(AuthProvidersEnum.google, {
       id: 'google-1',
       email: 'new@example.com',
       verified_email: true,
     });
 
-    expect(usersService.create).toHaveBeenCalledWith(
+    // ASSERT
+    expect(userCreateSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         authProvider: AuthProvidersEnum.google,
         providerSubject: 'google-1',
@@ -190,6 +193,7 @@ describe('AuthService', () => {
   });
 
   it('allows password update for email accounts and revokes other sessions', async () => {
+    // ARRANGE
     usersService.findById
       .mockResolvedValueOnce({
         ...baseUser,
@@ -199,14 +203,18 @@ describe('AuthService', () => {
       .mockResolvedValueOnce(baseUser);
     jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
     jest.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+    const deleteByUserIdWithExcludeSpy = jest.spyOn(sessionService, 'deleteByUserIdWithExclude');
+    const updateUserSpy = jest.spyOn(usersService, 'update');
 
+    // ACT
     await service.update('user-1', 'sid-1', {
       oldPassword: 'old',
       password: 'new-password',
     });
 
-    expect(sessionService.deleteByUserIdWithExclude).toHaveBeenCalled();
-    expect(usersService.update).toHaveBeenCalledWith(
+    // ASSERT
+    expect(deleteByUserIdWithExcludeSpy).toHaveBeenCalled();
+    expect(updateUserSpy).toHaveBeenCalledWith(
       'user-1',
       expect.objectContaining({
         password: 'new-hash',
@@ -216,8 +224,12 @@ describe('AuthService', () => {
   });
 
   it('delegates candidate onboarding to CandidateService', async () => {
+    // ARRANGE
+    const completeOnboardingSpy = jest.spyOn(candidateService, 'completeOnboarding');
+
     usersService.findById.mockResolvedValue(baseUser);
 
+    // ACT
     await service.completeCandidateOnboarding('user-1', {
       firstName: 'John',
       lastName: 'Doe',
@@ -225,7 +237,8 @@ describe('AuthService', () => {
       universityOfOrigin: 'UFRN',
     });
 
-    expect(candidateService.completeOnboarding).toHaveBeenCalledWith(
+    // ASSERT
+    expect(completeOnboardingSpy).toHaveBeenCalledWith(
       'user-1',
       expect.objectContaining({ cpf: '12345678901' }),
     );

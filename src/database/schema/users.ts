@@ -17,7 +17,7 @@ export const roleEnum = pgEnum('role', [
   'post-graduate-vice-coordinator',
 ]);
 
-export const statusEnum = pgEnum('status', ['active', 'inactive']);
+export const statusEnum = pgEnum('status', ['active', 'inactive', 'disabled']);
 export const authProviderEnum = pgEnum('auth_provider', ['email', 'google']);
 
 export const users = pgTable(

@@ -1,10 +1,16 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { MailService } from '../mail/mail.service';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { RoleEnum } from '../roles/roles.enum';
+import { SessionService } from '../session/session.service';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { UsersService } from '../users/users.service';
 import { Professor } from './domain/professor';
@@ -20,6 +26,7 @@ export class ProfessorService {
   constructor(
     private readonly usersService: UsersService,
     private readonly professorRepository: ProfessorRepository,
+    private readonly sessionService: SessionService,
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -89,14 +96,7 @@ export class ProfessorService {
   }
 
   async findOne(id: string): Promise<Professor> {
-    this.logger.debug({ id }, 'Fetching professor by id');
-
-    const professor = await this.professorRepository.findById(id);
-    if (!professor) {
-      throw new NotFoundException('Professor nao encontrado.');
-    }
-
-    return professor;
+    return this.requireProfessor(id);
   }
 
   async findAll(filters: FindProfessorsDto): Promise<PaginatedResponseDto<ProfessorItemDto>> {
@@ -144,10 +144,42 @@ export class ProfessorService {
 
     const professor = await this.professorRepository.findById(id);
     if (!professor) {
-      throw new NotFoundException('Professor nao encontrado.');
+      throw new NotFoundException(`Professor nao encontrado. Esperado id UUID. Recebido: ${id}`);
     }
 
     await this.professorRepository.remove(id);
+  }
+
+  async disableAccount(params: { professorId: string; actorUserId: string }): Promise<Professor> {
+    const professor = await this.requireProfessor(params.professorId);
+    const updated = await this.updateProfessorStatusIfNeeded({
+      professor,
+      professorId: params.professorId,
+      nextStatus: StatusEnum.disabled,
+    });
+
+    await this.revokeProfessorSessions(params.professorId);
+    this.logAccountToggle({
+      action: 'disable',
+      professorUserId: params.professorId,
+      secretaryUserId: params.actorUserId,
+    });
+    return updated;
+  }
+
+  async enableAccount(params: { professorId: string; actorUserId: string }): Promise<Professor> {
+    const professor = await this.requireProfessor(params.professorId);
+    const updated = await this.enableProfessorIfDisabled({
+      professor,
+      professorId: params.professorId,
+    });
+
+    this.logAccountToggle({
+      action: 'enable',
+      professorUserId: params.professorId,
+      secretaryUserId: params.actorUserId,
+    });
+    return updated;
   }
 
   private composeConfirmEmailBody(hash: string): string {
@@ -155,5 +187,84 @@ export class ProfessorService {
     const confirmUrl = `${frontendUrl}/auth/onboarding/professor?hash=${hash}`;
 
     return `<p>Voce foi cadastrado(a) na plataforma do MDCC. Clique no link abaixo para concluir o seu cadastro:</p><p><a href="${confirmUrl}">Confirmar email</a></p>`;
+  }
+
+  private async requireProfessor(id: string): Promise<Professor> {
+    this.logger.debug({ id }, 'Fetching professor by id');
+    const professor = await this.professorRepository.findById(id);
+    if (!professor) {
+      throw new NotFoundException(`Professor nao encontrado. Esperado id UUID. Recebido: ${id}`);
+    }
+    return professor;
+  }
+
+  private async updateProfessorStatusIfNeeded(params: {
+    professor: Professor;
+    professorId: string;
+    nextStatus: StatusEnum;
+  }): Promise<Professor> {
+    if (params.professor.status === params.nextStatus) {
+      return params.professor;
+    }
+
+    return this.updateProfessorStatus({
+      professorId: params.professorId,
+      nextStatus: params.nextStatus,
+    });
+  }
+
+  private async updateProfessorStatus(params: {
+    professorId: string;
+    nextStatus: StatusEnum;
+  }): Promise<Professor> {
+    const updated = await this.professorRepository.update(params.professorId, {
+      status: params.nextStatus,
+    });
+    if (!updated) {
+      throw new NotFoundException(
+        `Professor nao encontrado. Esperado id UUID. Recebido: ${params.professorId}`,
+      );
+    }
+    return updated;
+  }
+
+  private async enableProfessorIfDisabled(params: {
+    professor: Professor;
+    professorId: string;
+  }): Promise<Professor> {
+    if (params.professor.status === StatusEnum.inactive) {
+      throw new BadRequestException(
+        `Status invalido para reativacao. Esperado: ${StatusEnum.disabled}. Recebido: ${params.professor.status}`,
+      );
+    }
+
+    if (params.professor.status !== StatusEnum.disabled) {
+      return params.professor;
+    }
+
+    return this.updateProfessorStatus({
+      professorId: params.professorId,
+      nextStatus: StatusEnum.active,
+    });
+  }
+
+  private async revokeProfessorSessions(professorId: string): Promise<void> {
+    await this.sessionService.deleteByUserId(professorId);
+  }
+
+  private logAccountToggle(params: {
+    action: 'enable' | 'disable';
+    professorUserId: string;
+    secretaryUserId: string;
+  }): void {
+    this.logger.info(
+      {
+        action: params.action,
+        professorUserId: params.professorUserId,
+        secretaryUserId: params.secretaryUserId,
+        timestamp: new Date().toISOString(),
+      },
+      'Professor account status updated',
+    );
   }
 }
