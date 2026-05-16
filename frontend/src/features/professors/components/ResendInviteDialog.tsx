@@ -1,4 +1,4 @@
-import { Mail } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -9,15 +9,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { Professor } from '@/lib/mock-professors-management';
+import type { ProfessorItem } from '@/lib/api/professors';
 
 interface ResendInviteDialogProps {
-  professor: Professor | null;
+  professor: ProfessorItem | null;
   onClose: () => void;
   onConfirm: () => void;
+  isLoading?: boolean;
 }
 
-export function ResendInviteDialog({ professor, onClose, onConfirm }: ResendInviteDialogProps) {
+export function ResendInviteDialog({
+  professor,
+  onClose,
+  onConfirm,
+  isLoading,
+}: ResendInviteDialogProps) {
   return (
     <Dialog open={Boolean(professor)} onOpenChange={open => !open && onClose()}>
       <DialogContent className="p-6 sm:max-w-106.25">
@@ -49,14 +55,17 @@ export function ResendInviteDialog({ professor, onClose, onConfirm }: ResendInvi
           <Button
             variant="outline"
             onClick={onClose}
+            disabled={isLoading}
             className="border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
           >
             Cancelar
           </Button>
           <Button
             onClick={onConfirm}
+            disabled={isLoading}
             className="bg-blue-600 font-medium text-white shadow-sm hover:bg-blue-700"
           >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Confirmar Reenvio
           </Button>
         </DialogFooter>

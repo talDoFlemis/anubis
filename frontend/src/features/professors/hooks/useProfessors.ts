@@ -1,36 +1,45 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 import { toast } from 'sonner';
 
-import { mockProfessors, type Professor } from '@/lib/mock-professors-management';
+import { useDebounce } from '@/hooks/use-debounce';
+import { api } from '@/lib/api';
+import type { ProfessorItem } from '@/lib/api/professors';
 import type { NewProfessorFormData } from '../types/professors-form.types';
-import {
-  filterProfessors,
-  mapFormToProfessor,
-  toggleProfessorStatus,
-} from '../utils/professors-form.utils';
+
+function normalizeCpf(value: string): string {
+  return value.replace(/\D/g, '');
+}
 
 export function useProfessors() {
-  const [professors, setProfessors] = React.useState<Professor[]>(mockProfessors);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
   const [isCreateProfessorDialogOpen, setIsCreateProfessorDialogOpen] = React.useState(false);
-  const [professorToResendInvite, setProfessorToResendInvite] = React.useState<Professor | null>(
-    null,
-  );
-  const [professorForActions, setProfessorForActions] = React.useState<Professor | null>(null);
+  const [professorToResendInvite, setProfessorToResendInvite] =
+    React.useState<ProfessorItem | null>(null);
+  const [professorForActions, setProfessorForActions] = React.useState<ProfessorItem | null>(null);
 
-  const filteredProfessors = React.useMemo(
-    () => filterProfessors(professors, searchQuery),
-    [professors, searchQuery],
-  );
+  const debouncedSearch = useDebounce(searchQuery, 400);
 
-  const paginatedProfessors = React.useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredProfessors.slice(start, start + pageSize);
-  }, [filteredProfessors, currentPage, pageSize]);
+  const {
+    data: paginatedData,
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ['professors', currentPage, pageSize, debouncedSearch],
+    queryFn: () =>
+      api.professors.findAll({
+        page: currentPage,
+        limit: pageSize,
+        search: debouncedSearch,
+      }),
+  });
 
-  const totalPages = Math.ceil(filteredProfessors.length / pageSize);
+  const professors = paginatedData?.data ?? [];
+  const totalProfessors = paginatedData?.pagination.total ?? 0;
+  const totalPages = paginatedData?.pagination.totalPages ?? 1;
 
   const handleOpenCreateProfessorDialog = () => {
     setIsCreateProfessorDialogOpen(true);
@@ -40,14 +49,36 @@ export function useProfessors() {
     setIsCreateProfessorDialogOpen(false);
   };
 
-  const handleCreateProfessor = (formData: NewProfessorFormData) => {
-    const newProfessor = mapFormToProfessor(formData);
+  const createProfessorMutation = useMutation({
+    mutationFn: (formData: NewProfessorFormData) => {
+      const [firstName, ...rest] = formData.fullName.trim().split(' ');
+      const lastName = rest.length > 0 ? rest.join(' ') : null;
 
-    setProfessors(current => [newProfessor, ...current]);
-    toast.success('Cadastro de docente salvo com sucesso.');
+      return api.professors.create({
+        email: formData.email.trim().toLowerCase(),
+        cpf: normalizeCpf(formData.cpf) || null,
+        firstName,
+        lastName,
+        department: formData.mainResearchLine,
+        institution: formData.originInstitution.trim(),
+        status: 'inactive',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['professors'] });
+      toast.success('Cadastro de docente salvo com sucesso.');
+      handleCloseCreateProfessorDialog();
+    },
+    onError: () => {
+      toast.error('Erro ao cadastrar docente.');
+    },
+  });
+
+  const handleCreateProfessor = (formData: NewProfessorFormData) => {
+    createProfessorMutation.mutate(formData);
   };
 
-  const handleOpenResendInvite = (professor: Professor) => {
+  const handleOpenResendInvite = (professor: ProfessorItem) => {
     setProfessorToResendInvite(professor);
   };
 
@@ -55,12 +86,24 @@ export function useProfessors() {
     setProfessorToResendInvite(null);
   };
 
+  const resendInviteMutation = useMutation({
+    mutationFn: (email: string) => api.auth.resendProfessorOnboarding({ email }),
+    onSuccess: (_, email) => {
+      toast.success(`Convite reenviado para ${email}.`);
+      handleCloseResendInvite();
+    },
+    onError: () => {
+      toast.error('Erro ao reenviar convite.');
+    },
+  });
+
   const handleResendInvite = () => {
-    toast.success(`Convite reenviado para ${professorToResendInvite?.email}.`);
-    handleCloseResendInvite();
+    if (professorToResendInvite) {
+      resendInviteMutation.mutate(professorToResendInvite.email);
+    }
   };
 
-  const handleOpenProfessorActions = (professor: Professor) => {
+  const handleOpenProfessorActions = (professor: ProfessorItem) => {
     setProfessorForActions(professor);
   };
 
@@ -68,26 +111,35 @@ export function useProfessors() {
     setProfessorForActions(null);
   };
 
+  const toggleStatusMutation = useMutation({
+    mutationFn: (professor: ProfessorItem) => {
+      if (professor.status === 'disabled') {
+        return api.professors.enable(professor.id);
+      } else {
+        return api.professors.disable(professor.id);
+      }
+    },
+    onSuccess: (_, professor) => {
+      queryClient.invalidateQueries({ queryKey: ['professors'] });
+      toast.success(
+        professor.status === 'disabled'
+          ? `Docente ${professor.name} ativado com sucesso.`
+          : `Docente ${professor.name} desativado com sucesso.`,
+      );
+      handleCloseProfessorActions();
+    },
+    onError: () => {
+      toast.error('Erro ao alterar status do docente.');
+    },
+  });
+
   const handleToggleProfessorStatus = () => {
-    if (!professorForActions) {
-      return;
-    }
-
-    setProfessors(current => toggleProfessorStatus(current, professorForActions.id));
-
-    toast.success(
-      professorForActions.status === 'Desativado'
-        ? `Docente ${professorForActions.nome} ativado com sucesso.`
-        : `Docente ${professorForActions.nome} desativado com sucesso.`,
-    );
-    handleCloseProfessorActions();
+    if (!professorForActions) return;
+    toggleStatusMutation.mutate(professorForActions);
   };
 
   const handleResetPassword = () => {
-    if (!professorForActions) {
-      return;
-    }
-
+    if (!professorForActions) return;
     toast.success(`Solicitação de redefinição de senha enviada para ${professorForActions.email}.`);
     handleCloseProfessorActions();
   };
@@ -107,8 +159,9 @@ export function useProfessors() {
   };
 
   return {
-    professors: paginatedProfessors,
-    totalProfessors: filteredProfessors.length,
+    professors,
+    loading: isLoading || isFetching,
+    totalProfessors,
     searchQuery,
     currentPage,
     pageSize,
@@ -125,6 +178,7 @@ export function useProfessors() {
     handleOpenResendInvite,
     handleCloseResendInvite,
     handleResendInvite,
+    isResendingInvite: resendInviteMutation.isPending,
     handleOpenProfessorActions,
     handleCloseProfessorActions,
     handleToggleProfessorStatus,

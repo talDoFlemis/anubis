@@ -6,7 +6,8 @@ export const newProfessorFormSchema = z.object({
     .string()
     .trim()
     .min(1, 'Informe o CPF.')
-    .regex(/^\d{11}$/, 'CPF deve conter 11 numeros.'),
+    .transform(val => val.replace(/\D/g, ''))
+    .refine(val => val.length === 11, 'CPF deve conter 11 números.'),
   professorId: z.string().trim().min(1, 'Informe a matricula do docente.'),
   email: z.email('E-mail invalido.').trim().min(1, 'Informe o e-mail.'),
   originInstitution: z.string().trim().min(1, 'Informe a instituicao de origem.'),

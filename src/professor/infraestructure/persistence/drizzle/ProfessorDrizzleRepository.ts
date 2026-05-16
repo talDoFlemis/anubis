@@ -7,7 +7,7 @@ import { professors } from '@database/schema/professor';
 import { users } from '@database/schema/users';
 import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { User } from '@users/domain/user';
-import { and, eq, ilike, SQL, sql } from 'drizzle-orm';
+import { and, eq, ilike, or, SQL, sql } from 'drizzle-orm';
 import { StatusEnum } from 'src/statuses/statuses.enum';
 import { Professor } from '../../../domain/professor';
 import type {
@@ -89,14 +89,14 @@ export class ProfessorDrizzleRepository extends ProfessorRepository {
     const limit = filters.limit ?? 20;
     const offset = (page - 1) * limit;
 
-    if (filters.email) {
-      conditions.push(ilike(users.email, `%${filters.email}%`));
-    }
-    if (filters.firstName) {
-      conditions.push(ilike(users.firstName, `%${filters.firstName}%`));
-    }
-    if (filters.lastName) {
-      conditions.push(ilike(users.lastName, `%${filters.lastName}%`));
+    if (filters.search) {
+      conditions.push(
+        or(
+          ilike(users.email, `%${filters.search}%`),
+          ilike(users.firstName, `%${filters.search}%`),
+          ilike(users.lastName, `%${filters.search}%`),
+        )!,
+      );
     }
 
     const rows = await this.db
