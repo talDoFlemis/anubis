@@ -23,14 +23,14 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '../users/domain/user';
 import { Roles } from '../roles/roles.decorator';
 import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
 import { StatusEnum } from '../statuses/statuses.enum';
+import { User } from '../users/domain/user';
 import { Professor } from './domain/professor';
 import { CreateProfessorDto } from './dto/create-professor.dto';
 import { FindProfessorsDto } from './dto/find-professor.dto';

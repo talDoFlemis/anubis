@@ -1,6 +1,3 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useForm } from '@tanstack/react-form';
-import { toast } from 'sonner';
 import {
   AuthCallout,
   AuthErrorMessage,
@@ -11,12 +8,15 @@ import {
   SubmitButton,
 } from '@/components/auth';
 import { GoogleLoginButton } from '@/components/google-login-button';
+import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
-import { toFieldErrors } from '@/shared/errors/fieldErrors';
+import { signUpSchema, type SignUpFormData } from '@/features/auth/auth-form.schemas';
 import { useEmailRegister } from '@/hooks/use-auth';
 import { AUTH_SIGN_IN_ROUTE } from '@/lib/auth-flow';
-import { signUpSchema, type SignUpFormData } from '@/features/auth/auth-form.schemas';
+import { toFieldErrors } from '@/shared/errors/fieldErrors';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/sign-up')({
   component: SignUpPage,

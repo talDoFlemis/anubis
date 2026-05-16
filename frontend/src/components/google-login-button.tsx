@@ -1,6 +1,6 @@
-import type { ComponentProps } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
 import { useGoogleLogin } from '@/hooks/use-auth';
+import { GoogleLogin } from '@react-oauth/google';
+import type { ComponentProps } from 'react';
 import { toast } from 'sonner';
 
 interface GoogleLoginButtonProps {

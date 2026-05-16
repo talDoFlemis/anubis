@@ -1,6 +1,6 @@
+import { ConfigService } from '@nestjs/config';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
 import { SystemController } from './system.controller';
 
 describe('SystemController', () => {

@@ -1,5 +1,5 @@
-import type { User } from '../users/domain/user';
 import type { LoginResponseDto } from '../auth-email/dto/login-response.dto';
+import type { User } from '../users/domain/user';
 
 export function buildLoginResponse(user: User): LoginResponseDto {
   return {

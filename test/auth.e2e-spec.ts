@@ -1,24 +1,24 @@
 import { ValidationPipe, type ExecutionContext, type INestApplication } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
+import { getLoggerToken } from 'nestjs-pino';
 import request from 'supertest';
 import type { App } from 'supertest/types';
-import { AuthController } from '../src/auth/auth.controller';
-import { AuthGoogleController } from '../src/auth-google/auth-google.controller';
 import { AuthEmailController } from '../src/auth-email/auth-email.controller';
-import { AuthService } from '../src/auth/auth.service';
-import { AuthGoogleService } from '../src/auth-google/auth-google.service';
-import { AuthEmailService } from '../src/auth-email/auth-email.service';
 import { AuthEmailGuard } from '../src/auth-email/auth-email.guard';
+import { AuthEmailService } from '../src/auth-email/auth-email.service';
+import { AuthGoogleController } from '../src/auth-google/auth-google.controller';
+import { AuthGoogleService } from '../src/auth-google/auth-google.service';
 import { GoogleAuthGuard } from '../src/auth-google/guards/google-auth.guard';
+import { AuthProvidersEnum } from '../src/auth/auth-providers.enum';
+import { AuthController } from '../src/auth/auth.controller';
+import { AuthService } from '../src/auth/auth.service';
 import { SessionAuthGuard } from '../src/auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../src/auth/guards/session-lifecycle.guard';
 import { RoleEnum } from '../src/roles/roles.enum';
 import { StatusEnum } from '../src/statuses/statuses.enum';
-import { AuthProvidersEnum } from '../src/auth/auth-providers.enum';
-import { getLoggerToken } from 'nestjs-pino';
 import { UsersService } from '../src/users/users.service';
-import { Reflector } from '@nestjs/core';
 
 type LoginResponseBody = {
   onboardingCompleted: boolean;

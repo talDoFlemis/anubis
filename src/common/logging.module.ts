@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { LoggerModule } from 'nestjs-pino';
 import { randomUUID } from 'crypto';
+import { LoggerModule } from 'nestjs-pino';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 import { HttpLoggerMiddleware } from './middlewares/http-logger.middleware';
 

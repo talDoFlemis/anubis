@@ -1,5 +1,3 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useForm } from '@tanstack/react-form';
 import {
   AuthCallout,
   AuthErrorMessage,
@@ -8,12 +6,14 @@ import {
   SubmitButton,
 } from '@/components/auth';
 import { Button } from '@/components/ui/button';
-import { useLogout, useUpdateProfile } from '@/hooks/use-auth';
-import { getPostAuthPath } from '@/lib/auth-flow';
 import {
   changePasswordSchema,
   type ChangePasswordFormData,
 } from '@/features/auth/auth-form.schemas';
+import { useLogout, useUpdateProfile } from '@/hooks/use-auth';
+import { getPostAuthPath } from '@/lib/auth-flow';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/auth/change-password')({
   component: ChangePasswordPage,

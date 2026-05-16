@@ -1,10 +1,10 @@
 import { MoreVertical, Search, UserPlus } from 'lucide-react';
 
+import { Table } from '@/components/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table } from '@/components/table';
 import type { Professor, ProfessorStatus } from '@/lib/mock-professors-management';
 import type { ColumnDef } from '@tanstack/react-table';
 

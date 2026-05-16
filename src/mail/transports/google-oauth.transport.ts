@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
+import * as nodemailer from 'nodemailer';
 import type { MailTransport } from '../interfaces/mail-transport.interface';
 
 // Refresh the access token this many milliseconds before it expires

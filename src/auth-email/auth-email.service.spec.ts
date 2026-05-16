@@ -1,19 +1,19 @@
+import { BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { getLoggerToken } from 'nestjs-pino';
-import { AuthEmailService } from './auth-email.service';
-import { UsersService } from '../users/users.service';
-import { CandidateService } from '../candidate/candidate.service';
-import { SessionService } from '../session/session.service';
-import { MailService } from '../mail/mail.service';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
+import { CandidateService } from '../candidate/candidate.service';
+import { MailService } from '../mail/mail.service';
 import { RoleEnum } from '../roles/roles.enum';
+import { SessionService } from '../session/session.service';
 import { StatusEnum } from '../statuses/statuses.enum';
 import type { User } from '../users/domain/user';
+import { UsersService } from '../users/users.service';
+import { AuthEmailService } from './auth-email.service';
 
 jest.mock('bcrypt', () => ({ compare: jest.fn(), hash: jest.fn() }));
 

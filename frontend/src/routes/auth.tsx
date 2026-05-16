@@ -1,10 +1,10 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { authQueryOptions } from '@/hooks/use-auth';
 import {
   getRestrictedSessionPath,
   isLifecycleAuthPath,
   isRedirectLikeError,
 } from '@/lib/auth-flow';
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 
 const PUBLIC_HASH_AUTH_PATHS = new Set([
   '/auth/confirm-email',

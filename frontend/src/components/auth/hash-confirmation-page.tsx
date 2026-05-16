@@ -1,9 +1,9 @@
+import { AuthCallout, AuthPageLayout } from '@/components/auth/auth-layout';
+import { Button } from '@/components/ui/button';
+import type { UseMutationResult } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { CheckCircle, LoaderCircle, XCircle } from 'lucide-react';
 import { useEffect } from 'react';
-import type { UseMutationResult } from '@tanstack/react-query';
-import { AuthCallout, AuthPageLayout } from '@/components/auth/auth-layout';
-import { Button } from '@/components/ui/button';
 
 interface HashConfirmationConfig {
   eyebrow: string;

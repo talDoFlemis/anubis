@@ -1,8 +1,8 @@
 import { Exclude, plainToInstance } from 'class-transformer';
+import { UserSelect } from 'src/database/schema/users';
 import { AuthProvidersEnum } from '../../auth/auth-providers.enum';
 import { RoleEnum } from '../../roles/roles.enum';
 import { StatusEnum } from '../../statuses/statuses.enum';
-import { UserSelect } from 'src/database/schema/users';
 
 export class User {
   id: string;

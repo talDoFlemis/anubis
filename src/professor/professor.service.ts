@@ -7,19 +7,19 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { MailService } from '../mail/mail.service';
+import type { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
+import { MailService } from '../mail/mail.service';
 import { RoleEnum } from '../roles/roles.enum';
 import { SessionService } from '../session/session.service';
 import { StatusEnum } from '../statuses/statuses.enum';
 import { UsersService } from '../users/users.service';
 import { Professor } from './domain/professor';
 import { CreateProfessorDto } from './dto/create-professor.dto';
+import { FindProfessorsDto } from './dto/find-professor.dto';
+import type { ProfessorItemDto } from './dto/professor-response.dto';
 import { UpdateProfessorDto } from './dto/update-professor.dto';
 import { ProfessorRepository } from './infraestructure/persistence/professor.repository';
-import type { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
-import type { ProfessorItemDto as ProfessorItemDto } from './dto/professor-response.dto';
-import { FindProfessorsDto } from './dto/find-professor.dto';
 
 @Injectable()
 export class ProfessorService {

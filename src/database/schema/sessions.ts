@@ -1,4 +1,4 @@
-import { pgTable, varchar, json, timestamp, index } from 'drizzle-orm/pg-core';
+import { index, json, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 /**
  * Session table for connect-pg-simple.

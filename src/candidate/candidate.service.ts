@@ -6,12 +6,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { UsersService } from '../users/users.service';
 import { PaginatedResult } from '../common/dto/paginated-response.dto';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
-import { CompleteCandidateOnboardingDto } from './dto/complete-candidate-onboarding.dto';
+import { UsersService } from '../users/users.service';
 import { CandidateProfile } from './domain/candidate-profile';
+import { CompleteCandidateOnboardingDto } from './dto/complete-candidate-onboarding.dto';
 import { FindCandidatesDto } from './dto/find-candidates.dto';
 import { CandidateRepository } from './infrastructure/persistence/candidate.repository';
 

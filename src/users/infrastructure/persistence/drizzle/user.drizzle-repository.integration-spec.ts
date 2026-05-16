@@ -1,16 +1,16 @@
+import { eq } from 'drizzle-orm';
 import type { Pool } from 'pg';
+import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
+import type { DrizzleDB } from '../../../../database/drizzle.provider';
+import { users } from '../../../../database/schema/users';
 import {
   createTestDrizzle,
   truncateAllTables,
   type TestDrizzleDB,
 } from '../../../../database/testing/integration-database';
-import { UserDrizzleRepository } from './user.drizzle-repository';
-import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
-import { users } from '../../../../database/schema/users';
-import { eq } from 'drizzle-orm';
-import type { DrizzleDB } from '../../../../database/drizzle.provider';
+import { UserDrizzleRepository } from './user.drizzle-repository';
 
 describe('UserDrizzleRepository (integration)', () => {
   let db: TestDrizzleDB;

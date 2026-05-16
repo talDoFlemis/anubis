@@ -5,23 +5,23 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { UsersService } from '../users/users.service';
-import { SessionService } from '../session/session.service';
-import { AuthProvidersEnum } from './auth-providers.enum';
-import { SocialInterface } from '../social/interfaces/social.interface';
-import { RoleEnum } from '../roles/roles.enum';
-import { StatusEnum } from '../statuses/statuses.enum';
-import { User } from '../users/domain/user';
-import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
 import { AuthUpdateDto } from '../auth-email/dto/auth-update.dto';
+import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
 import { CandidateService } from '../candidate/candidate.service';
 import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candidate-onboarding.dto';
-import { buildLoginResponse } from './login-response.builder';
 import { MailService } from '../mail/mail.service';
+import { RoleEnum } from '../roles/roles.enum';
+import { SessionService } from '../session/session.service';
+import { SocialInterface } from '../social/interfaces/social.interface';
+import { StatusEnum } from '../statuses/statuses.enum';
+import { User } from '../users/domain/user';
+import { UsersService } from '../users/users.service';
+import { AuthProvidersEnum } from './auth-providers.enum';
+import { buildLoginResponse } from './login-response.builder';
 
 const BCRYPT_SALT_ROUNDS = 12;
 

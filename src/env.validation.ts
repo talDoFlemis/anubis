@@ -1,17 +1,17 @@
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
-  IsNumber,
-  validateSync,
-  IsNotEmpty,
-  Min,
-  Max,
-  IsUrl,
-  IsEnum,
-  IsOptional,
-  MinLength,
   IsBoolean,
-  IsString,
   IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  Min,
+  MinLength,
+  validateSync,
 } from 'class-validator';
 
 enum Environment {

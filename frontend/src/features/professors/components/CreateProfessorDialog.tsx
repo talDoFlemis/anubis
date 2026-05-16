@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { useForm } from '@tanstack/react-form';
+import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -10,9 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
-import { toFieldErrors } from '@/shared/errors/fieldErrors';
 import {
   Select,
   SelectContent,
@@ -20,12 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { normalizeCpf } from '../utils/professors-form.utils';
+import { toFieldErrors } from '@/shared/errors/fieldErrors';
 import {
   INITIAL_NEW_PROFESSOR_FORM,
   newProfessorFormSchema,
   type NewProfessorFormData,
 } from '../types/professors-form.types';
+import { normalizeCpf } from '../utils/professors-form.utils';
 
 interface CreateProfessorDialogProps {
   open: boolean;

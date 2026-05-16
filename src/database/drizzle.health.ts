@@ -1,8 +1,8 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
-import type { DrizzleDB } from './drizzle.provider';
-import { DRIZZLE } from './drizzle.constants';
 import { sql } from 'drizzle-orm';
+import { DRIZZLE } from './drizzle.constants';
+import type { DrizzleDB } from './drizzle.provider';
 
 @Injectable()
 export class DrizzleDBHealthIndicator {

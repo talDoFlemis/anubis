@@ -12,8 +12,8 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { StatusEnum } from '../../statuses/statuses.enum';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { StatusEnum } from '../../statuses/statuses.enum';
 
 function toTrimmedString(value: unknown): unknown {
   return typeof value === 'string' ? value.trim() : value;

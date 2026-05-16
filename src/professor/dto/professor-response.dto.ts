@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { StatusEnum } from 'src/statuses/statuses.enum';
 import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
+import { StatusEnum } from 'src/statuses/statuses.enum';
 
 export type ProfessorItemData = {
   id: string;

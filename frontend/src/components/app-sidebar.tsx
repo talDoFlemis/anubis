@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { Link } from '@tanstack/react-router';
-import { useAuth, useLogout } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Home, Bell, PanelLeft, LogOut } from 'lucide-react';
+import { useAuth, useLogout } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
+import { Link } from '@tanstack/react-router';
+import { Bell, Home, LogOut, PanelLeft } from 'lucide-react';
+import { useState } from 'react';
 
 function getInitials(firstName: string | null, lastName: string | null): string {
   const first = firstName?.charAt(0)?.toUpperCase() ?? '';

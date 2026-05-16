@@ -1,13 +1,13 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useForm } from '@tanstack/react-form';
-import { toast } from 'sonner';
 import { AuthErrorMessage, AuthPageLayout, EmailField, SubmitButton } from '@/components/auth';
-import { useForgotPassword } from '@/hooks/use-auth';
-import { AUTH_HOME_ROUTE } from '@/lib/auth-flow';
 import {
   forgotPasswordSchema,
   type ForgotPasswordFormData,
 } from '@/features/auth/auth-form.schemas';
+import { useForgotPassword } from '@/hooks/use-auth';
+import { AUTH_HOME_ROUTE } from '@/lib/auth-flow';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/forgot-password')({
   component: ForgotPasswordPage,

@@ -1,8 +1,8 @@
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
-import { HealthController } from './health.controller';
-import { HttpModule } from '@nestjs/axios';
 import { MailModule } from 'src/mail/mail.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [TerminusModule, HttpModule, MailModule],

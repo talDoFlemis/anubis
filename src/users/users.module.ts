@@ -1,9 +1,9 @@
 import { MiddlewareConsumer, Module } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { MailModule } from 'src/mail/mail.module';
 import { UserDrizzlePersistenceModule } from './infrastructure/persistence/drizzle/drizzle-persistence.module';
 import { UserInfoMiddleware } from './user-info.middleware';
 import { UsersController } from './users.controller';
-import { MailModule } from 'src/mail/mail.module';
+import { UsersService } from './users.service';
 
 @Module({
   imports: [UserDrizzlePersistenceModule, MailModule],

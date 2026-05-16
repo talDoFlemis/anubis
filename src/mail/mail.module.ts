@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MailService } from './mail.service';
-import { MAIL_TRANSPORT } from './interfaces/mail-transport.interface';
-import { SmtpTransport } from './transports/smtp.transport';
-import { GoogleOauthTransport } from './transports/google-oauth.transport';
 import { HealthIndicatorService } from '@nestjs/terminus';
+import { MAIL_TRANSPORT } from './interfaces/mail-transport.interface';
 import { MailHealthIndicator } from './mail.health';
+import { MailService } from './mail.service';
+import { GoogleOauthTransport } from './transports/google-oauth.transport';
+import { SmtpTransport } from './transports/smtp.transport';
 
 @Module({
   providers: [
