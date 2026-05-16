@@ -25,6 +25,7 @@ import { AuthRegisterDto } from './dto/auth-register.dto';
 import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
 import { CompleteProfessorOnboardingDto } from './dto/complete-professor-onboarding.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { AuthResendProfessorOnboardingDto } from './dto/auth-resend-professor-onboarding.dto';
 
 @Injectable()
 export class AuthEmailService {
@@ -231,6 +232,45 @@ export class AuthEmailService {
     });
   }
 
+  async resendProfessorOnboarding(dto: AuthResendProfessorOnboardingDto): Promise<void> {
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    const user = await this.usersService.findByEmail(normalizedEmail);
+
+    if (!user || user.authProvider !== AuthProvidersEnum.email) {
+      return;
+    }
+
+    if (user.role !== RoleEnum.professor) {
+      return;
+    }
+
+    if (user.password && !user.mustChangePassword) {
+      return;
+    }
+
+    const nextConfirmEmailTokenVersion = user.confirmEmailTokenVersion + 1;
+    await this.usersService.update(user.id, {
+      confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
+    });
+
+    const hash = await this.jwtService.signAsync(
+      {
+        confirmEmailUserId: user.id,
+        confirmEmailTokenVersion: nextConfirmEmailTokenVersion,
+      },
+      {
+        secret: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_SECRET'),
+        expiresIn: this.configService.getOrThrow('AUTH_CONFIRM_EMAIL_EXPIRES_IN'),
+      },
+    );
+
+    await this.mailService.send({
+      to: normalizedEmail,
+      title: 'Confirme seu email - Anubis',
+      body: this.composeProfessorOnboardingEmailBody(hash),
+    });
+  }
+
   async confirmNewEmail(dto: AuthConfirmEmailDto): Promise<void> {
     const token = await this.verifyConfirmToken(dto.hash);
 
@@ -360,5 +400,12 @@ export class AuthEmailService {
     const resetUrl = `${frontendUrl}/auth/reset-password?hash=${hash}`;
 
     return `<p>Voce solicitou uma redefinicao de senha. Clique no link abaixo:</p><p><a href="${resetUrl}">Redefinir senha</a></p>`;
+  }
+
+  private composeProfessorOnboardingEmailBody(hash: string): string {
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+    const confirmUrl = `${frontendUrl}/auth/onboarding/professor?hash=${hash}`;
+
+    return `<p>Voce foi cadastrado(a) na plataforma do MDCC. Clique no link abaixo para concluir o seu cadastro:</p><p><a href="${confirmUrl}">Confirmar email</a></p>`;
   }
 }

@@ -1,22 +1,22 @@
+import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useForm } from '@tanstack/react-form';
 import { XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   AuthCallout,
   AuthErrorMessage,
   AuthPageLayout,
+  EmailField,
   PasswordField,
   SubmitButton,
 } from '@/components/auth';
 import { Button } from '@/components/ui/button';
-import { useCompleteProfessorOnboarding } from '@/hooks/use-auth';
-import {
-  AUTH_SIGN_IN_ROUTE,
-  AUTH_FORGOT_PASSWORD_ROUTE,
-  validateHashSearch,
-} from '@/lib/auth-flow';
+import { useCompleteProfessorOnboarding, useResendProfessorOnboarding } from '@/hooks/use-auth';
+import { AUTH_SIGN_IN_ROUTE, validateHashSearch } from '@/lib/auth-flow';
 import { ApiError } from '@/lib/api';
 import {
+  forgotPasswordSchema,
   professorOnboardingSchema,
   type ProfessorOnboardingFormData,
 } from '@/features/auth/auth-form.schemas';
@@ -28,6 +28,72 @@ export const Route = createFileRoute('/auth/onboarding/professor')({
 
 function ExpiredLinkPage() {
   const navigate = useNavigate();
+  const [showResendForm, setShowResendForm] = useState(false);
+  const resendOnboarding = useResendProfessorOnboarding();
+  const form = useForm({
+    defaultValues: { email: '' },
+    validators: { onSubmit: forgotPasswordSchema },
+    onSubmit: async ({ value }) => {
+      resendOnboarding.mutate(value, {
+        onSuccess: () => {
+          toast.success('Novo link enviado! Verifique sua caixa de entrada.');
+          setShowResendForm(false);
+        },
+      });
+    },
+  });
+
+  if (showResendForm) {
+    return (
+      <AuthPageLayout
+        eyebrow="Reenviar Link"
+        title="Solicitar Novo Link"
+        description="Informe seu email para receber um novo link de ativacao."
+        compact
+      >
+        <form
+          onSubmit={event => {
+            event.preventDefault();
+            form.handleSubmit();
+          }}
+          className="space-y-5"
+        >
+          <form.Field name="email">
+            {field => (
+              <EmailField
+                value={field.state.value}
+                onChange={value => field.handleChange(value)}
+                onBlur={field.handleBlur}
+                errors={field.state.meta.errors}
+                isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              />
+            )}
+          </form.Field>
+
+          <AuthErrorMessage
+            message={resendOnboarding.isError ? resendOnboarding.error.message : null}
+          />
+
+          <div className="flex flex-col gap-3">
+            <SubmitButton
+              isPending={resendOnboarding.isPending}
+              label="Enviar Link"
+              pendingLabel="Enviando..."
+            />
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowResendForm(false)}
+              disabled={resendOnboarding.isPending}
+              type="button"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </AuthPageLayout>
+    );
+  }
 
   return (
     <AuthPageLayout
@@ -46,7 +112,7 @@ function ExpiredLinkPage() {
       }
     >
       <div className="flex flex-col gap-3">
-        <Button className="w-full" onClick={() => navigate({ to: AUTH_FORGOT_PASSWORD_ROUTE })}>
+        <Button className="w-full" onClick={() => setShowResendForm(true)}>
           Solicitar novo link
         </Button>
         <Button

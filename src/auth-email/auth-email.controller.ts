@@ -23,6 +23,7 @@ import { AuthEmailGuard } from './auth-email.guard';
 import { buildLoginResponse } from 'src/auth/login-response.builder';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { CompleteProfessorOnboardingDto } from './dto/complete-professor-onboarding.dto';
+import { AuthResendProfessorOnboardingDto } from './dto/auth-resend-professor-onboarding.dto';
 
 @ApiTags('Auth', 'Email Auth')
 @Controller({ path: 'auth/provider/email', version: '1' })
@@ -78,6 +79,15 @@ export class AuthEmailController {
   @ApiNotFoundResponse({ description: 'User associated with hash not found' })
   async completeProfessorOnboarding(@Body() dto: CompleteProfessorOnboardingDto): Promise<void> {
     await this.authEmailService.completeProfessorOnboarding(dto);
+  }
+
+  @Post('onboarding/professor/resend')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Resend professor onboarding email' })
+  @ApiNoContentResponse({ description: 'Request processed' })
+  async resendProfessorOnboarding(@Body() dto: AuthResendProfessorOnboardingDto): Promise<void> {
+    await this.authEmailService.resendProfessorOnboarding(dto);
   }
 
   @Post('confirm/new')
