@@ -86,6 +86,12 @@ export function useCompleteProfessorOnboarding() {
   });
 }
 
+export function useResendProfessorOnboarding() {
+  return useMutation({
+    mutationFn: api.auth.resendProfessorOnboarding,
+  });
+}
+
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
