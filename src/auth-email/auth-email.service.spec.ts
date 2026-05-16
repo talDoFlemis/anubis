@@ -156,12 +156,17 @@ describe('AuthEmailService', () => {
   });
 
   it('registers candidate with email provider metadata', async () => {
+    // ARRANGE
     usersService.findByEmail.mockResolvedValue(null);
     usersService.findByCpf.mockResolvedValue(null);
     jest.mocked(bcrypt.hash).mockResolvedValue('hashed' as never);
     usersService.create.mockResolvedValue(baseUser);
     jwtService.signAsync.mockResolvedValue('confirm-token');
+    const userCreateSpy = jest.spyOn(usersService, 'create');
+    const createProfileSpy = jest.spyOn(candidateService, 'createProfile');
+    const sendMailSpy = jest.spyOn(mailService, 'send');
 
+    // ACT
     await service.register({
       email: 'User@Example.com',
       password: 'password123',
@@ -171,15 +176,16 @@ describe('AuthEmailService', () => {
       universityOfOrigin: 'UFRN',
     });
 
-    expect(usersService.create).toHaveBeenCalledWith(
+    // ASSERT
+    expect(userCreateSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'user@example.com',
         authProvider: AuthProvidersEnum.email,
         providerSubject: 'user@example.com',
       }),
     );
-    expect(candidateService.createProfile).toHaveBeenCalled();
-    expect(mailService.send).toHaveBeenCalled();
+    expect(createProfileSpy).toHaveBeenCalled();
+    expect(sendMailSpy).toHaveBeenCalled();
   });
 
   it('rejects registration when email belongs to another provider', async () => {
@@ -203,29 +209,39 @@ describe('AuthEmailService', () => {
   });
 
   it('increments forgot password token and sends email only for email users', async () => {
+    // ARRANGE
     usersService.findByEmail.mockResolvedValue(baseUser);
     jwtService.signAsync.mockResolvedValue('forgot-token');
+    const updateSpy = jest.spyOn(usersService, 'update');
+    const sendMailSpy = jest.spyOn(mailService, 'send');
 
+    // ACT
     await service.forgotPassword({ email: 'user@example.com' });
 
-    expect(usersService.update).toHaveBeenCalledWith('user-1', {
+    // ASSERT
+    expect(updateSpy).toHaveBeenCalledWith('user-1', {
       forgotPasswordTokenVersion: 1,
     });
-    expect(mailService.send).toHaveBeenCalled();
+    expect(sendMailSpy).toHaveBeenCalled();
   });
 
   it('ignores forgot password for google-backed user', async () => {
+    // ARRANGE
     usersService.findByEmail.mockResolvedValue({
       ...baseUser,
       authProvider: AuthProvidersEnum.google,
       providerSubject: 'google-sub',
       password: null,
     });
+    const updateSpy = jest.spyOn(usersService, 'update');
+    const sendMailSpy = jest.spyOn(mailService, 'send');
 
+    // ACT
     await service.forgotPassword({ email: 'user@example.com' });
 
-    expect(usersService.update).not.toHaveBeenCalled();
-    expect(mailService.send).not.toHaveBeenCalled();
+    // ASSERT
+    expect(updateSpy).not.toHaveBeenCalled();
+    expect(sendMailSpy).not.toHaveBeenCalled();
   });
 
   it('rejects password reset for google-backed user', async () => {
@@ -246,6 +262,7 @@ describe('AuthEmailService', () => {
   });
 
   it('updates provider subject when confirming new email for email user', async () => {
+    // ARRANGE
     jwtService.verifyAsync.mockResolvedValue({
       confirmEmailUserId: 'user-1',
       confirmEmailTokenVersion: 0,
@@ -253,10 +270,13 @@ describe('AuthEmailService', () => {
     });
     usersService.findById.mockResolvedValue(baseUser);
     usersService.findByEmail.mockResolvedValue(null);
+    const updateSpy = jest.spyOn(usersService, 'update');
 
+    // ACT
     await service.confirmNewEmail({ hash: 'confirm-token' });
 
-    expect(usersService.update).toHaveBeenCalledWith('user-1', {
+    // ASSERT
+    expect(updateSpy).toHaveBeenCalledWith('user-1', {
       email: 'new@example.com',
       providerSubject: 'new@example.com',
       status: StatusEnum.active,
@@ -265,26 +285,32 @@ describe('AuthEmailService', () => {
   });
 
   it('resets password and invalidates sessions for email user', async () => {
+    // ARRANGE
     jwtService.verifyAsync.mockResolvedValue({
       forgotUserId: 'user-1',
       forgotPasswordTokenVersion: 0,
     });
     usersService.findById.mockResolvedValue(baseUser);
     jest.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+    const updateSpy = jest.spyOn(usersService, 'update');
+    const deleteByUserIdSpy = jest.spyOn(sessionService, 'deleteByUserId');
 
+    // ACT
     await service.resetPassword({ hash: 'token', password: 'new-password' });
 
-    expect(usersService.update).toHaveBeenCalledWith(
+    // ASSERT
+    expect(updateSpy).toHaveBeenCalledWith(
       'user-1',
       expect.objectContaining({
         password: 'new-hash',
         forgotPasswordTokenVersion: 1,
       }),
     );
-    expect(sessionService.deleteByUserId).toHaveBeenCalledWith('user-1');
+    expect(deleteByUserIdSpy).toHaveBeenCalledWith('user-1');
   });
 
   it('completes professor onboarding by setting password', async () => {
+    // ARRANGE
     jwtService.verifyAsync.mockResolvedValue({
       confirmEmailUserId: 'user-1',
       confirmEmailTokenVersion: 1,
@@ -296,10 +322,13 @@ describe('AuthEmailService', () => {
       confirmEmailTokenVersion: 1,
     });
     jest.mocked(bcrypt.hash).mockResolvedValue('new-hash' as never);
+    const updateSpy = jest.spyOn(usersService, 'update');
 
+    // ACT
     await service.completeProfessorOnboarding({ hash: 'confirm-token', password: 'new-pass' });
 
-    expect(usersService.update).toHaveBeenCalledWith('user-1', {
+    // ASSERT
+    expect(updateSpy).toHaveBeenCalledWith('user-1', {
       password: 'new-hash',
       mustChangePassword: false,
       bootstrapPasswordExpiresAt: null,
