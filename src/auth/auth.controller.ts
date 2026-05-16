@@ -13,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCookieAuth,
   ApiNoContentResponse,
@@ -21,17 +22,16 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
-  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candidate-onboarding.dto';
 import { AuthUpdateDto } from '../auth-email/dto/auth-update.dto';
-import { SessionAuthGuard } from './guards/session-auth.guard';
+import { CompleteCandidateOnboardingDto } from '../candidate/dto/complete-candidate-onboarding.dto';
+import { User } from '../users/domain/user';
 import { AuthService } from './auth.service';
-import { RestrictedSessionReason, SessionLifecycleGuard } from './guards/session-lifecycle.guard';
 import { AllowRestrictedSession } from './decorators/allow-restricted-session.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { User } from '../users/domain/user';
+import { SessionAuthGuard } from './guards/session-auth.guard';
+import { RestrictedSessionReason, SessionLifecycleGuard } from './guards/session-lifecycle.guard';
 
 @ApiTags('Auth')
 @UseGuards(SessionAuthGuard, SessionLifecycleGuard)

@@ -1,7 +1,7 @@
-import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { api, type CandidateProfile, type User } from '@/lib/api';
 import { AUTH_SIGN_IN_ROUTE, getPostAuthPath } from '@/lib/auth-flow';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 
 export const authQueryOptions = queryOptions({
   queryKey: ['auth', 'me'],

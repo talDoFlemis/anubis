@@ -1,6 +1,3 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { KeyRound, XCircle } from 'lucide-react';
-import { useForm } from '@tanstack/react-form';
 import {
   AuthCallout,
   AuthErrorMessage,
@@ -9,9 +6,12 @@ import {
   SubmitButton,
 } from '@/components/auth';
 import { Button } from '@/components/ui/button';
+import { resetPasswordSchema, type ResetPasswordFormData } from '@/features/auth/auth-form.schemas';
 import { useResetPassword } from '@/hooks/use-auth';
 import { AUTH_SIGN_IN_ROUTE, validateHashSearch } from '@/lib/auth-flow';
-import { resetPasswordSchema, type ResetPasswordFormData } from '@/features/auth/auth-form.schemas';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { KeyRound, XCircle } from 'lucide-react';
 
 export const Route = createFileRoute('/auth/reset-password')({
   validateSearch: validateHashSearch,

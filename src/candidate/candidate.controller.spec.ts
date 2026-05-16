@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/unbound-method */
+import { Reflector } from '@nestjs/core';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { Reflector } from '@nestjs/core';
 import { getLoggerToken } from 'nestjs-pino';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
+import { buildPaginatedResult } from '../common/dto/paginated-response.dto';
+import { RoleEnum } from '../roles/roles.enum';
 import { RolesGuard } from '../roles/roles.guard';
+import { StatusEnum } from '../statuses/statuses.enum';
 import { CandidateController } from './candidate.controller';
 import { CandidateService } from './candidate.service';
-import { RoleEnum } from '../roles/roles.enum';
-import { StatusEnum } from '../statuses/statuses.enum';
-import { buildPaginatedResult } from '../common/dto/paginated-response.dto';
 
 describe('CandidateController', () => {
   let controller: CandidateController;

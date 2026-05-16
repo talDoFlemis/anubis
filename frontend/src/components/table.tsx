@@ -23,11 +23,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Table as TablePrimitive,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
+  Table as TablePrimitive,
   TableRow,
 } from '@/components/ui/table';
 

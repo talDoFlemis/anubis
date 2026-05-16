@@ -1,10 +1,10 @@
+import { HealthCheckService, HttpHealthIndicator } from '@nestjs/terminus';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { HealthCheckService, HttpHealthIndicator } from '@nestjs/terminus';
-import { HealthController } from './health.controller';
+import { getLoggerToken } from 'nestjs-pino';
 import { DrizzleDBHealthIndicator } from 'src/database/drizzle.health';
 import { MailHealthIndicator } from 'src/mail/mail.health';
-import { getLoggerToken } from 'nestjs-pino';
+import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
   let controller: HealthController;

@@ -1,7 +1,7 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
-import { MAIL_TRANSPORT, type MailTransport } from './interfaces/mail-transport.interface';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { MAIL_TRANSPORT, type MailTransport } from './interfaces/mail-transport.interface';
 
 @Injectable()
 export class MailHealthIndicator {

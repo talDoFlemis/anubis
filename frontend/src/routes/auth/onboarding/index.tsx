@@ -1,14 +1,14 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useForm } from '@tanstack/react-form';
-import { toast } from 'sonner';
 import { AuthCallout, AuthErrorMessage, AuthPageLayout, SubmitButton } from '@/components/auth';
 import { Button } from '@/components/ui/button';
+import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
+import { onboardingSchema, type OnboardingFormData } from '@/features/auth/auth-form.schemas';
 import { useAuth, useCompleteCandidateOnboarding, useLogout } from '@/hooks/use-auth';
 import { getPostAuthPath } from '@/lib/auth-flow';
-import { onboardingSchema, type OnboardingFormData } from '@/features/auth/auth-form.schemas';
 import { toFieldErrors } from '@/shared/errors/fieldErrors';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/onboarding/')({
   component: CandidateOnboardingPage,

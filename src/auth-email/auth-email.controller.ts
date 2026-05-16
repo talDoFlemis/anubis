@@ -12,18 +12,18 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
-import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
-import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
-import { AuthRegisterDto } from './dto/auth-register.dto';
-import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
-import { LoginResponseDto } from './dto/login-response.dto';
-import { AuthEmailService } from './auth-email.service';
+import { buildLoginResponse } from 'src/auth/login-response.builder';
 import { User } from '../users/domain/user';
 import { AuthEmailGuard } from './auth-email.guard';
-import { buildLoginResponse } from 'src/auth/login-response.builder';
+import { AuthEmailService } from './auth-email.service';
+import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
-import { CompleteProfessorOnboardingDto } from './dto/complete-professor-onboarding.dto';
+import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
+import { AuthRegisterDto } from './dto/auth-register.dto';
 import { AuthResendProfessorOnboardingDto } from './dto/auth-resend-professor-onboarding.dto';
+import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
+import { CompleteProfessorOnboardingDto } from './dto/complete-professor-onboarding.dto';
+import { LoginResponseDto } from './dto/login-response.dto';
 
 @ApiTags('Auth', 'Email Auth')
 @Controller({ path: 'auth/provider/email', version: '1' })

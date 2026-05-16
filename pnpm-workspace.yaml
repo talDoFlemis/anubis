@@ -11,3 +11,5 @@ allowBuilds:
   esbuild: false
   ssh2: false
   unrs-resolver: false
+
+ignoreWorkspaceRootCheck: true

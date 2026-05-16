@@ -1,8 +1,3 @@
-import { useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useForm } from '@tanstack/react-form';
-import { XCircle } from 'lucide-react';
-import { toast } from 'sonner';
 import {
   AuthCallout,
   AuthErrorMessage,
@@ -12,14 +7,19 @@ import {
   SubmitButton,
 } from '@/components/auth';
 import { Button } from '@/components/ui/button';
-import { useCompleteProfessorOnboarding, useResendProfessorOnboarding } from '@/hooks/use-auth';
-import { AUTH_SIGN_IN_ROUTE, validateHashSearch } from '@/lib/auth-flow';
-import { ApiError } from '@/lib/api';
 import {
   forgotPasswordSchema,
   professorOnboardingSchema,
   type ProfessorOnboardingFormData,
 } from '@/features/auth/auth-form.schemas';
+import { useCompleteProfessorOnboarding, useResendProfessorOnboarding } from '@/hooks/use-auth';
+import { ApiError } from '@/lib/api';
+import { AUTH_SIGN_IN_ROUTE, validateHashSearch } from '@/lib/auth-flow';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/auth/onboarding/professor')({
   validateSearch: validateHashSearch,

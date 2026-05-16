@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { and, eq } from 'drizzle-orm';
+import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
 import { DRIZZLE_TX } from '../../../../database/drizzle.constants';
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import { users } from '../../../../database/schema/users';
-import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
 import { RoleEnum } from '../../../../roles/roles.enum';
 import { StatusEnum } from '../../../../statuses/statuses.enum';
 import { User } from '../../../domain/user';

@@ -1,6 +1,6 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { authQueryOptions } from '@/hooks/use-auth';
 import { getRestrictedSessionPath, isRedirectLikeError } from '@/lib/auth-flow';
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: async ({ context }) => {

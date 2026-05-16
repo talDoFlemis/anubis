@@ -1,10 +1,10 @@
+import { Button } from '@/components/ui/button';
+import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { toFieldErrors } from '@/shared/errors/fieldErrors';
 import { Link } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
-import { toFieldErrors } from '@/shared/errors/fieldErrors';
 
 interface PasswordFieldProps {
   id: string;

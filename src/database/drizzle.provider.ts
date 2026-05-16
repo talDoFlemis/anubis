@@ -1,14 +1,14 @@
 import type { Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import type { NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import type { PgDatabase } from 'drizzle-orm/pg-core';
 import type { ExtractTablesWithRelations } from 'drizzle-orm';
+import type { NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import type { PgDatabase } from 'drizzle-orm/pg-core';
+import { Pool } from 'pg';
 import { DRIZZLE } from './drizzle.constants';
-import * as usersSchema from './schema/users';
-import * as sessionsSchema from './schema/sessions';
 import * as candidatesSchema from './schema/candidates';
+import * as sessionsSchema from './schema/sessions';
+import * as usersSchema from './schema/users';
 
 const schema = {
   ...usersSchema,

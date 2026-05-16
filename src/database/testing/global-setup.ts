@@ -1,10 +1,10 @@
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
-import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { Pool } from 'pg';
 
 const CONTAINER_ID_FILE = path.join(os.tmpdir(), 'anubis-test-container-id');
 

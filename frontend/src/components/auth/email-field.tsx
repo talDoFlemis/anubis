@@ -1,5 +1,5 @@
+import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Field, FieldLabel, FieldContent, FieldError } from '@/components/ui/field';
 import { toFieldErrors } from '@/shared/errors/fieldErrors';
 
 interface EmailFieldProps {

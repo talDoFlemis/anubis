@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { AuthProvidersEnum } from '../auth/auth-providers.enum';
+import { User } from './domain/user';
 import {
   CreateUserData,
   UpdateUserData,
   UserRepository,
 } from './infrastructure/persistence/user.repository';
-import { User } from './domain/user';
-import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 
 @Injectable()
 export class UsersService {

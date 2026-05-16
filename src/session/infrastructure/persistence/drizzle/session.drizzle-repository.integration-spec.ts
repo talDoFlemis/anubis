@@ -1,12 +1,12 @@
 import type { Pool } from 'pg';
+import type { DrizzleDB } from '../../../../database/drizzle.provider';
+import { sessions } from '../../../../database/schema/sessions';
 import {
   createTestDrizzle,
   truncateAllTables,
   type TestDrizzleDB,
 } from '../../../../database/testing/integration-database';
 import { SessionDrizzleRepository } from './session.drizzle-repository';
-import { sessions } from '../../../../database/schema/sessions';
-import type { DrizzleDB } from '../../../../database/drizzle.provider';
 
 describe('SessionDrizzleRepository (integration)', () => {
   let db: TestDrizzleDB;

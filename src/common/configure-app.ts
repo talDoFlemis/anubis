@@ -1,14 +1,14 @@
 import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
-import session from 'express-session';
-import connectPgSimple from 'connect-pg-simple';
-import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
-import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
-import helmet from 'helmet';
+import connectPgSimple from 'connect-pg-simple';
 import type { Application, NextFunction, Request, Response } from 'express';
-import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import session from 'express-session';
+import helmet from 'helmet';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import passport from 'passport';
+import { Pool } from 'pg';
+import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 
 const helmetWithCsp = helmet();
 const helmetWithoutCsp = helmet({ contentSecurityPolicy: false });

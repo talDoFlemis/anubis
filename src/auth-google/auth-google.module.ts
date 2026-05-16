@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AuthGoogleService } from './auth-google.service';
-import { AuthGoogleController } from './auth-google.controller';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { AuthGoogleController } from './auth-google.controller';
+import { AuthGoogleService } from './auth-google.service';
 import { GoogleIdTokenStrategy } from './google-id-token.strategy';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 
 @Module({
   imports: [AuthModule, UsersModule],

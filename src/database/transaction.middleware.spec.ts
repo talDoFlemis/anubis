@@ -1,8 +1,8 @@
-import { EventEmitter } from 'node:events';
 import type { NextFunction, Request, Response } from 'express';
-import { TransactionMiddleware } from './transaction.middleware';
-import { transactionStorage } from './transaction.cls';
+import { EventEmitter } from 'node:events';
 import type { DrizzleDB } from './drizzle.provider';
+import { transactionStorage } from './transaction.cls';
+import { TransactionMiddleware } from './transaction.middleware';
 
 describe('TransactionMiddleware', () => {
   let middleware: TransactionMiddleware;

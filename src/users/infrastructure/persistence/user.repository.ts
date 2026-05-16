@@ -1,5 +1,5 @@
-import type { User } from '../../domain/user';
 import type { AuthProvidersEnum } from '../../../auth/auth-providers.enum';
+import type { User } from '../../domain/user';
 
 export type NullableUser = User | null;
 

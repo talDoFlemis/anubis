@@ -1,20 +1,22 @@
-import { Controller, Get } from '@nestjs/common';
-import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
-import { ApiOperation, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
-import { ApiOkResponse } from '@nestjs/swagger';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { Controller, Get, Logger } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiServiceUnavailableResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
 import { DrizzleDBHealthIndicator } from 'src/database/drizzle.health';
 import { MailHealthIndicator } from 'src/mail/mail.health';
 
 @ApiTags('Health')
 @Controller('health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
   constructor(
     private health: HealthCheckService,
     private drizzleDBHealthIndicator: DrizzleDBHealthIndicator,
     private mailHealthIndicator: MailHealthIndicator,
-    @InjectPinoLogger(HealthController.name)
-    private readonly logger: PinoLogger,
   ) {}
 
   @Get()

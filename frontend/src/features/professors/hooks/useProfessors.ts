@@ -2,12 +2,12 @@ import * as React from 'react';
 import { toast } from 'sonner';
 
 import { mockProfessors, type Professor } from '@/lib/mock-professors-management';
+import type { NewProfessorFormData } from '../types/professors-form.types';
 import {
   filterProfessors,
   mapFormToProfessor,
   toggleProfessorStatus,
 } from '../utils/professors-form.utils';
-import type { NewProfessorFormData } from '../types/professors-form.types';
 
 export function useProfessors() {
   const [professors, setProfessors] = React.useState<Professor[]>(mockProfessors);

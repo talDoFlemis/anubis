@@ -7,12 +7,12 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { User } from '../users/domain/user';
-import { AuthGoogleLoginDto } from './dto/auth-google-login.dto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { buildLoginResponse } from 'src/auth/login-response.builder';
+import { LoginResponseDto } from '../auth-email/dto/login-response.dto';
+import { User } from '../users/domain/user';
+import { AuthGoogleLoginDto } from './dto/auth-google-login.dto';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 
 @ApiTags('Auth', 'Google Auth')
 @Controller({ path: 'auth/provider/google', version: '1' })

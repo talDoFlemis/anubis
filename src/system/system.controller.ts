@@ -7,8 +7,8 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { ChangeLogLevelDto } from './dto/change-log-level.dto';
 import { PinoLogger } from 'nestjs-pino';
+import { ChangeLogLevelDto } from './dto/change-log-level.dto';
 import { SystemTokenGuard } from './guards/system-token.guard';
 
 @ApiTags('System')

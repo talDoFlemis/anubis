@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { SystemController } from './system.controller';
 import { SystemTokenGuard } from './guards/system-token.guard';
+import { SystemController } from './system.controller';
 
 @Module({
   controllers: [SystemController],

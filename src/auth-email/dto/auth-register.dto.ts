@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsEmail, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 import { normalizeCpf } from '../../common/utils/normalize-cpf';
 import { IsCpf } from '../../common/validators/is-cpf.validator';
 

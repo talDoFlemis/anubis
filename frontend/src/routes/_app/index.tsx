@@ -1,6 +1,3 @@
-import type { ReactNode } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
-import { Bell, CalendarDays, CircleCheckBig, Clock3, Mail, Shield, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth, useMyCandidateProfile } from '@/hooks/use-auth';
 import { mockCandidateHome } from '@/lib/mock-candidate-home';
+import { createFileRoute } from '@tanstack/react-router';
+import { Bell, CalendarDays, CircleCheckBig, Clock3, Mail, Shield, Sparkles } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 export const Route = createFileRoute('/_app/')({
   component: HomePage,

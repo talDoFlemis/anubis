@@ -22,10 +22,10 @@ import { AuthConfirmEmailDto } from './dto/auth-confirm-email.dto';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthRegisterDto } from './dto/auth-register.dto';
+import { AuthResendProfessorOnboardingDto } from './dto/auth-resend-professor-onboarding.dto';
 import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
 import { CompleteProfessorOnboardingDto } from './dto/complete-professor-onboarding.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
-import { AuthResendProfessorOnboardingDto } from './dto/auth-resend-professor-onboarding.dto';
 
 @Injectable()
 export class AuthEmailService {

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsEmail } from 'class-validator';
 
 export class AuthForgotPasswordDto {
   @ApiProperty({ example: 'test@example.com', type: String })

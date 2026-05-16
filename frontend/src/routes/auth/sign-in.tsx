@@ -1,5 +1,3 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useForm } from '@tanstack/react-form';
 import {
   AuthCallout,
   AuthErrorMessage,
@@ -10,9 +8,11 @@ import {
   SubmitButton,
 } from '@/components/auth';
 import { GoogleLoginButton } from '@/components/google-login-button';
+import { signInSchema, type SignInFormData } from '@/features/auth/auth-form.schemas';
 import { useEmailLogin } from '@/hooks/use-auth';
 import { AUTH_SIGN_UP_ROUTE } from '@/lib/auth-flow';
-import { signInSchema, type SignInFormData } from '@/features/auth/auth-form.schemas';
+import { useForm } from '@tanstack/react-form';
+import { createFileRoute, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/auth/sign-in')({
   component: SignInPage,

@@ -1,9 +1,9 @@
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
-import * as usersSchema from '../schema/users';
-import * as sessionsSchema from '../schema/sessions';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import * as candidatesSchema from '../schema/candidates';
+import * as sessionsSchema from '../schema/sessions';
+import * as usersSchema from '../schema/users';
 
 const schema = {
   ...usersSchema,

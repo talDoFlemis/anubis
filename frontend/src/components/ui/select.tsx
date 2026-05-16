@@ -1,5 +1,5 @@
-import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
+import * as React from 'react';
 
 import { Check, ChevronDown } from 'lucide-react';
 
@@ -81,4 +81,4 @@ const SelectItem = React.forwardRef<
 ));
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
-export { Select, SelectValue, SelectTrigger, SelectContent, SelectItem };
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue };

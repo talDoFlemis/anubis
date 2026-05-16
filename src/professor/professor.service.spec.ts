@@ -1,18 +1,18 @@
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { getLoggerToken } from 'nestjs-pino';
-import { ProfessorService } from './professor.service';
-import { UsersService } from '../users/users.service';
-import { ProfessorRepository } from './infraestructure/persistence/professor.repository';
-import { RoleEnum } from '../roles/roles.enum';
-import { StatusEnum } from '../statuses/statuses.enum';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { MailService } from '../mail/mail.service';
+import { RoleEnum } from '../roles/roles.enum';
 import { SessionService } from '../session/session.service';
+import { StatusEnum } from '../statuses/statuses.enum';
+import { UsersService } from '../users/users.service';
 import type { Professor } from './domain/professor';
+import { ProfessorRepository } from './infraestructure/persistence/professor.repository';
+import { ProfessorService } from './professor.service';
 
 describe('ProfessorService', () => {
   let service: ProfessorService;

@@ -1,10 +1,10 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { ProfessorController } from './professor.controller';
-import { ProfessorService } from './professor.service';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { RolesGuard } from '../roles/roles.guard';
+import { ProfessorController } from './professor.controller';
+import { ProfessorService } from './professor.service';
 
 describe('ProfessorController', () => {
   let controller: ProfessorController;

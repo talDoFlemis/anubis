@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/unbound-method */
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { CandidateService } from './candidate.service';
-import { UsersService } from '../users/users.service';
-import { CandidateRepository } from './infrastructure/persistence/candidate.repository';
+import { getLoggerToken } from 'nestjs-pino';
+import { buildPaginatedResult } from '../common/dto/paginated-response.dto';
 import { RoleEnum } from '../roles/roles.enum';
 import { StatusEnum } from '../statuses/statuses.enum';
-import { getLoggerToken } from 'nestjs-pino';
+import { UsersService } from '../users/users.service';
+import { CandidateService } from './candidate.service';
 import type { CandidateProfile } from './domain/candidate-profile';
-import { buildPaginatedResult } from '../common/dto/paginated-response.dto';
+import { CandidateRepository } from './infrastructure/persistence/candidate.repository';
 
 describe('CandidateService', () => {
   let service: CandidateService;

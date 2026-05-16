@@ -3,20 +3,20 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { HttpLoggerMiddleware } from './common/middlewares/http-logger.middleware';
-import { validate } from './env.validation';
-import { DatabaseModule } from './database/database.module';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
 import { AuthEmailModule } from './auth-email/auth-email.module';
 import { AuthGoogleModule } from './auth-google/auth-google.module';
-import { SessionModule } from './session/session.module';
-import { MailModule } from './mail/mail.module';
-import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
 import { CandidateModule } from './candidate/candidate.module';
-import { SystemModule } from './system/system.module';
-import { ProfessorModule } from './professor/professor.module';
 import { LoggingModule } from './common/logging.module';
+import { HttpLoggerMiddleware } from './common/middlewares/http-logger.middleware';
+import { DatabaseModule } from './database/database.module';
+import { validate } from './env.validation';
+import { HealthModule } from './health/health.module';
+import { MailModule } from './mail/mail.module';
+import { ProfessorModule } from './professor/professor.module';
+import { SessionModule } from './session/session.module';
+import { SystemModule } from './system/system.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [

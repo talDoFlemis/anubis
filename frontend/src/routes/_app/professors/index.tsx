@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import { mainResearchLines } from '@/lib/mock-professors-management';
 import { ManagementPageLayout } from '@/components/layout/management-page-layout';
 import { CreateProfessorDialog } from '@/features/professors/components/CreateProfessorDialog';
 import { ProfessorActionsDialog } from '@/features/professors/components/ProfessorActionsDialog';
@@ -8,6 +7,7 @@ import { ProfessorsHeader } from '@/features/professors/components/ProfessorsHea
 import { ProfessorsTable } from '@/features/professors/components/ProfessorsTable';
 import { ResendInviteDialog } from '@/features/professors/components/ResendInviteDialog';
 import { useProfessors } from '@/features/professors/hooks/useProfessors';
+import { mainResearchLines } from '@/lib/mock-professors-management';
 
 export const Route = createFileRoute('/_app/professors/')({
   component: GestaoDocentesScreen,

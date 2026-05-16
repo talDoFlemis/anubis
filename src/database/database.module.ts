@@ -1,8 +1,8 @@
 import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { drizzleProvider } from './drizzle.provider';
+import { HealthIndicatorService } from '@nestjs/terminus';
 import { drizzleTxProvider } from './drizzle-tx.provider';
 import { DrizzleDBHealthIndicator } from './drizzle.health';
-import { HealthIndicatorService } from '@nestjs/terminus';
+import { drizzleProvider } from './drizzle.provider';
 import { TransactionMiddleware } from './transaction.middleware';
 
 @Global()

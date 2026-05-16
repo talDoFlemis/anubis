@@ -5,10 +5,10 @@ import { CandidateModule } from '../candidate/candidate.module';
 import { MailModule } from '../mail/mail.module';
 import { SessionModule } from '../session/session.module';
 import { UsersModule } from '../users/users.module';
-import { AuthEmailGuard } from './auth-email.guard';
-import { AuthEmailStrategy } from './auth-email.strategy';
 import { AuthEmailController } from './auth-email.controller';
+import { AuthEmailGuard } from './auth-email.guard';
 import { AuthEmailService } from './auth-email.service';
+import { AuthEmailStrategy } from './auth-email.strategy';
 
 @Module({
   imports: [

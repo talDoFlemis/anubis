@@ -1,14 +1,14 @@
-export { ApiError, apiClient } from './client';
 export { authApi } from './auth';
 export { candidatesApi } from './candidates';
+export { apiClient, ApiError } from './client';
 
 export type {
-  User,
-  LoginResponse,
-  EmailRegisterData,
   CandidateOnboardingData,
-  UpdateUserData,
+  EmailRegisterData,
+  LoginResponse,
   ProfessorOnboardingData,
+  UpdateUserData,
+  User,
 } from './auth';
 
 export type { CandidateProfile } from './candidates';
