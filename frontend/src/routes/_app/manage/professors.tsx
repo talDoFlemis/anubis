@@ -9,7 +9,7 @@ import { ResendInviteDialog } from '@/features/professors/components/ResendInvit
 import { useProfessors } from '@/features/professors/hooks/useProfessors';
 import { mainResearchLines } from '@/lib/mock-professors-management';
 
-export const Route = createFileRoute('/_app/professors/')({
+export const Route = createFileRoute('/_app/manage/professors')({
   component: GestaoDocentesScreen,
 });
 
