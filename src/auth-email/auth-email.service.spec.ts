@@ -5,6 +5,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { getLoggerToken } from 'nestjs-pino';
+import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { CandidateService } from '../candidate/candidate.service';
 import { MailService } from '../mail/mail.service';
@@ -24,6 +25,7 @@ describe('AuthEmailService', () => {
   let sessionService: jest.Mocked<SessionService>;
   let mailService: jest.Mocked<MailService>;
   let jwtService: jest.Mocked<JwtService>;
+  let authGoogleService: jest.Mocked<AuthGoogleService>;
 
   const baseUser: User = {
     id: 'user-1',
@@ -55,6 +57,7 @@ describe('AuthEmailService', () => {
             findByEmail: jest.fn(),
             findById: jest.fn(),
             findByCpf: jest.fn(),
+            findByAuthProvider: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
           },
@@ -86,7 +89,19 @@ describe('AuthEmailService', () => {
         },
         {
           provide: getLoggerToken(AuthEmailService.name),
-          useValue: { info: jest.fn(), debug: jest.fn(), error: jest.fn() },
+          useValue: {
+            info: jest.fn(),
+            debug: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            log: jest.fn(),
+          },
+        },
+        {
+          provide: AuthGoogleService,
+          useValue: {
+            getProfileByToken: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -97,6 +112,7 @@ describe('AuthEmailService', () => {
     sessionService = module.get(SessionService);
     mailService = module.get(MailService);
     jwtService = module.get(JwtService);
+    authGoogleService = module.get(AuthGoogleService);
   });
 
   it('logs in email user with valid password', async () => {
@@ -383,5 +399,173 @@ describe('AuthEmailService', () => {
     await expect(
       service.completeProfessorOnboarding({ hash: 'confirm-token', password: 'new-pass' }),
     ).rejects.toThrow('Usuario nao encontrado.');
+  });
+
+  // ── Google onboarding ───────────────────────────────────────────
+
+  it('completes Google onboarding when email matches', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      email: 'prof@ufc.br',
+      status: StatusEnum.inactive,
+      mustChangePassword: true,
+      confirmEmailTokenVersion: 1,
+    });
+    authGoogleService.getProfileByToken.mockResolvedValue({
+      id: 'google-sub-123',
+      email: 'prof@ufc.br',
+      firstName: 'Maria',
+      lastName: 'Silva',
+      verified_email: true,
+    });
+    usersService.findByAuthProvider.mockResolvedValue(null);
+
+    await service.completeGoogleOnboarding({
+      hash: 'confirm-token',
+      idToken: 'google-id-token',
+    });
+
+    expect(usersService.update.mock.calls).toEqual([
+      [
+        'user-1',
+        {
+          authProvider: AuthProvidersEnum.google,
+          providerSubject: 'google-sub-123',
+          password: null,
+          status: StatusEnum.active,
+          mustChangePassword: false,
+          bootstrapPasswordExpiresAt: null,
+          confirmEmailTokenVersion: 2,
+        },
+      ],
+    ]);
+  });
+
+  it('rejects Google onboarding when email does not match', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      email: 'prof@ufc.br',
+      status: StatusEnum.inactive,
+      mustChangePassword: true,
+      confirmEmailTokenVersion: 1,
+    });
+    authGoogleService.getProfileByToken.mockResolvedValue({
+      id: 'google-sub-123',
+      email: 'other@gmail.com',
+      firstName: 'Other',
+      verified_email: true,
+    });
+
+    await expect(
+      service.completeGoogleOnboarding({
+        hash: 'confirm-token',
+        idToken: 'google-id-token',
+      }),
+    ).rejects.toThrow('O email do Google nao corresponde ao email do convite.');
+  });
+
+  it('rejects Google onboarding when account already activated', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      status: StatusEnum.active,
+      mustChangePassword: false,
+      confirmEmailTokenVersion: 1,
+    });
+
+    await expect(
+      service.completeGoogleOnboarding({
+        hash: 'confirm-token',
+        idToken: 'google-id-token',
+      }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('rejects Google onboarding when token version mismatches', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 2,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      status: StatusEnum.inactive,
+      mustChangePassword: true,
+      confirmEmailTokenVersion: 1,
+    });
+
+    await expect(
+      service.completeGoogleOnboarding({
+        hash: 'confirm-token',
+        idToken: 'google-id-token',
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('rejects Google onboarding when Google account is already linked to another user', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      email: 'prof@ufc.br',
+      status: StatusEnum.inactive,
+      mustChangePassword: true,
+      confirmEmailTokenVersion: 1,
+    });
+    authGoogleService.getProfileByToken.mockResolvedValue({
+      id: 'google-sub-123',
+      email: 'prof@ufc.br',
+      firstName: 'Maria',
+      verified_email: true,
+    });
+    usersService.findByAuthProvider.mockResolvedValue({
+      ...baseUser,
+      id: 'other-user-id',
+    });
+
+    await expect(
+      service.completeGoogleOnboarding({
+        hash: 'confirm-token',
+        idToken: 'google-id-token',
+      }),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('rejects Google onboarding when Google email is missing', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      confirmEmailUserId: 'user-1',
+      confirmEmailTokenVersion: 1,
+    });
+    usersService.findById.mockResolvedValue({
+      ...baseUser,
+      status: StatusEnum.inactive,
+      mustChangePassword: true,
+      confirmEmailTokenVersion: 1,
+    });
+    authGoogleService.getProfileByToken.mockResolvedValue({
+      id: 'google-sub-123',
+      email: undefined,
+      firstName: 'Maria',
+      verified_email: true,
+    });
+
+    await expect(
+      service.completeGoogleOnboarding({
+        hash: 'confirm-token',
+        idToken: 'google-id-token',
+      }),
+    ).rejects.toThrow('O email do Google nao esta disponivel.');
   });
 });

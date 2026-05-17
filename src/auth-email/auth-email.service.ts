@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { comparePassword, hashPassword } from 'src/utils/password';
+import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
 import { buildLoginResponse } from '../auth/login-response.builder';
 import { CandidateService } from '../candidate/candidate.service';
@@ -36,6 +37,7 @@ export class AuthEmailService {
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly authGoogleService: AuthGoogleService,
     @InjectPinoLogger(AuthEmailService.name)
     private readonly logger: PinoLogger,
   ) {}
@@ -240,13 +242,74 @@ export class AuthEmailService {
       throw new NotFoundException('Usuario nao encontrado.');
     }
 
-    if (user.status === StatusEnum.active && user.password && !user.mustChangePassword) {
+    if (user.status === StatusEnum.active && !user.mustChangePassword) {
       throw new ConflictException('Esta conta ja foi ativada anteriormente.');
     }
 
     if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
       throw new BadRequestException('Link de confirmacao invalido ou expirado.');
     }
+  }
+
+  async completeGoogleOnboarding(params: { hash: string; idToken: string }): Promise<void> {
+    this.logger.debug('Google onboarding attempt');
+
+    const token = await this.verifyConfirmToken(params.hash);
+    const user = await this.usersService.findById(token.confirmEmailUserId);
+
+    if (!user) {
+      throw new NotFoundException('Usuario nao encontrado.');
+    }
+
+    if (user.status === StatusEnum.active && !user.mustChangePassword) {
+      throw new ConflictException('Esta conta ja foi ativada anteriormente.');
+    }
+
+    if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
+      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
+    }
+
+    const socialProfile = await this.authGoogleService.getProfileByToken({
+      idToken: params.idToken,
+    });
+
+    if (!socialProfile.email) {
+      throw new BadRequestException('O email do Google nao esta disponivel.');
+    }
+
+    const googleEmail = socialProfile.email.toLowerCase().trim();
+    const invitedEmail = user.email?.toLowerCase().trim();
+
+    if (googleEmail !== invitedEmail) {
+      this.logger.warn(
+        { googleEmail, invitedEmail, userId: user.id },
+        'Google onboarding email mismatch',
+      );
+      throw new BadRequestException(
+        'O email do Google nao corresponde ao email do convite. Use a mesma conta Google associada ao email convidado.',
+      );
+    }
+
+    const existingGoogleUser = await this.usersService.findByAuthProvider({
+      provider: AuthProvidersEnum.google,
+      providerSubject: socialProfile.id,
+    });
+
+    if (existingGoogleUser && existingGoogleUser.id !== user.id) {
+      throw new ConflictException('Esta conta Google ja esta vinculada a outro usuario.');
+    }
+
+    await this.usersService.update(user.id, {
+      authProvider: AuthProvidersEnum.google,
+      providerSubject: socialProfile.id,
+      password: null,
+      status: StatusEnum.active,
+      mustChangePassword: false,
+      bootstrapPasswordExpiresAt: null,
+      confirmEmailTokenVersion: token.confirmEmailTokenVersion + 1,
+    });
+
+    this.logger.info({ userId: user.id, googleEmail }, 'Google onboarding completed successfully');
   }
 
   async resendProfessorOnboarding(dto: AuthResendProfessorOnboardingDto): Promise<void> {

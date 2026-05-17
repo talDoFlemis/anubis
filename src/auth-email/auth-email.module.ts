@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { AuthGoogleModule } from '../auth-google/auth-google.module';
 import { AuthModule } from '../auth/auth.module';
 import { CandidateModule } from '../candidate/candidate.module';
 import { MailModule } from '../mail/mail.module';
@@ -14,6 +15,7 @@ import { AuthEmailStrategy } from './auth-email.strategy';
   imports: [
     UsersModule,
     AuthModule,
+    AuthGoogleModule,
     CandidateModule,
     SessionModule,
     MailModule,

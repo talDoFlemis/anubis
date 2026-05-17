@@ -118,6 +118,9 @@ export const authApi = {
   verifyOnboardingToken: (data: { hash: string }) =>
     apiClient.post<void>('/auth/provider/email/onboarding/verify', data).then(res => res.data),
 
+  completeGoogleOnboarding: (data: { hash: string; idToken: string }) =>
+    apiClient.post<void>('/auth/provider/email/onboarding/google', data).then(res => res.data),
+
   resendProfessorOnboarding: (data: { email: string }) =>
     apiClient
       .post<void>('/auth/provider/email/onboarding/professor/resend', data)

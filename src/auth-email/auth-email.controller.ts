@@ -22,6 +22,7 @@ import { AuthForgotPasswordDto } from './dto/auth-forgot-password.dto';
 import { AuthRegisterDto } from './dto/auth-register.dto';
 import { AuthResendProfessorOnboardingDto } from './dto/auth-resend-professor-onboarding.dto';
 import { AuthResetPasswordDto } from './dto/auth-reset-password.dto';
+import { CompleteGoogleOnboardingDto } from './dto/complete-google-onboarding.dto';
 import { CompleteProfessorOnboardingDto } from './dto/complete-professor-onboarding.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 
@@ -90,6 +91,22 @@ export class AuthEmailController {
   @ApiNotFoundResponse({ description: 'User associated with hash not found' })
   async verifyOnboardingToken(@Body() dto: AuthConfirmEmailDto): Promise<void> {
     await this.authEmailService.verifyOnboardingToken(dto.hash);
+  }
+
+  @Post('onboarding/google')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Complete onboarding via Google OAuth' })
+  @ApiNoContentResponse({ description: 'Onboarding completed with Google' })
+  @ApiBadRequestResponse({ description: 'Invalid hash, token, or email mismatch' })
+  @ApiConflictResponse({
+    description: 'Account already activated or Google account already linked',
+  })
+  @ApiNotFoundResponse({ description: 'User associated with hash not found' })
+  async completeGoogleOnboarding(@Body() dto: CompleteGoogleOnboardingDto): Promise<void> {
+    await this.authEmailService.completeGoogleOnboarding({
+      hash: dto.hash,
+      idToken: dto.idToken,
+    });
   }
 
   @Post('onboarding/professor/resend')
