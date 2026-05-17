@@ -98,6 +98,12 @@ export function useVerifyOnboardingToken() {
   });
 }
 
+export function useCompleteGoogleOnboarding() {
+  return useMutation({
+    mutationFn: api.auth.completeGoogleOnboarding,
+  });
+}
+
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
 

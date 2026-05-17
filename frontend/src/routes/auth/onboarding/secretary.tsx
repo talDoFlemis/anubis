@@ -6,6 +6,7 @@ import {
   PasswordField,
   SubmitButton,
 } from '@/components/auth';
+import { GoogleLoginButton } from '@/components/google-login-button';
 import { Button } from '@/components/ui/button';
 import {
   forgotPasswordSchema,
@@ -13,6 +14,7 @@ import {
   type ProfessorOnboardingFormData,
 } from '@/features/auth/auth-form.schemas';
 import {
+  useCompleteGoogleOnboarding,
   useCompleteProfessorOnboarding,
   useResendProfessorOnboarding,
   useVerifyOnboardingToken,
@@ -176,6 +178,7 @@ function SecretaryOnboardingPage() {
   const { hash } = Route.useSearch();
   const verifyToken = useVerifyOnboardingToken();
   const completeOnboarding = useCompleteProfessorOnboarding();
+  const googleOnboarding = useCompleteGoogleOnboarding();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -206,7 +209,10 @@ function SecretaryOnboardingPage() {
       verifyToken.error.status === 409) ||
     (completeOnboarding.isError &&
       completeOnboarding.error instanceof ApiError &&
-      completeOnboarding.error.status === 409);
+      completeOnboarding.error.status === 409) ||
+    (googleOnboarding.isError &&
+      googleOnboarding.error instanceof ApiError &&
+      googleOnboarding.error.status === 409);
 
   const isExpiredError =
     (verifyToken.isError &&
@@ -236,62 +242,102 @@ function SecretaryOnboardingPage() {
     return <ExpiredLinkPage />;
   }
 
+  const googleError =
+    googleOnboarding.isError && googleOnboarding.error instanceof ApiError
+      ? googleOnboarding.error.message
+      : null;
+
   return (
     <AuthPageLayout
       eyebrow="Ativacao"
       title="Ative sua Conta"
-      description="Crie uma senha segura com no minimo 8 caracteres."
+      description="Escolha como deseja ativar sua conta: crie uma senha ou use o Google."
       compact
     >
-      <form
-        onSubmit={event => {
-          event.preventDefault();
-          form.handleSubmit();
-        }}
-        className="space-y-5"
-      >
-        <form.Field name="password">
-          {field => (
-            <PasswordField
-              id="password"
-              label="Nova Senha"
-              value={field.state.value}
-              onChange={value => field.handleChange(value)}
-              onBlur={field.handleBlur}
-              placeholder="Minimo 8 caracteres"
-              minLength={8}
-              errors={field.state.meta.errors}
-              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-          )}
-        </form.Field>
-
-        <form.Field name="confirmPassword">
-          {field => (
-            <PasswordField
-              id="confirmPassword"
-              label="Confirmar Nova Senha"
-              value={field.state.value}
-              onChange={value => field.handleChange(value)}
-              onBlur={field.handleBlur}
-              placeholder="Repita a nova senha"
-              minLength={8}
-              errors={field.state.meta.errors}
-              isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
-            />
-          )}
-        </form.Field>
-
-        <AuthErrorMessage
-          message={completeOnboarding.isError ? completeOnboarding.error.message : null}
+      <div className="space-y-5">
+        <GoogleLoginButton
+          text="signin_with"
+          onIdToken={idToken => {
+            googleOnboarding.mutate(
+              { hash, idToken },
+              {
+                onSuccess: () => {
+                  toast.success('Conta ativada com Google!');
+                  navigate({ to: AUTH_SIGN_IN_ROUTE });
+                },
+                onError: error => {
+                  if (error instanceof ApiError && error.status === 409) {
+                    return;
+                  }
+                  toast.error(error.message);
+                },
+              },
+            );
+          }}
+          helperText="Use a mesma conta Google associada ao email do convite."
         />
 
-        <SubmitButton
-          isPending={completeOnboarding.isPending}
-          label="Ativar Conta"
-          pendingLabel="Ativando..."
-        />
-      </form>
+        <AuthErrorMessage message={googleError} />
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background text-muted-foreground px-2">ou crie uma senha</span>
+          </div>
+        </div>
+
+        <form
+          onSubmit={event => {
+            event.preventDefault();
+            form.handleSubmit();
+          }}
+          className="space-y-5"
+        >
+          <form.Field name="password">
+            {field => (
+              <PasswordField
+                id="password"
+                label="Nova Senha"
+                value={field.state.value}
+                onChange={value => field.handleChange(value)}
+                onBlur={field.handleBlur}
+                placeholder="Minimo 8 caracteres"
+                minLength={8}
+                errors={field.state.meta.errors}
+                isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              />
+            )}
+          </form.Field>
+
+          <form.Field name="confirmPassword">
+            {field => (
+              <PasswordField
+                id="confirmPassword"
+                label="Confirmar Nova Senha"
+                value={field.state.value}
+                onChange={value => field.handleChange(value)}
+                onBlur={field.handleBlur}
+                placeholder="Repita a nova senha"
+                minLength={8}
+                errors={field.state.meta.errors}
+                isInvalid={field.state.meta.isTouched && !field.state.meta.isValid}
+              />
+            )}
+          </form.Field>
+
+          <AuthErrorMessage
+            message={completeOnboarding.isError ? completeOnboarding.error.message : null}
+          />
+
+          <SubmitButton
+            isPending={completeOnboarding.isPending}
+            label="Ativar com Senha"
+            pendingLabel="Ativando..."
+          />
+        </form>
+      </div>
     </AuthPageLayout>
   );
 }
