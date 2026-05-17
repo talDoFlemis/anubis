@@ -113,7 +113,10 @@ export const authApi = {
     apiClient.post('/auth/onboarding/candidate', data).then(res => normalizeUser(res.data)),
 
   completeProfessorOnboarding: (data: ProfessorOnboardingData) =>
-    apiClient.post<void>('/auth/onboarding/professor', data).then(res => res.data),
+    apiClient.post<void>('/auth/provider/email/onboarding/professor', data).then(res => res.data),
+
+  verifyOnboardingToken: (data: { hash: string }) =>
+    apiClient.post<void>('/auth/provider/email/onboarding/verify', data).then(res => res.data),
 
   resendProfessorOnboarding: (data: { email: string }) =>
     apiClient

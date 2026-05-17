@@ -21,6 +21,7 @@ import { Route as AuthConfirmEmailRouteImport } from './routes/auth/confirm-emai
 import { Route as AuthChangePasswordRouteImport } from './routes/auth/change-password'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
 import { Route as AppProfessorsIndexRouteImport } from './routes/_app/professors/index'
+import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboarding/secretary'
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
 
 const AuthRoute = AuthRouteImport.update({
@@ -82,6 +83,11 @@ const AppProfessorsIndexRoute = AppProfessorsIndexRouteImport.update({
   path: '/professors/',
   getParentRoute: () => AppRoute,
 } as any)
+const AuthOnboardingSecretaryRoute = AuthOnboardingSecretaryRouteImport.update({
+  id: '/onboarding/secretary',
+  path: '/onboarding/secretary',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthOnboardingProfessorRoute = AuthOnboardingProfessorRouteImport.update({
   id: '/onboarding/professor',
   path: '/onboarding/professor',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
+  '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/professors/': typeof AppProfessorsIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
 }
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/': typeof AppIndexRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
+  '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/professors': typeof AppProfessorsIndexRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
 }
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/_app/': typeof AppIndexRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
+  '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/_app/professors/': typeof AppProfessorsIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
 }
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/auth/onboarding/professor'
+    | '/auth/onboarding/secretary'
     | '/professors/'
     | '/auth/onboarding/'
   fileRoutesByTo: FileRoutesByTo
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/'
     | '/auth/onboarding/professor'
+    | '/auth/onboarding/secretary'
     | '/professors'
     | '/auth/onboarding'
   id:
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/_app/'
     | '/auth/onboarding/professor'
+    | '/auth/onboarding/secretary'
     | '/_app/professors/'
     | '/auth/onboarding/'
   fileRoutesById: FileRoutesById
@@ -269,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfessorsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/auth/onboarding/secretary': {
+      id: '/auth/onboarding/secretary'
+      path: '/onboarding/secretary'
+      fullPath: '/auth/onboarding/secretary'
+      preLoaderRoute: typeof AuthOnboardingSecretaryRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/auth/onboarding/professor': {
       id: '/auth/onboarding/professor'
       path: '/onboarding/professor'
@@ -300,6 +319,7 @@ interface AuthRouteChildren {
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   AuthOnboardingProfessorRoute: typeof AuthOnboardingProfessorRoute
+  AuthOnboardingSecretaryRoute: typeof AuthOnboardingSecretaryRoute
   AuthOnboardingIndexRoute: typeof AuthOnboardingIndexRoute
 }
 
@@ -312,6 +332,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   AuthOnboardingProfessorRoute: AuthOnboardingProfessorRoute,
+  AuthOnboardingSecretaryRoute: AuthOnboardingSecretaryRoute,
   AuthOnboardingIndexRoute: AuthOnboardingIndexRoute,
 }
 
