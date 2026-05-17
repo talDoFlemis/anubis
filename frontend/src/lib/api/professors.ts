@@ -22,7 +22,7 @@ export interface PaginatedProfessors {
   };
 }
 
-export interface CreateProfessorPayload {
+export interface InviteProfessorPayload {
   email: string;
   cpf?: string | null;
   firstName: string;
@@ -67,8 +67,8 @@ export const professorsApi = {
       },
     };
   },
-  create: async (payload: CreateProfessorPayload): Promise<void> => {
-    await apiClient.post('/professors', payload);
+  invite: async (payload: InviteProfessorPayload): Promise<void> => {
+    await apiClient.post('/professors/invite', payload);
   },
   enable: async (id: string): Promise<void> => {
     await apiClient.patch(`/professors/${id}/enable`);
