@@ -11,7 +11,7 @@ describe('ProfessorController', () => {
   let professorService: ProfessorServiceMock;
 
   type ProfessorServiceMock = {
-    create: jest.Mock;
+    invite: jest.Mock;
     findOne: jest.Mock;
     findAll: jest.Mock;
     update: jest.Mock;
@@ -27,7 +27,7 @@ describe('ProfessorController', () => {
         {
           provide: ProfessorService,
           useValue: {
-            create: jest.fn(),
+            invite: jest.fn(),
             findOne: jest.fn(),
             findAll: jest.fn(),
             update: jest.fn(),
@@ -50,17 +50,17 @@ describe('ProfessorController', () => {
     professorService = module.get(ProfessorService);
   });
 
-  it('calls create on service', async () => {
-    professorService.create.mockResolvedValue({} as never);
+  it('calls invite on service', async () => {
+    professorService.invite.mockResolvedValue({} as never);
 
-    await controller.create({
+    await controller.invite({
       email: 'prof@ufc.br',
       firstName: 'Maria',
       department: 'Departamento de Computacao',
       institution: 'UFC',
     });
 
-    expect(professorService.create).toHaveBeenCalled();
+    expect(professorService.invite).toHaveBeenCalled();
   });
 
   it('calls findOne on service', async () => {

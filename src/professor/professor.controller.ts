@@ -45,21 +45,21 @@ import { ProfessorService } from './professor.service';
 export class ProfessorController {
   constructor(private readonly professorService: ProfessorService) {}
 
-  @Post()
+  @Post('invite')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a professor profile' })
+  @ApiOperation({ summary: 'Invite a new professor' })
   @ApiCreatedResponse()
   @ApiUnauthorizedResponse({ description: 'No active session' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @UseGuards(RolesGuard)
   @Roles(RoleEnum.mdccSecretary)
-  async create(@Body() createProfessorDto: CreateProfessorDto) {
+  async invite(@Body() createProfessorDto: CreateProfessorDto) {
     const payload = {
       ...createProfessorDto,
       status: createProfessorDto.status ?? StatusEnum.inactive,
     };
 
-    await this.professorService.create(payload);
+    await this.professorService.invite(payload);
     return;
   }
 

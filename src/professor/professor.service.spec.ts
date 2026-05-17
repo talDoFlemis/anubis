@@ -1,11 +1,9 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { getLoggerToken } from 'nestjs-pino';
 import { AuthProvidersEnum } from '../auth/auth-providers.enum';
-import { MailService } from '../mail/mail.service';
+import { InvitationService } from '../invitation/invitation.service';
 import { RoleEnum } from '../roles/roles.enum';
 import { SessionService } from '../session/session.service';
 import { StatusEnum } from '../statuses/statuses.enum';
@@ -18,8 +16,7 @@ describe('ProfessorService', () => {
   let service: ProfessorService;
   let usersService: jest.Mocked<UsersService>;
   let professorRepository: jest.Mocked<ProfessorRepository>;
-  let mailService: jest.Mocked<MailService>;
-  let jwtService: jest.Mocked<JwtService>;
+  let invitationService: jest.Mocked<InvitationService>;
   let deleteByUserIdMock: jest.Mock;
   let professorUpdateMock: jest.Mock;
 
@@ -78,28 +75,9 @@ describe('ProfessorService', () => {
           },
         },
         {
-          provide: MailService,
+          provide: InvitationService,
           useValue: {
-            send: jest.fn(),
-          },
-        },
-        {
-          provide: JwtService,
-          useValue: {
-            signAsync: jest.fn(),
-          },
-        },
-        {
-          provide: ConfigService,
-          useValue: {
-            getOrThrow: jest.fn((key: string) => {
-              const map: Record<string, string> = {
-                AUTH_CONFIRM_EMAIL_SECRET: 'confirm-secret',
-                AUTH_CONFIRM_EMAIL_EXPIRES_IN: '1d',
-                FRONTEND_URL: 'http://localhost:3000',
-              };
-              return map[key] ?? key;
-            }),
+            sendInvitation: jest.fn(),
           },
         },
         {
@@ -117,19 +95,16 @@ describe('ProfessorService', () => {
     service = module.get(ProfessorService);
     usersService = module.get(UsersService);
     professorRepository = module.get(ProfessorRepository);
-    mailService = module.get(MailService);
-    jwtService = module.get(JwtService);
+    invitationService = module.get(InvitationService);
   });
 
-  it('creates professor when unique constraints pass', async () => {
+  it('invites professor when unique constraints pass', async () => {
     usersService.findByEmail.mockResolvedValue(null);
     usersService.findByCpf.mockResolvedValue(null);
     professorRepository.create.mockResolvedValue(professor);
-    usersService.update.mockResolvedValue(professor as never);
-    jwtService.signAsync.mockResolvedValue('confirm-token');
 
     await expect(
-      service.create({
+      service.invite({
         email: 'prof@ufc.br',
         department: 'Departamento de Computacao',
         institution: 'UFC',
@@ -146,26 +121,23 @@ describe('ProfessorService', () => {
         }),
       ],
     ]);
-    expect(usersService.update.mock.calls).toEqual([['user-1', { confirmEmailTokenVersion: 1 }]]);
-    const mailPayload = mailService.send.mock.calls[0]?.[0] as {
-      to: string;
-      title: string;
-      body: string;
-    };
-    expect(mailPayload).toEqual(
-      expect.objectContaining({
-        to: 'prof@ufc.br',
-        title: 'Confirme seu email - Anubis',
-      }),
-    );
-    expect(mailPayload.body).toContain('/auth/onboarding/professor?hash=');
+    expect(invitationService.sendInvitation.mock.calls).toEqual([
+      [
+        {
+          userId: 'user-1',
+          email: 'prof@ufc.br',
+          currentTokenVersion: 0,
+          onboardingPath: '/auth/onboarding/professor',
+        },
+      ],
+    ]);
   });
 
   it('rejects duplicate email on create', async () => {
     usersService.findByEmail.mockResolvedValue({ id: 'other' } as never);
 
     await expect(
-      service.create({
+      service.invite({
         email: 'prof@ufc.br',
         department: 'Departamento de Computacao',
         institution: 'UFC',
@@ -177,11 +149,9 @@ describe('ProfessorService', () => {
     usersService.findByEmail.mockResolvedValue(null);
     usersService.findByCpf.mockResolvedValue(null);
     professorRepository.create.mockResolvedValue(professor);
-    usersService.update.mockResolvedValue(professor as never);
-    jwtService.signAsync.mockResolvedValue('confirm-token');
 
     await expect(
-      service.create({
+      service.invite({
         email: '  Prof@Ufc.br ',
         department: 'Departamento de Computacao',
         institution: 'UFC',
