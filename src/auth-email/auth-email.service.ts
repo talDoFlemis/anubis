@@ -214,12 +214,12 @@ export class AuthEmailService {
       );
     }
 
-    if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
-      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
+    if (user.status === StatusEnum.active && user.password && !user.mustChangePassword) {
+      throw new ConflictException('Esta conta ja foi ativada anteriormente.');
     }
 
-    if (user.password && !user.mustChangePassword) {
-      return;
+    if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
+      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
     }
 
     const hashedPassword = await hashPassword(dto.password);
@@ -232,6 +232,23 @@ export class AuthEmailService {
     });
   }
 
+  async verifyOnboardingToken(hash: string): Promise<void> {
+    const token = await this.verifyConfirmToken(hash);
+    const user = await this.usersService.findById(token.confirmEmailUserId);
+
+    if (!user) {
+      throw new NotFoundException('Usuario nao encontrado.');
+    }
+
+    if (user.status === StatusEnum.active && user.password && !user.mustChangePassword) {
+      throw new ConflictException('Esta conta ja foi ativada anteriormente.');
+    }
+
+    if (user.confirmEmailTokenVersion !== token.confirmEmailTokenVersion) {
+      throw new BadRequestException('Link de confirmacao invalido ou expirado.');
+    }
+  }
+
   async resendProfessorOnboarding(dto: AuthResendProfessorOnboardingDto): Promise<void> {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const user = await this.usersService.findByEmail(normalizedEmail);
@@ -240,7 +257,13 @@ export class AuthEmailService {
       return;
     }
 
-    if (user.role !== RoleEnum.professor) {
+    const onboardingPathByRole: Partial<Record<string, string>> = {
+      [RoleEnum.professor]: '/auth/onboarding/professor',
+      [RoleEnum.mdccSecretary]: '/auth/onboarding/secretary',
+    };
+
+    const onboardingPath = onboardingPathByRole[user.role];
+    if (!onboardingPath) {
       return;
     }
 
@@ -264,10 +287,13 @@ export class AuthEmailService {
       },
     );
 
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+    const confirmUrl = `${frontendUrl}${onboardingPath}?hash=${hash}`;
+
     await this.mailService.send({
       to: normalizedEmail,
       title: 'Confirme seu email - Anubis',
-      body: this.composeProfessorOnboardingEmailBody(hash),
+      body: `<p>Voce foi cadastrado(a) na plataforma do MDCC. Clique no link abaixo para concluir o seu cadastro:</p><p><a href="${confirmUrl}">Confirmar email</a></p>`,
     });
   }
 
