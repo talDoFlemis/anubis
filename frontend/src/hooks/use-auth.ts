@@ -1,4 +1,4 @@
-import { api, type CandidateProfile, type User } from '@/lib/api';
+import { api, type User } from '@/lib/api';
 import { AUTH_SIGN_IN_ROUTE, getPostAuthPath } from '@/lib/auth-flow';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -136,10 +136,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: api.auth.logout,
     onSuccess: () => {
-      queryClient.setQueryData(['auth', 'me'], null);
-      queryClient.setQueryData(['candidates', 'me'], null as CandidateProfile | null);
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      queryClient.invalidateQueries({ queryKey: ['candidates', 'me'] });
+      queryClient.invalidateQueries();
       navigate({ to: AUTH_SIGN_IN_ROUTE });
     },
   });
