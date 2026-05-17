@@ -35,6 +35,7 @@ export function useProfessors() {
         limit: pageSize,
         search: debouncedSearch,
       }),
+    staleTime: 1 * 60 * 1000, // 1 minutes
   });
 
   const professors = paginatedData?.data ?? [];

@@ -23,6 +23,7 @@ import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboardin
 import { Route as AppProfessorsIndexRouteImport } from './routes/_app/professors/index'
 import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboarding/secretary'
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
+import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/professors'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -93,6 +94,11 @@ const AuthOnboardingProfessorRoute = AuthOnboardingProfessorRouteImport.update({
   path: '/onboarding/professor',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppManageProfessorsRoute = AppManageProfessorsRouteImport.update({
+  id: '/manage/professors',
+  path: '/manage/professors',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/manage/professors': typeof AppManageProfessorsRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/professors/': typeof AppProfessorsIndexRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/': typeof AppIndexRoute
+  '/manage/professors': typeof AppManageProfessorsRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/professors': typeof AppProfessorsIndexRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/manage/professors': typeof AppManageProfessorsRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/_app/professors/': typeof AppProfessorsIndexRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/manage/professors'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/professors/'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/'
+    | '/manage/professors'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/professors'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/_app/'
+    | '/_app/manage/professors'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/_app/professors/'
@@ -295,17 +307,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingProfessorRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_app/manage/professors': {
+      id: '/_app/manage/professors'
+      path: '/manage/professors'
+      fullPath: '/manage/professors'
+      preLoaderRoute: typeof AppManageProfessorsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
-  AppProfessorsIndexRoute: typeof AppProfessorsIndexRoute
+  AppManageProfessorsRoute: typeof AppManageProfessorsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
-  AppProfessorsIndexRoute: AppProfessorsIndexRoute,
+  AppManageProfessorsRoute: AppManageProfessorsRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

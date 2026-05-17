@@ -1,3 +1,4 @@
+import { Footer } from '@/components/footer';
 import { authQueryOptions } from '@/hooks/use-auth';
 import { getRestrictedSessionPath, isRedirectLikeError } from '@/lib/auth-flow';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
@@ -24,8 +25,11 @@ export const Route = createFileRoute('/_app')({
 
 function AppLayout() {
   return (
-    <div className="min-h-svh">
-      <Outlet />
+    <div className="flex min-h-svh flex-col">
+      <main className="flex flex-1 flex-col">
+        <Outlet />
+      </main>
+      <Footer />
     </div>
   );
 }
