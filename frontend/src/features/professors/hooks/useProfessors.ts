@@ -55,7 +55,7 @@ export function useProfessors() {
       const [firstName, ...rest] = formData.fullName.trim().split(' ');
       const lastName = rest.length > 0 ? rest.join(' ') : null;
 
-      return api.professors.create({
+      return api.professors.invite({
         email: formData.email.trim().toLowerCase(),
         cpf: normalizeCpf(formData.cpf) || null,
         firstName,

@@ -25,9 +25,9 @@ import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-export const Route = createFileRoute('/auth/onboarding/professor')({
+export const Route = createFileRoute('/auth/onboarding/secretary')({
   validateSearch: validateHashSearch,
-  component: ProfessorOnboardingPage,
+  component: SecretaryOnboardingPage,
 });
 
 function AlreadyActivatedPage() {
@@ -134,7 +134,7 @@ function ExpiredLinkPage() {
       status={
         <AuthCallout
           title="Link de ativacao expirado"
-          description="Solicite um novo envio com a secretaria ou retorne ao login para iniciar novamente."
+          description="Solicite um novo envio com o coordenador ou retorne ao login para iniciar novamente."
           className="bg-[rgba(186,26,26,0.08)]"
         >
           <XCircle className="text-destructive h-5 w-5" />
@@ -172,7 +172,7 @@ function LoadingPage() {
   );
 }
 
-function ProfessorOnboardingPage() {
+function SecretaryOnboardingPage() {
   const { hash } = Route.useSearch();
   const verifyToken = useVerifyOnboardingToken();
   const completeOnboarding = useCompleteProfessorOnboarding();

@@ -81,6 +81,17 @@ export class AuthEmailController {
     await this.authEmailService.completeProfessorOnboarding(dto);
   }
 
+  @Post('onboarding/verify')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Verify onboarding token validity' })
+  @ApiNoContentResponse({ description: 'Token is valid and account needs activation' })
+  @ApiBadRequestResponse({ description: 'Invalid or expired confirmation hash' })
+  @ApiConflictResponse({ description: 'Account already activated' })
+  @ApiNotFoundResponse({ description: 'User associated with hash not found' })
+  async verifyOnboardingToken(@Body() dto: AuthConfirmEmailDto): Promise<void> {
+    await this.authEmailService.verifyOnboardingToken(dto.hash);
+  }
+
   @Post('onboarding/professor/resend')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.NO_CONTENT)

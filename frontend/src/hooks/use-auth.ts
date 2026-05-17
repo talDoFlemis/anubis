@@ -92,6 +92,12 @@ export function useResendProfessorOnboarding() {
   });
 }
 
+export function useVerifyOnboardingToken() {
+  return useMutation({
+    mutationFn: api.auth.verifyOnboardingToken,
+  });
+}
+
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
