@@ -11,7 +11,7 @@ export function FallbackHome({ user }: FallbackHomeProps) {
   const displayName = getUserDisplayName(user.firstName, user.lastName);
 
   return (
-    <div className="min-h-svh px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+    <div className="flex flex-1 flex-col justify-center px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <Card className="rounded-4xl">
           <CardHeader className="space-y-3">
