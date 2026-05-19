@@ -11,7 +11,7 @@ import { useResetPassword } from '@/hooks/use-auth';
 import { AUTH_SIGN_IN_ROUTE, validateHashSearch } from '@/lib/auth-flow';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { KeyRound, XCircle } from 'lucide-react';
+import { XCircle } from 'lucide-react';
 
 export const Route = createFileRoute('/auth/reset-password')({
   validateSearch: validateHashSearch,
@@ -69,16 +69,8 @@ function ResetPasswordPage() {
     <AuthPageLayout
       eyebrow="Nova senha"
       title="Defina uma nova senha para retomar seu acesso."
-      description="Escolha uma senha nova e confirme abaixo. Assim que o envio for concluido, voce podera entrar novamente no Anubis."
+      description="Escolha uma senha nova e confirme abaixo."
       compact
-      status={
-        <AuthCallout
-          title="Link de recuperacao validado"
-          description="Agora falta apenas registrar a nova senha para voltar ao fluxo normal de acesso."
-        >
-          <KeyRound className="text-primary h-5 w-5" />
-        </AuthCallout>
-      }
       footer={
         <Link to={AUTH_SIGN_IN_ROUTE} className="text-primary underline-offset-4 hover:underline">
           Cancelar e voltar ao login
