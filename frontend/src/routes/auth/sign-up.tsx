@@ -47,9 +47,9 @@ function SignUpPage() {
 
   return (
     <AuthPageLayout
-      eyebrow="Cadastro"
-      title="Abra sua candidatura em uma mesa de leitura clara e guiada."
-      description="O cadastro inicial registra seus dados essenciais de candidato e prepara o percurso para confirmacao de email, autenticacao e etapas seguintes."
+      eyebrow="Sistema de Seleção MDCC"
+      title="Criar conta"
+      description="Preencha seus dados para iniciar a candidatura."
       footer={
         <>
           Ja possui acesso?{' '}
@@ -60,6 +60,10 @@ function SignUpPage() {
         </>
       }
     >
+      <AuthCallout
+        title="Docentes"
+        description="cadastro de docentes deve ser feito por um administrador. entre em contato com o suporte para obter ajuda."
+      />
       <form
         onSubmit={event => {
           event.preventDefault();

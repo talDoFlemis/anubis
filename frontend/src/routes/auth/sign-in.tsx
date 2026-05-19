@@ -30,9 +30,9 @@ function SignInPage() {
 
   return (
     <AuthPageLayout
-      eyebrow="Acesso"
-      title="Entre para acompanhar sua jornada seletiva."
-      description="Consulte documentos, acompanhe prazos e retome seu processo com a mesma clareza editorial presente em cada etapa do Anubis."
+      eyebrow="Sistema de Seleção MDCC"
+      title="Entrar"
+      description="Use seu email e senha para acessar."
       footer={
         <>
           Candidatos ainda nao cadastrados podem{' '}
@@ -43,6 +43,10 @@ function SignInPage() {
         </>
       }
     >
+      <AuthCallout
+        title="Docentes"
+        description="a conta de docentes deve ser criada por um administrador. entre em contato com o suporte para obter ajuda."
+      />
       <form
         onSubmit={event => {
           event.preventDefault();

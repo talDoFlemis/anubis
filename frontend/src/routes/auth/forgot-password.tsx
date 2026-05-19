@@ -30,8 +30,8 @@ function ForgotPasswordPage() {
   return (
     <AuthPageLayout
       eyebrow="Recuperacao"
-      title="Peça um novo acesso sem perder o ritmo da candidatura."
-      description="Informe o email da conta para receber o link de redefinicao e retomar sua entrada com seguranca."
+      title="Recuperar senha"
+      description="Informe seu email para receber o link de redefinicao."
       compact
       footer={
         <Link to={AUTH_HOME_ROUTE} className="text-primary underline-offset-4 hover:underline">
