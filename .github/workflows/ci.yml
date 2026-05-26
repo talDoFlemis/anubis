@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build
+    name: Build & Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +28,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - run: pnpm typecheck
 
   lint:
     name: Lint
