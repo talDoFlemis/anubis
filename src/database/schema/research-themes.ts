@@ -10,12 +10,8 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import type { ResearchThemeReference } from '../../common/types/research-theme-reference';
 import { professors } from './professor';
-
-export type ResearchThemeReference = {
-  name: string;
-  url: string;
-};
 
 export const researchThemeLevelEnum = pgEnum('research_theme_level', ['masters', 'doctoral']);
 

@@ -15,6 +15,7 @@
     "start:prod": "node dist/main",
     "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit --pretty false",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
