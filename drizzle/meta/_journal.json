@@ -15,6 +15,13 @@
       "when": 1778624791827,
       "tag": "0001_spotty_baron_zemo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779834248161,
+      "tag": "0002_loud_phantom_reporter",
+      "breakpoints": true
     }
   ]
 }

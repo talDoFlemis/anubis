@@ -14,6 +14,7 @@ import { validate } from './env.validation';
 import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
 import { ProfessorModule } from './professor/professor.module';
+import { ResearchThemeModule } from './research-theme/research-theme.module';
 import { SecretaryModule } from './secretary/secretary.module';
 import { SessionModule } from './session/session.module';
 import { SystemModule } from './system/system.module';
@@ -36,6 +37,7 @@ import { UsersModule } from './users/users.module';
     DatabaseModule,
     UsersModule,
     ProfessorModule,
+    ResearchThemeModule,
     SecretaryModule,
     CandidateModule,
     AuthModule,

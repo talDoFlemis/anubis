@@ -7,6 +7,7 @@ import type { PgDatabase } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
 import { DRIZZLE } from './drizzle.constants';
 import * as candidatesSchema from './schema/candidates';
+import * as researchThemesSchema from './schema/research-themes';
 import * as sessionsSchema from './schema/sessions';
 import * as usersSchema from './schema/users';
 
@@ -14,6 +15,7 @@ const schema = {
   ...usersSchema,
   ...sessionsSchema,
   ...candidatesSchema,
+  ...researchThemesSchema,
 };
 
 export type DrizzleSchema = typeof schema;
