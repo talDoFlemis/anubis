@@ -35,6 +35,7 @@ export interface EmailRegisterData {
   lastName: string;
   cpf: string;
   universityOfOrigin: string;
+  ira: string;
 }
 
 export interface CandidateOnboardingData {
@@ -42,7 +43,7 @@ export interface CandidateOnboardingData {
   lastName: string;
   cpf: string;
   universityOfOrigin: string;
-  ira?: string;
+  ira: string;
   poscomp?: number;
 }
 

@@ -27,7 +27,7 @@ export class CandidateService {
   async createProfile(params: {
     userId: string;
     universityOfOrigin: string;
-    ira?: string | null;
+    ira: string;
     poscomp?: number | null;
   }): Promise<void> {
     this.logger.debug({ userId: params.userId }, 'Upserting candidate profile');
@@ -77,7 +77,7 @@ export class CandidateService {
       await this.candidateRepository.upsertByUserId({
         userId: user.id,
         universityOfOrigin: dto.universityOfOrigin,
-        ira: dto.ira ?? null,
+        ira: dto.ira,
         poscomp: dto.poscomp ?? null,
       });
 

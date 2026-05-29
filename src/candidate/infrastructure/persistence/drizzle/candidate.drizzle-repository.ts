@@ -138,7 +138,7 @@ export class CandidateDrizzleRepository extends CandidateRepository {
   async upsertByUserId(params: {
     userId: string;
     universityOfOrigin: string;
-    ira?: string | null;
+    ira: string;
     poscomp?: number | null;
   }): Promise<Candidate> {
     const [row] = await this.db
@@ -146,14 +146,14 @@ export class CandidateDrizzleRepository extends CandidateRepository {
       .values({
         userId: params.userId,
         universityOfOrigin: params.universityOfOrigin,
-        ira: params.ira ?? null,
+        ira: params.ira,
         poscomp: params.poscomp ?? null,
       })
       .onConflictDoUpdate({
         target: candidates.userId,
         set: {
           universityOfOrigin: params.universityOfOrigin,
-          ira: params.ira ?? null,
+          ira: params.ira,
           poscomp: params.poscomp ?? null,
           updatedAt: new Date(),
         },

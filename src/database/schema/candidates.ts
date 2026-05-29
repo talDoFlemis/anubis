@@ -8,7 +8,7 @@ export const candidates = pgTable('candidates', {
   universityOfOrigin: varchar('university_of_origin', {
     length: 255,
   }).notNull(),
-  ira: numeric('ira', { precision: 5, scale: 2 }),
+  ira: numeric('ira', { precision: 5, scale: 2 }).notNull(),
   poscomp: integer('poscomp'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

@@ -1,0 +1,1 @@
+ALTER TABLE "candidates" ALTER COLUMN "ira" SET NOT NULL;

@@ -22,11 +22,11 @@ export class CompleteCandidateOnboardingDto {
   @IsNotEmpty()
   universityOfOrigin: string;
 
-  @ApiPropertyOptional({ example: '8.75', maxLength: 5 })
-  @IsOptional()
+  @ApiProperty({ example: '8.75', maxLength: 5 })
+  @IsNotEmpty()
   @MaxLength(5)
   @Matches(/^\d{1,2}(\.\d{1,2})?$/)
-  ira?: string;
+  ira: string;
 
   @ApiPropertyOptional({ example: 780, minimum: 0, maximum: 1000 })
   @IsOptional()

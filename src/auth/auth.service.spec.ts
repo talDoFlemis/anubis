@@ -235,6 +235,7 @@ describe('AuthService', () => {
       lastName: 'Doe',
       cpf: '12345678901',
       universityOfOrigin: 'UFRN',
+      ira: '8.75',
     });
 
     // ASSERT

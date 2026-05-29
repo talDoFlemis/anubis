@@ -194,6 +194,7 @@ describe('Auth journeys (e2e)', () => {
         lastName: 'Doe',
         cpf: '529.982.247-25',
         universityOfOrigin: 'UFRN',
+        ira: '8.75',
       })
       .expect(204);
 
@@ -312,6 +313,7 @@ describe('Auth journeys (e2e)', () => {
         lastName: 'Doe',
         cpf: '529.982.247-25',
         universityOfOrigin: 'UFRN',
+        ira: '8.75',
       })
       .expect(200);
 
