@@ -28,6 +28,8 @@ function getHeaderNavItems(role: string | null): HeaderNavItem[] {
   if (role && MANAGEMENT_ROLES.has(role)) {
     items.push({ label: 'Gestao de docentes', to: '/manage/professors' });
     items.push({ label: 'Gestao de temas', to: '/manage/research-themes' });
+  } else {
+    items.push({ label: 'Temas de Pesquisa', to: '/research-themes' });
   }
 
   return items;

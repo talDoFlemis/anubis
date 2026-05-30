@@ -19,6 +19,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-pas
 import { Route as AuthConfirmNewEmailRouteImport } from './routes/auth/confirm-new-email'
 import { Route as AuthConfirmEmailRouteImport } from './routes/auth/confirm-email'
 import { Route as AuthChangePasswordRouteImport } from './routes/auth/change-password'
+import { Route as AppResearchThemesRouteImport } from './routes/_app/research-themes'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
 import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboarding/secretary'
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
@@ -74,6 +75,11 @@ const AuthChangePasswordRoute = AuthChangePasswordRouteImport.update({
   path: '/change-password',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppResearchThemesRoute = AppResearchThemesRouteImport.update({
+  id: '/research-themes',
+  path: '/research-themes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AuthOnboardingIndexRoute = AuthOnboardingIndexRouteImport.update({
   id: '/onboarding/',
   path: '/onboarding/',
@@ -103,6 +109,7 @@ const AppManageProfessorsRoute = AppManageProfessorsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/research-themes': typeof AppResearchThemesRoute
   '/auth/change-password': typeof AuthChangePasswordRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
+  '/research-themes': typeof AppResearchThemesRoute
   '/auth/change-password': typeof AuthChangePasswordRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/_app/research-themes': typeof AppResearchThemesRoute
   '/auth/change-password': typeof AuthChangePasswordRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/confirm-new-email': typeof AuthConfirmNewEmailRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/research-themes'
     | '/auth/change-password'
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/research-themes'
     | '/auth/change-password'
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/auth'
+    | '/_app/research-themes'
     | '/auth/change-password'
     | '/auth/confirm-email'
     | '/auth/confirm-new-email'
@@ -279,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthChangePasswordRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_app/research-themes': {
+      id: '/_app/research-themes'
+      path: '/research-themes'
+      fullPath: '/research-themes'
+      preLoaderRoute: typeof AppResearchThemesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/auth/onboarding/': {
       id: '/auth/onboarding/'
       path: '/onboarding'
@@ -318,12 +337,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppResearchThemesRoute: typeof AppResearchThemesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
   AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppResearchThemesRoute: AppResearchThemesRoute,
   AppIndexRoute: AppIndexRoute,
   AppManageProfessorsRoute: AppManageProfessorsRoute,
   AppManageResearchThemesRoute: AppManageResearchThemesRoute,
