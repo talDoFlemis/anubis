@@ -65,7 +65,7 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
   }
 
   private async findByIdWithTx(id: string, tx: DrizzleDB): Promise<ResearchTheme | null> {
-    const assocUsers = alias(users, 'assoc_users') as typeof users;
+    const assocUsers = alias(users, 'assoc_users');
 
     const [row] = await tx
       .select({
@@ -164,7 +164,7 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
       );
     }
 
-    const assocUsers = alias(users, 'assoc_users') as typeof users;
+    const assocUsers = alias(users, 'assoc_users');
 
     const rows = await this.db
       .select({

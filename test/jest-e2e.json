@@ -7,6 +7,10 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    "^src/(.*)$": "<rootDir>/../src/$1"
+    "^src/(.*)$": "<rootDir>/../src/$1",
+    "^@/(.*)$": "<rootDir>/../src/$1",
+    "^@database/(.*)$": "<rootDir>/../src/database/$1",
+    "^@users/(.*)$": "<rootDir>/../src/users/$1",
+    "^@professors/(.*)$": "<rootDir>/../src/professors/$1"
   }
 }
