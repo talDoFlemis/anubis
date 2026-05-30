@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, type PaginatedResponse } from './client';
 import { asRecord, asString } from './normalizers';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -12,15 +12,7 @@ export interface ProfessorItem {
   email: string;
 }
 
-export interface PaginatedProfessors {
-  data: ProfessorItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
+export type PaginatedProfessors = PaginatedResponse<ProfessorItem>;
 
 export interface InviteProfessorPayload {
   email: string;

@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, type PaginatedResponse } from './client';
 import { asRecord, asString } from './normalizers';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -29,15 +29,7 @@ export interface ResearchTheme {
   associatedProfessors?: ResearchThemeProfessor[];
 }
 
-export interface PaginatedResearchThemes {
-  data: ResearchTheme[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
+export type PaginatedResearchThemes = PaginatedResponse<ResearchTheme>;
 
 export interface CreateResearchThemePayload {
   title: string;

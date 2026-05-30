@@ -1,7 +1,7 @@
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { SessionAuthGuard } from '@/auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '@/auth/guards/session-lifecycle.guard';
-import { Roles } from '@/roles/roles.decorator';
+import { Roles, StaffOnly } from '@/roles/roles.decorator';
 import { RoleEnum } from '@/roles/roles.enum';
 import { RolesGuard } from '@/roles/roles.guard';
 import { User } from '@/users/domain/user';
@@ -103,13 +103,7 @@ export class ResearchThemeController {
   @ApiUnauthorizedResponse({ description: 'No active session' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @ApiNotFoundResponse({ description: 'Research theme not found' })
-  @UseGuards(RolesGuard)
-  @Roles(
-    RoleEnum.professor,
-    RoleEnum.mdccSecretary,
-    RoleEnum.postGraduateCoordinator,
-    RoleEnum.postGraduateViceCoordinator,
-  )
+  @StaffOnly()
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: User,
@@ -129,13 +123,7 @@ export class ResearchThemeController {
   @ApiUnauthorizedResponse({ description: 'No active session' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @ApiNotFoundResponse({ description: 'Research theme not found' })
-  @UseGuards(RolesGuard)
-  @Roles(
-    RoleEnum.professor,
-    RoleEnum.mdccSecretary,
-    RoleEnum.postGraduateCoordinator,
-    RoleEnum.postGraduateViceCoordinator,
-  )
+  @StaffOnly()
   remove(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: User): Promise<void> {
     return this.researchThemeService.remove({
       id,

@@ -75,3 +75,13 @@ apiClient.interceptors.response.use(
     throw new ApiError(status, message, legacyErrors);
   },
 );
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

@@ -1,6 +1,6 @@
 export { authApi } from './auth';
 export { candidatesApi } from './candidates';
-export { apiClient, ApiError } from './client';
+export { apiClient, ApiError, type PaginatedResponse } from './client';
 
 export type {
   CandidateOnboardingData,
@@ -12,9 +12,11 @@ export type {
 } from './auth';
 
 export type { CandidateProfile } from './candidates';
+export type { InviteProfessorPayload, PaginatedProfessors, ProfessorItem } from './professors';
 export type {
   CreateResearchThemeOnBehalfPayload,
   CreateResearchThemePayload,
+  PaginatedResearchThemes,
   ResearchTheme,
   ResearchThemeProfessor,
   ResearchThemeReference,
