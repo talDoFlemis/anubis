@@ -1,5 +1,8 @@
+import { sql } from 'drizzle-orm';
 import {
   boolean,
+  customType,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -8,6 +11,12 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return 'tsvector';
+  },
+});
 
 export const roleEnum = pgEnum('role', [
   'professor',
@@ -42,9 +51,20 @@ export const users = pgTable(
     forgotPasswordTokenVersion: integer('forgot_password_token_version').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+
+    searchVector: tsvector('search_vector').generatedAlwaysAs(
+      () =>
+        sql`to_tsvector(
+        'simple',
+        coalesce(firstName, '') || ' ' ||
+        coalesce(lastName, '') || ' ' ||
+        coalesce(email, '')
+      )`,
+    ),
   },
   table => [
     uniqueIndex('users_auth_provider_subject_unique').on(table.authProvider, table.providerSubject),
+    index('users_search_vector_gin_idx').using('gin', table.searchVector),
   ],
 );
 

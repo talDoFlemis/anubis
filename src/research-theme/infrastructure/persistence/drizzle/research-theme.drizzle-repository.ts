@@ -6,7 +6,7 @@ import { users } from '@/database/schema/users';
 import { ResearchTheme } from '@/research-theme/domain/research-theme';
 import { FindResearchThemesDto } from '@/research-theme/dto/find-research-themes.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
+import { and, eq, exists, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type {
   CreateResearchThemeData,
   UpdateResearchThemeData,
@@ -119,25 +119,29 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
         or(
           ilike(researchThemes.title, searchPattern),
           ilike(researchThemes.description, searchPattern),
-          sql`exists (
-            select 1 from ${users} 
-            where ${users.id} = ${researchThemes.professorId} 
-            and (
-              ${users.firstName} ilike ${searchPattern} 
-              or ${users.lastName} ilike ${searchPattern} 
-              or ${users.email} ilike ${searchPattern}
-            )
-          )`,
-          sql`exists (
-            select 1 from ${researchThemeProfessors}
-            inner join ${users} on ${users.id} = ${researchThemeProfessors.professorId}
-            where ${researchThemeProfessors.researchThemeId} = ${researchThemes.id}
-            and (
-              ${users.firstName} ilike ${searchPattern} 
-              or ${users.lastName} ilike ${searchPattern} 
-              or ${users.email} ilike ${searchPattern}
-            )
-          )`,
+          exists(
+            this.db
+              .select({ one: sql`1` })
+              .from(users)
+              .where(
+                and(
+                  eq(users.id, researchThemes.professorId),
+                  sql`${users.searchVector} @@ plainto_tsquery('simple', ${filters.search})`,
+                ),
+              ),
+          ),
+          exists(
+            this.db
+              .select({ one: sql`1` })
+              .from(researchThemeProfessors)
+              .innerJoin(users, eq(users.id, researchThemeProfessors.professorId))
+              .where(
+                and(
+                  eq(researchThemeProfessors.researchThemeId, researchThemes.id),
+                  sql`${users.searchVector} @@ plainto_tsquery('simple', ${filters.search})`,
+                ),
+              ),
+          ),
         )!,
       );
     }

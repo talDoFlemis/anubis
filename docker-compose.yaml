@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres
+    image: postgres:16-alpine
     environment:
       POSTGRES_DB: anubis
       POSTGRES_USER: postgres
@@ -13,6 +13,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    volumes:
+      - ./scripts/init-extensions.sql:/docker-entrypoint-initdb.d/db.sql
+      - postgres_data:/var/lib/postgresql/data
 
   api:
     build:
@@ -122,3 +125,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+volumes:
+  postgres_data:
