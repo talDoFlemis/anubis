@@ -27,6 +27,7 @@ function getHeaderNavItems(role: string | null): HeaderNavItem[] {
 
   if (role && MANAGEMENT_ROLES.has(role)) {
     items.push({ label: 'Gestao de docentes', to: '/manage/professors' });
+    items.push({ label: 'Gestao de temas', to: '/manage/research-themes' });
   }
 
   return items;
@@ -82,7 +83,7 @@ export function AppHeader(): ReactElement | null {
       <div className="pointer-events-none absolute inset-x-0 -bottom-6 h-6 bg-linear-to-b from-slate-200/70 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 -bottom-10 h-10 bg-linear-to-b from-slate-100/60 to-transparent" />
       <div className="mx-auto flex w-full max-w-300 flex-wrap items-center gap-4 px-6 py-4">
-        <div className="flex min-w-50 flex-1 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-slate-900">Portal</span>
             <span className="text-xs text-slate-500">MDCC-UFC</span>
@@ -107,7 +108,7 @@ export function AppHeader(): ReactElement | null {
           ))}
         </nav>
 
-        <div className="flex min-w-50 flex-1 justify-end">
+        <div className="flex shrink-0 justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button

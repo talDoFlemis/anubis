@@ -68,7 +68,11 @@ export class ResearchThemeController {
   @ApiUnauthorizedResponse({ description: 'No active session' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @UseGuards(RolesGuard)
-  @Roles(RoleEnum.mdccSecretary)
+  @Roles(
+    RoleEnum.mdccSecretary,
+    RoleEnum.postGraduateCoordinator,
+    RoleEnum.postGraduateViceCoordinator,
+  )
   createOnBehalf(@Body() dto: CreateResearchThemeOnBehalfDto): Promise<ResearchThemeResponseDto> {
     return this.researchThemeService.createOnBehalf(dto);
   }
@@ -100,7 +104,12 @@ export class ResearchThemeController {
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @ApiNotFoundResponse({ description: 'Research theme not found' })
   @UseGuards(RolesGuard)
-  @Roles(RoleEnum.professor, RoleEnum.mdccSecretary)
+  @Roles(
+    RoleEnum.professor,
+    RoleEnum.mdccSecretary,
+    RoleEnum.postGraduateCoordinator,
+    RoleEnum.postGraduateViceCoordinator,
+  )
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @CurrentUser() user: User,
@@ -121,7 +130,12 @@ export class ResearchThemeController {
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
   @ApiNotFoundResponse({ description: 'Research theme not found' })
   @UseGuards(RolesGuard)
-  @Roles(RoleEnum.professor, RoleEnum.mdccSecretary)
+  @Roles(
+    RoleEnum.professor,
+    RoleEnum.mdccSecretary,
+    RoleEnum.postGraduateCoordinator,
+    RoleEnum.postGraduateViceCoordinator,
+  )
   remove(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: User): Promise<void> {
     return this.researchThemeService.remove({
       id,

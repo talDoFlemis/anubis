@@ -11,4 +11,16 @@ export class ResearchTheme {
   references: ResearchThemeReference[];
   createdAt: Date;
   updatedAt: Date;
+  professor?: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+  };
+  associatedProfessors?: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+  }[];
 }

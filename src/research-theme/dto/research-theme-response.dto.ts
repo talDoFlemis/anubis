@@ -3,6 +3,20 @@ import type { ResearchThemeReference } from '@/common/types/research-theme-refer
 import { ApiProperty } from '@nestjs/swagger';
 import { ResearchThemeLevelEnum } from '../research-theme-level.enum';
 
+export class ResearchThemeProfessorDto {
+  @ApiProperty({ format: 'uuid' })
+  id: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  firstName: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  lastName: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  email: string | null;
+}
+
 export class ResearchThemeResponseDto {
   @ApiProperty()
   id: string;
@@ -30,6 +44,12 @@ export class ResearchThemeResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty({ type: ResearchThemeProfessorDto, required: false })
+  professor?: ResearchThemeProfessorDto;
+
+  @ApiProperty({ type: ResearchThemeProfessorDto, isArray: true, required: false })
+  associatedProfessors?: ResearchThemeProfessorDto[];
 }
 
 export class PaginatedResearchThemeResponseDto extends PaginatedResponseDto<ResearchThemeResponseDto> {

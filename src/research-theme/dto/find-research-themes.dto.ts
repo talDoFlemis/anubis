@@ -1,7 +1,7 @@
 import { PaginationQueryDto } from '@/common/dto/pagination-query.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ResearchThemeLevelEnum } from '../research-theme-level.enum';
 
 function toTrimmedString(value: unknown): unknown {
@@ -19,4 +19,10 @@ export class FindResearchThemesDto extends PaginationQueryDto {
   @Transform(({ value }) => toTrimmedString(value))
   @IsUUID()
   professorId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Transform(({ value }) => toTrimmedString(value))
+  @IsString()
+  search?: string;
 }

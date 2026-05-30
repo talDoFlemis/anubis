@@ -5,6 +5,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -39,5 +40,24 @@ export const researchThemes = pgTable(
   ],
 );
 
+export const researchThemeProfessors = pgTable(
+  'research_theme_professors',
+  {
+    researchThemeId: uuid('research_theme_id')
+      .notNull()
+      .references(() => researchThemes.id, { onDelete: 'cascade' }),
+    professorId: uuid('professor_id')
+      .notNull()
+      .references(() => professors.userId, { onDelete: 'cascade' }),
+  },
+  table => [
+    primaryKey({ columns: [table.researchThemeId, table.professorId] }),
+    index('research_theme_professors_research_theme_id_idx').on(table.researchThemeId),
+    index('research_theme_professors_professor_id_idx').on(table.professorId),
+  ],
+);
+
 export type ResearchThemeInsert = typeof researchThemes.$inferInsert;
 export type ResearchThemeSelect = typeof researchThemes.$inferSelect;
+export type ResearchThemeProfessorInsert = typeof researchThemeProfessors.$inferInsert;
+export type ResearchThemeProfessorSelect = typeof researchThemeProfessors.$inferSelect;

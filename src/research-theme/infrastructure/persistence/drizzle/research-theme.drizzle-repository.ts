@@ -1,11 +1,12 @@
 import { buildPaginatedResult, type PaginatedResult } from '@/common/dto/paginated-response.dto';
 import { DRIZZLE_TX } from '@/database/drizzle.constants';
 import type { DrizzleDB } from '@/database/drizzle.provider';
-import { researchThemes } from '@/database/schema/research-themes';
+import { researchThemeProfessors, researchThemes } from '@/database/schema/research-themes';
+import { users } from '@/database/schema/users';
 import { ResearchTheme } from '@/research-theme/domain/research-theme';
 import { FindResearchThemesDto } from '@/research-theme/dto/find-research-themes.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, sql, type SQL } from 'drizzle-orm';
+import { and, eq, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type {
   CreateResearchThemeData,
   UpdateResearchThemeData,
@@ -21,29 +22,74 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
   }
 
   async create(data: CreateResearchThemeData): Promise<ResearchTheme> {
-    const [row] = await this.db
-      .insert(researchThemes)
-      .values({
-        professorId: data.professorId,
-        title: data.title,
-        description: data.description,
-        vacancies: data.vacancies,
-        level: data.level,
-        references: data.references,
-      })
-      .returning();
+    return await this.db.transaction(async tx => {
+      const [row] = await tx
+        .insert(researchThemes)
+        .values({
+          professorId: data.professorId,
+          title: data.title,
+          description: data.description,
+          vacancies: data.vacancies,
+          level: data.level,
+          references: data.references,
+        })
+        .returning();
 
-    return this.toDomain(row);
+      if (data.associatedProfessorIds && data.associatedProfessorIds.length > 0) {
+        await tx.insert(researchThemeProfessors).values(
+          data.associatedProfessorIds.map(profId => ({
+            researchThemeId: row.id,
+            professorId: profId,
+          })),
+        );
+      }
+
+      const created = await this.findByIdWithTx(row.id, tx);
+      if (!created) {
+        throw new Error('Failed to fetch created research theme');
+      }
+      return created;
+    });
   }
 
   async findById(id: string): Promise<ResearchTheme | null> {
-    const [row] = await this.db
-      .select()
+    return this.findByIdWithTx(id, this.db);
+  }
+
+  private async findByIdWithTx(id: string, tx: DrizzleDB): Promise<ResearchTheme | null> {
+    const [row] = await tx
+      .select({
+        theme: researchThemes,
+        professor: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        },
+      })
       .from(researchThemes)
+      .leftJoin(users, eq(users.id, researchThemes.professorId))
       .where(eq(researchThemes.id, id))
       .limit(1);
 
-    return row ? this.toDomain(row) : null;
+    if (!row) return null;
+
+    const associated = await tx
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+      })
+      .from(researchThemeProfessors)
+      .innerJoin(users, eq(users.id, researchThemeProfessors.professorId))
+      .where(eq(researchThemeProfessors.researchThemeId, id));
+
+    return {
+      ...this.toDomain(row.theme),
+      professor: row.professor ?? undefined,
+      associatedProfessors: associated,
+    };
   }
 
   async findAllByFilters(filters: FindResearchThemesDto): Promise<PaginatedResult<ResearchTheme>> {
@@ -56,12 +102,58 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
       conditions.push(eq(researchThemes.level, filters.level));
     }
     if (filters.professorId) {
-      conditions.push(eq(researchThemes.professorId, filters.professorId));
+      conditions.push(
+        or(
+          eq(researchThemes.professorId, filters.professorId),
+          sql`exists (
+            select 1 from ${researchThemeProfessors} 
+            where ${researchThemeProfessors.researchThemeId} = ${researchThemes.id} 
+            and ${researchThemeProfessors.professorId} = ${filters.professorId}
+          )`,
+        )!,
+      );
+    }
+    if (filters.search) {
+      const searchPattern = `%${filters.search}%`;
+      conditions.push(
+        or(
+          ilike(researchThemes.title, searchPattern),
+          ilike(researchThemes.description, searchPattern),
+          sql`exists (
+            select 1 from ${users} 
+            where ${users.id} = ${researchThemes.professorId} 
+            and (
+              ${users.firstName} ilike ${searchPattern} 
+              or ${users.lastName} ilike ${searchPattern} 
+              or ${users.email} ilike ${searchPattern}
+            )
+          )`,
+          sql`exists (
+            select 1 from ${researchThemeProfessors}
+            inner join ${users} on ${users.id} = ${researchThemeProfessors.professorId}
+            where ${researchThemeProfessors.researchThemeId} = ${researchThemes.id}
+            and (
+              ${users.firstName} ilike ${searchPattern} 
+              or ${users.lastName} ilike ${searchPattern} 
+              or ${users.email} ilike ${searchPattern}
+            )
+          )`,
+        )!,
+      );
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        theme: researchThemes,
+        professor: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        },
+      })
       .from(researchThemes)
+      .leftJoin(users, eq(users.id, researchThemes.professorId))
       .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(researchThemes.createdAt, researchThemes.id)
       .limit(limit)
@@ -72,8 +164,39 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
       .from(researchThemes)
       .where(conditions.length ? and(...conditions) : undefined);
 
+    let data: ResearchTheme[] = [];
+    if (rows.length > 0) {
+      const themeIds = rows.map(r => r.theme.id);
+      const associations = await this.db
+        .select({
+          researchThemeId: researchThemeProfessors.researchThemeId,
+          professor: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            email: users.email,
+          },
+        })
+        .from(researchThemeProfessors)
+        .innerJoin(users, eq(users.id, researchThemeProfessors.professorId))
+        .where(inArray(researchThemeProfessors.researchThemeId, themeIds));
+
+      const associatedMap = new Map<string, (typeof associations)[0]['professor'][]>();
+      for (const assoc of associations) {
+        const list = associatedMap.get(assoc.researchThemeId) ?? [];
+        list.push(assoc.professor);
+        associatedMap.set(assoc.researchThemeId, list);
+      }
+
+      data = rows.map(r => ({
+        ...this.toDomain(r.theme),
+        professor: r.professor ?? undefined,
+        associatedProfessors: associatedMap.get(r.theme.id) ?? [],
+      }));
+    }
+
     return buildPaginatedResult({
-      data: rows.map(row => this.toDomain(row)),
+      data,
       page,
       limit,
       total: totalRow?.count ?? 0,
@@ -81,20 +204,39 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
   }
 
   async update(id: string, data: UpdateResearchThemeData): Promise<ResearchTheme | null> {
-    const [row] = await this.db
-      .update(researchThemes)
-      .set({
-        title: data.title,
-        description: data.description,
-        vacancies: data.vacancies,
-        level: data.level,
-        references: data.references,
-        updatedAt: new Date(),
-      })
-      .where(eq(researchThemes.id, id))
-      .returning();
+    return await this.db.transaction(async tx => {
+      const [row] = await tx
+        .update(researchThemes)
+        .set({
+          title: data.title,
+          description: data.description,
+          vacancies: data.vacancies,
+          level: data.level,
+          references: data.references,
+          updatedAt: new Date(),
+        })
+        .where(eq(researchThemes.id, id))
+        .returning();
 
-    return row ? this.toDomain(row) : null;
+      if (!row) return null;
+
+      if (data.associatedProfessorIds !== undefined) {
+        await tx
+          .delete(researchThemeProfessors)
+          .where(eq(researchThemeProfessors.researchThemeId, id));
+
+        if (data.associatedProfessorIds.length > 0) {
+          await tx.insert(researchThemeProfessors).values(
+            data.associatedProfessorIds.map(profId => ({
+              researchThemeId: id,
+              professorId: profId,
+            })),
+          );
+        }
+      }
+
+      return this.findByIdWithTx(id, tx);
+    });
   }
 
   async remove(id: string): Promise<void> {

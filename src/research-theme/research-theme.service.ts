@@ -54,12 +54,20 @@ export class ResearchThemeService {
     const theme = await this.requireTheme(params.id);
     this.assertActorCanManage(params.actorRole, params.actorUserId, theme.professorId);
 
+    if (params.dto.associatedProfessorIds && params.dto.associatedProfessorIds.length > 0) {
+      if (params.dto.associatedProfessorIds.includes(theme.professorId)) {
+        throw new BadRequestException('O professor proprietario nao pode ser associado novamente.');
+      }
+      await this.assertProfessors(params.dto.associatedProfessorIds);
+    }
+
     const updated = await this.researchThemeRepository.update(params.id, {
       title: params.dto.title,
       description: params.dto.description,
       vacancies: params.dto.vacancies,
       level: params.dto.level,
       references: params.dto.references,
+      associatedProfessorIds: params.dto.associatedProfessorIds,
     });
 
     if (!updated) {
@@ -88,10 +96,19 @@ export class ResearchThemeService {
     vacancies: number;
     level: ResearchTheme['level'];
     references?: ResearchTheme['references'];
+    associatedProfessorIds?: string[];
   }): Promise<ResearchTheme> {
     this.logger.debug({ professorId: params.professorId }, 'Creating research theme');
 
     const references = params.references ?? [];
+    const associatedProfessorIds = params.associatedProfessorIds ?? [];
+
+    if (associatedProfessorIds.length > 0) {
+      if (associatedProfessorIds.includes(params.professorId)) {
+        throw new BadRequestException('O professor proprietario nao pode ser associado novamente.');
+      }
+      await this.assertProfessors(associatedProfessorIds);
+    }
 
     return this.researchThemeRepository.create({
       professorId: params.professorId,
@@ -100,6 +117,7 @@ export class ResearchThemeService {
       vacancies: params.vacancies,
       level: params.level,
       references,
+      associatedProfessorIds,
     });
   }
 
@@ -112,8 +130,18 @@ export class ResearchThemeService {
     }
   }
 
+  private async assertProfessors(userIds: string[]): Promise<void> {
+    for (const id of userIds) {
+      await this.assertProfessor(id);
+    }
+  }
+
   private assertActorCanManage(actorRole: RoleEnum, actorUserId: string, ownerId: string): void {
-    if (actorRole === RoleEnum.mdccSecretary) {
+    if (
+      actorRole === RoleEnum.mdccSecretary ||
+      actorRole === RoleEnum.postGraduateCoordinator ||
+      actorRole === RoleEnum.postGraduateViceCoordinator
+    ) {
       return;
     }
 

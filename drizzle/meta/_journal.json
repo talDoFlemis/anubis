@@ -29,6 +29,13 @@
       "when": 1780096732450,
       "tag": "0003_cool_norrin_radd",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780099491203,
+      "tag": "0004_smooth_paper_doll",
+      "breakpoints": true
     }
   ]
 }

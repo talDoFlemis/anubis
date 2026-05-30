@@ -169,6 +169,43 @@ describe('ResearchThemeService', () => {
     expect(researchThemeRepository.remove.mock.calls).toEqual([['theme-1']]);
   });
 
+  it('allows coordinator or vice-coordinator to update theme', async () => {
+    researchThemeRepository.findById.mockResolvedValue(theme);
+    researchThemeRepository.update.mockResolvedValue({ ...theme, title: 'Coordenacao' });
+
+    await expect(
+      service.update({
+        id: 'theme-1',
+        actorUserId: 'coord-1',
+        actorRole: RoleEnum.postGraduateCoordinator,
+        dto: { title: 'Coordenacao' },
+      }),
+    ).resolves.toEqual({ ...theme, title: 'Coordenacao' });
+
+    await expect(
+      service.update({
+        id: 'theme-1',
+        actorUserId: 'vice-1',
+        actorRole: RoleEnum.postGraduateViceCoordinator,
+        dto: { title: 'Coordenacao' },
+      }),
+    ).resolves.toEqual({ ...theme, title: 'Coordenacao' });
+  });
+
+  it('rejects creation or update if associated professor contains owner', async () => {
+    usersService.findById.mockResolvedValue({ id: 'prof-1', role: RoleEnum.professor } as never);
+
+    await expect(
+      service.createForProfessor('prof-1', {
+        title: 'IA',
+        description: 'Desc',
+        vacancies: 1,
+        level: ResearchThemeLevelEnum.masters,
+        associatedProfessorIds: ['prof-1'],
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('throws when theme not found', async () => {
     researchThemeRepository.findById.mockResolvedValue(null);
 
