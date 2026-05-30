@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import * as React from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,12 +26,7 @@ export function ResearchThemesListing({ page, search, level }: Props) {
   const navigate = useNavigate();
   const PAGE_SIZE = 10;
 
-  const [localSearch, setLocalSearch] = React.useState(search);
-  const debouncedSearch = useDebounce(localSearch, 300);
-
-  React.useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
+  const debouncedSearch = useDebounce(search, 300);
 
   const { data, isLoading } = useQuery({
     queryKey: ['research-themes', page, PAGE_SIZE, debouncedSearch, level],
@@ -54,7 +48,7 @@ export function ResearchThemesListing({ page, search, level }: Props) {
   function pushSearch(patch: Partial<SearchParams>) {
     void navigate({
       to: '/research-themes',
-      search: prev => ({ ...prev, ...patch } as SearchParams),
+      search: prev => ({ ...prev, ...patch }) as SearchParams,
     });
   }
 
@@ -75,18 +69,17 @@ export function ResearchThemesListing({ page, search, level }: Props) {
             <div className="sm:col-span-2">
               <Input
                 placeholder="Buscar por título ou nome do orientador..."
-                value={localSearch}
-                onChange={e => {
-                  setLocalSearch(e.target.value);
-                  pushSearch({ search: e.target.value, page: 1 });
-                }}
+                value={search}
+                onChange={e => pushSearch({ search: e.target.value, page: 1 })}
                 className="w-full"
               />
             </div>
             <div>
               <Select
                 value={level}
-                onValueChange={val => pushSearch({ level: val as 'all' | 'masters' | 'doctoral', page: 1 })}
+                onValueChange={val =>
+                  pushSearch({ level: val as 'all' | 'masters' | 'doctoral', page: 1 })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Filtrar por nível" />
@@ -120,9 +113,7 @@ export function ResearchThemesListing({ page, search, level }: Props) {
                     <Badge variant={theme.level === 'masters' ? 'default' : 'secondary'}>
                       {theme.level === 'masters' ? 'Mestrado' : 'Doutorado'}
                     </Badge>
-                    {theme.vacancies === 0 && (
-                      <Badge variant="destructive">Sem vagas</Badge>
-                    )}
+                    {theme.vacancies === 0 && <Badge variant="destructive">Sem vagas</Badge>}
                   </div>
 
                   <p className="line-clamp-3 text-sm text-slate-600">{theme.description}</p>
