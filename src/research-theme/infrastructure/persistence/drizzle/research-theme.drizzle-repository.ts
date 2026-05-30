@@ -65,6 +65,8 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
   }
 
   private async findByIdWithTx(id: string, tx: DrizzleDB): Promise<ResearchTheme | null> {
+    const assocUsers = alias(users, 'assoc_users') as typeof users;
+
     const [row] = await tx
       .select({
         theme: researchThemes,
@@ -74,29 +76,37 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
           lastName: users.lastName,
           email: users.email,
         },
+        associatedProfessors: sql<AssociatedProfessorRow[]>`
+          coalesce(
+            json_agg(
+              json_build_object(
+                'id', ${assocUsers.id},
+                'firstName', ${assocUsers.firstName},
+                'lastName', ${assocUsers.lastName},
+                'email', ${assocUsers.email}
+              )
+            ) filter (where ${assocUsers.id} is not null),
+            '[]'::json
+          )
+        `,
       })
       .from(researchThemes)
       .leftJoin(users, eq(users.id, researchThemes.professorId))
+      .leftJoin(
+        researchThemeProfessors,
+        eq(researchThemeProfessors.researchThemeId, researchThemes.id),
+      )
+      .leftJoin(assocUsers, eq(assocUsers.id, researchThemeProfessors.professorId))
       .where(eq(researchThemes.id, id))
+      .groupBy(researchThemes.id, users.id)
       .limit(1);
 
     if (!row) return null;
 
-    const associated = await tx
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-      })
-      .from(researchThemeProfessors)
-      .innerJoin(users, eq(users.id, researchThemeProfessors.professorId))
-      .where(eq(researchThemeProfessors.researchThemeId, id));
-
     return {
       ...this.toDomain(row.theme),
       professor: row.professor ?? undefined,
-      associatedProfessors: associated,
+      associatedProfessors: row.associatedProfessors,
     };
   }
 
