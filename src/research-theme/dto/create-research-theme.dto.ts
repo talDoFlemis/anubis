@@ -7,6 +7,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   ValidateNested,
@@ -41,4 +42,10 @@ export class CreateResearchThemeDto {
   @ValidateNested({ each: true })
   @Type(() => ResearchThemeReferenceDto)
   references?: ResearchThemeReferenceDto[];
+
+  @ApiPropertyOptional({ type: String, isArray: true })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  associatedProfessorIds?: string[];
 }

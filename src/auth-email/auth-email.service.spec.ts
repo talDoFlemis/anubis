@@ -190,6 +190,7 @@ describe('AuthEmailService', () => {
       lastName: 'Doe',
       cpf: '12345678901',
       universityOfOrigin: 'UFRN',
+      ira: '8.75',
     });
 
     // ASSERT
@@ -200,7 +201,13 @@ describe('AuthEmailService', () => {
         providerSubject: 'user@example.com',
       }),
     );
-    expect(createProfileSpy).toHaveBeenCalled();
+    expect(createProfileSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        universityOfOrigin: 'UFRN',
+        ira: '8.75',
+      }),
+    );
     expect(sendMailSpy).toHaveBeenCalled();
   });
 
@@ -220,6 +227,7 @@ describe('AuthEmailService', () => {
         lastName: 'Doe',
         cpf: '12345678901',
         universityOfOrigin: 'UFRN',
+        ira: '8.75',
       }),
     ).rejects.toThrow(ConflictException);
   });

@@ -11,6 +11,7 @@ export interface CreateResearchThemeData {
   vacancies: number;
   level: ResearchThemeLevelEnum;
   references: ResearchThemeReference[];
+  associatedProfessorIds?: string[];
 }
 
 export interface UpdateResearchThemeData {
@@ -19,6 +20,7 @@ export interface UpdateResearchThemeData {
   vacancies?: number;
   level?: ResearchThemeLevelEnum;
   references?: ResearchThemeReference[];
+  associatedProfessorIds?: string[];
 }
 
 export abstract class ResearchThemeRepository {

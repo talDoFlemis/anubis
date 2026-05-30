@@ -269,10 +269,12 @@ describe('CandidateDrizzleRepository (integration)', () => {
     await candidateRepository.upsertByUserId({
       userId: first.id,
       universityOfOrigin: 'UFC',
+      ira: '8.5',
     });
     await candidateRepository.upsertByUserId({
       userId: second.id,
       universityOfOrigin: 'UFC',
+      ira: '9.0',
     });
 
     const pageOne = await candidateRepository.findAllByFilters({

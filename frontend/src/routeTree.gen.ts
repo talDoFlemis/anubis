@@ -22,6 +22,7 @@ import { Route as AuthChangePasswordRouteImport } from './routes/auth/change-pas
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
 import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboarding/secretary'
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
+import { Route as AppManageResearchThemesRouteImport } from './routes/_app/manage/research-themes'
 import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/professors'
 
 const AuthRoute = AuthRouteImport.update({
@@ -88,6 +89,11 @@ const AuthOnboardingProfessorRoute = AuthOnboardingProfessorRouteImport.update({
   path: '/onboarding/professor',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppManageResearchThemesRoute = AppManageResearchThemesRouteImport.update({
+  id: '/manage/research-themes',
+  path: '/manage/research-themes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppManageProfessorsRoute = AppManageProfessorsRouteImport.update({
   id: '/manage/professors',
   path: '/manage/professors',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/manage/professors': typeof AppManageProfessorsRoute
+  '/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/': typeof AppIndexRoute
   '/manage/professors': typeof AppManageProfessorsRoute
+  '/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/_app/': typeof AppIndexRoute
   '/_app/manage/professors': typeof AppManageProfessorsRoute
+  '/_app/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/manage/professors'
+    | '/manage/research-themes'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/auth/onboarding/'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/'
     | '/manage/professors'
+    | '/manage/research-themes'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/auth/onboarding'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/_app/'
     | '/_app/manage/professors'
+    | '/_app/manage/research-themes'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/auth/onboarding/'
@@ -288,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingProfessorRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_app/manage/research-themes': {
+      id: '/_app/manage/research-themes'
+      path: '/manage/research-themes'
+      fullPath: '/manage/research-themes'
+      preLoaderRoute: typeof AppManageResearchThemesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/manage/professors': {
       id: '/_app/manage/professors'
       path: '/manage/professors'
@@ -301,11 +320,13 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
+  AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppManageProfessorsRoute: AppManageProfessorsRoute,
+  AppManageResearchThemesRoute: AppManageResearchThemesRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -36,7 +36,7 @@ function CandidateOnboardingPage() {
           lastName: value.lastName,
           cpf: value.cpf,
           universityOfOrigin: value.universityOfOrigin,
-          ira: value.ira.trim() || undefined,
+          ira: value.ira.trim(),
           poscomp: value.poscomp.trim() ? Number(value.poscomp) : undefined,
         },
         {
@@ -169,7 +169,7 @@ function CandidateOnboardingPage() {
           <form.Field name="ira">
             {field => (
               <Field className="space-y-2">
-                <FieldLabel htmlFor={field.name}>IRA (opcional)</FieldLabel>
+                <FieldLabel htmlFor={field.name}>IRA</FieldLabel>
                 <FieldContent>
                   <Input
                     id={field.name}
@@ -178,6 +178,7 @@ function CandidateOnboardingPage() {
                     onChange={event => field.handleChange(event.target.value)}
                     onBlur={field.handleBlur}
                     placeholder="Ex.: 8.75"
+                    required
                   />
                 </FieldContent>
               </Field>

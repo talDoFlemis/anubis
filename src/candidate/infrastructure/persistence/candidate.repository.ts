@@ -13,7 +13,7 @@ export abstract class CandidateRepository {
   abstract upsertByUserId(params: {
     userId: string;
     universityOfOrigin: string;
-    ira?: string | null;
+    ira: string;
     poscomp?: number | null;
   }): Promise<Candidate>;
 }

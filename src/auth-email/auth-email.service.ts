@@ -145,6 +145,7 @@ export class AuthEmailService {
       await this.candidateService.createProfile({
         userId: user.id,
         universityOfOrigin: dto.universityOfOrigin,
+        ira: dto.ira,
       });
 
       const nextConfirmEmailTokenVersion = user.confirmEmailTokenVersion + 1;

@@ -114,9 +114,86 @@ describe('ResearchThemeDrizzleRepository (integration)', () => {
     expect(pageOne.pagination.totalPages).toBe(2);
     expect(pageTwo.pagination.page).toBe(2);
   });
+
+  it('creates, updates and fetches a research theme with many-to-many associations', async () => {
+    const ownerId = await createProfessor(db, undefined, 'Carlos', 'Oliveira');
+    const assocId1 = await createProfessor(db, undefined, 'Ana', 'Silva');
+    const assocId2 = await createProfessor(db, undefined, 'Bruno', 'Santos');
+
+    const created = await repository.create({
+      professorId: ownerId,
+      title: 'IA e Computacao',
+      description: 'Descricao',
+      vacancies: 2,
+      level: ResearchThemeLevelEnum.masters,
+      references: [],
+      associatedProfessorIds: [assocId1, assocId2],
+    });
+
+    const found = await repository.findById(created.id);
+    expect(found).toBeDefined();
+    expect(found?.professorId).toBe(ownerId);
+    expect(found?.professor?.firstName).toBe('Carlos');
+    expect(found?.associatedProfessors).toHaveLength(2);
+    const assocIds = found?.associatedProfessors?.map(p => p.id) ?? [];
+    expect(assocIds).toContain(assocId1);
+    expect(assocIds).toContain(assocId2);
+
+    // Update associations
+    await repository.update(created.id, {
+      associatedProfessorIds: [assocId1],
+    });
+
+    const foundAfterUpdate = await repository.findById(created.id);
+    expect(foundAfterUpdate?.associatedProfessors).toHaveLength(1);
+    expect(foundAfterUpdate?.associatedProfessors?.[0]?.id).toBe(assocId1);
+  });
+
+  it('searches themes by title, description and professor names', async () => {
+    const ownerId = await createProfessor(db, undefined, 'Gabriel', 'Castro');
+    const otherId = await createProfessor(db, undefined, 'Maria', 'Sousa');
+
+    await repository.create({
+      professorId: ownerId,
+      title: 'Drizzle ORM Advanced Techniques',
+      description: 'Some desc',
+      vacancies: 1,
+      level: ResearchThemeLevelEnum.masters,
+      references: [],
+    });
+
+    await repository.create({
+      professorId: otherId,
+      title: 'NestJS Framework',
+      description: 'Learning NestJS',
+      vacancies: 2,
+      level: ResearchThemeLevelEnum.doctoral,
+      references: [],
+    });
+
+    // Search by title
+    const searchTitle = await repository.findAllByFilters({ search: 'drizzle' });
+    expect(searchTitle.data).toHaveLength(1);
+    expect(searchTitle.data[0]?.title).toBe('Drizzle ORM Advanced Techniques');
+
+    // Search by description
+    const searchDesc = await repository.findAllByFilters({ search: 'learning' });
+    expect(searchDesc.data).toHaveLength(1);
+    expect(searchDesc.data[0]?.title).toBe('NestJS Framework');
+
+    // Search by owner name
+    const searchOwner = await repository.findAllByFilters({ search: 'gabriel' });
+    expect(searchOwner.data).toHaveLength(1);
+    expect(searchOwner.data[0]?.title).toBe('Drizzle ORM Advanced Techniques');
+  });
 });
 
-async function createProfessor(db: TestDrizzleDB, id?: string): Promise<string> {
+async function createProfessor(
+  db: TestDrizzleDB,
+  id?: string,
+  firstName?: string,
+  lastName?: string,
+): Promise<string> {
   const professorId = id ?? randomUUID();
   const [userRow] = await db
     .insert(users)
@@ -124,6 +201,9 @@ async function createProfessor(db: TestDrizzleDB, id?: string): Promise<string> 
       id: professorId,
       role: RoleEnum.professor,
       status: StatusEnum.active,
+      firstName: firstName ?? 'Professor',
+      lastName: lastName ?? 'Test',
+      email: `${professorId}@example.com`,
     })
     .returning({ id: users.id });
 

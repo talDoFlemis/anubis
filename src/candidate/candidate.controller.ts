@@ -17,13 +17,11 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { STAFF_CANDIDATE_ROLES } from 'src/common/enums/staff-candidates';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { PaginatedResult } from '../common/dto/paginated-response.dto';
-import { Roles } from '../roles/roles.decorator';
-import { RolesGuard } from '../roles/roles.guard';
+import { StaffOnly } from '../roles/roles.decorator';
 import { User } from '../users/domain/user';
 import { CandidateService } from './candidate.service';
 import { CandidateResponseDto, PaginatedCandidateResponseDto } from './dto/candidate-response.dto';
@@ -50,8 +48,7 @@ export class CandidateController {
   }
 
   @Get(':userId')
-  @UseGuards(RolesGuard)
-  @Roles(...STAFF_CANDIDATE_ROLES)
+  @StaffOnly()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a candidate profile by user id' })
   @ApiOkResponse({ type: CandidateResponseDto })
@@ -63,8 +60,7 @@ export class CandidateController {
   }
 
   @Get()
-  @UseGuards(RolesGuard)
-  @Roles(...STAFF_CANDIDATE_ROLES)
+  @StaffOnly()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List candidates using optional filters' })
   @ApiOkResponse({ type: PaginatedCandidateResponseDto })

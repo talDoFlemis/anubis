@@ -1,4 +1,5 @@
 import { Footer } from '@/components/footer';
+import { AppHeader } from '@/components/layout/app-header';
 import { authQueryOptions } from '@/hooks/use-auth';
 import { getRestrictedSessionPath, isRedirectLikeError } from '@/lib/auth-flow';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/_app')({
 function AppLayout() {
   return (
     <div className="flex min-h-svh flex-col">
+      <AppHeader />
       <main className="flex flex-1 flex-col">
         <Outlet />
       </main>

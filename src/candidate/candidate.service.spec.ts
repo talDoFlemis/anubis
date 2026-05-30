@@ -82,6 +82,7 @@ describe('CandidateService', () => {
       lastName: 'Doe',
       cpf: '12345678901',
       universityOfOrigin: 'UFRN',
+      ira: '8.75',
     });
 
     expect(usersService.update).toHaveBeenCalledWith(
@@ -89,7 +90,7 @@ describe('CandidateService', () => {
       expect.objectContaining({ onboardingCompleted: true }),
     );
     expect(candidateRepository.upsertByUserId).toHaveBeenCalledWith(
-      expect.objectContaining({ universityOfOrigin: 'UFRN' }),
+      expect.objectContaining({ universityOfOrigin: 'UFRN', ira: '8.75' }),
     );
   });
 
