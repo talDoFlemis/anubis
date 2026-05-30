@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
-import { Pool } from 'pg';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { users } from '../../src/database/schema/users';
+import { Pool } from 'pg';
 import { professors } from '../../src/database/schema/professor';
+import { users } from '../../src/database/schema/users';
 
 interface RawMockProfessor {
   nome: string;
@@ -123,7 +123,7 @@ async function seedProfessor(
       authProvider: 'email',
       providerSubject: prof.email,
       email: prof.email,
-      password: '$2b$10$EP4kH9.z5kM.iA3.d1zWKuN2pWp.iA3.d1zWKuN2pWp.iA3.d1zWK',
+      password: '$2a$12$lr9fx486D2ZJT1rmHu4xtOUOxRuapGfZwmdDhVKNzpBCNlHNXwvc.', // bcrypt hash for senha123
       cpf: prof.cpf,
       firstName: prof.firstName,
       lastName: prof.lastName,
