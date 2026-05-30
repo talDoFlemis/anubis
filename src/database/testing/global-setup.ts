@@ -15,6 +15,8 @@ export default async function globalSetup() {
   const pool = new Pool({ connectionString: connectionUri });
   const db = drizzle(pool);
 
+  await db.$client.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
+
   await migrate(db, {
     migrationsFolder: path.join(process.cwd(), 'drizzle'),
   });
