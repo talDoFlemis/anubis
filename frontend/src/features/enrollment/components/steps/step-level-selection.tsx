@@ -23,30 +23,22 @@ interface StepLevelSelectionProps {
 // ── Level options ────────────────────────────────────────────────────
 
 const LEVEL_OPTIONS = [
-  {
-    value: 'mestrado',
-    label: 'Mestrado',
-    description:
-      'Programa de pós-graduação stricto sensu voltado para o aprofundamento em pesquisa na área de Ciência da Computação.',
-  },
-  {
-    value: 'doutorado',
-    label: 'Doutorado',
-    description:
-      'Programa de pós-graduação stricto sensu de nível avançado, com foco em contribuições originais para a ciência.',
-  },
+  { value: 'masters', label: 'Mestrado' },
+  { value: 'doctoral', label: 'Doutorado' },
 ] as const;
 
 // ── Component ────────────────────────────────────────────────────────
 
-export function StepLevelSelection({ enrollment, period, onNext }: StepLevelSelectionProps) {
+export function StepLevelSelection({
+  enrollment,
+  period,
+  onNext,
+}: StepLevelSelectionProps) {
   const { data: profile, isLoading: isProfileLoading } = useMyCandidateProfile();
   const createEnrollment = useCreateEnrollment();
 
   const isExisting = enrollment !== null;
-  const [selectedLevel, setSelectedLevel] = useState<string>(
-    enrollment?.level ?? period.level ?? '',
-  );
+  const [selectedLevel, setSelectedLevel] = useState<string>(enrollment?.level ?? '');
   const [error, setError] = useState<string | null>(null);
 
   function handleSelectLevel(level: string) {
@@ -109,7 +101,7 @@ export function StepLevelSelection({ enrollment, period, onNext }: StepLevelSele
                 disabled={isDisabled}
                 onClick={() => handleSelectLevel(option.value)}
                 className={cn(
-                  'group relative flex flex-col items-start gap-3 rounded-2xl p-6 text-left transition-all',
+                  'group relative flex items-center gap-3 rounded-2xl px-5 py-4 text-left transition-all',
                   'bg-surface-dim/50 hover:bg-surface-dim',
                   isSelected && 'bg-primary/5 ring-primary/30 ring-2 ring-inset',
                   isDisabled && 'cursor-not-allowed opacity-60',
@@ -117,19 +109,14 @@ export function StepLevelSelection({ enrollment, period, onNext }: StepLevelSele
               >
                 <div
                   className={cn(
-                    'flex h-11 w-11 items-center justify-center rounded-xl',
+                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
                     isSelected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
                   )}
                 >
                   <GraduationCap className="h-5 w-5" />
                 </div>
 
-                <div className="space-y-1">
-                  <span className="font-label text-base font-semibold">{option.label}</span>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {option.description}
-                  </p>
-                </div>
+                <span className="font-label text-base font-semibold">{option.label}</span>
               </button>
             );
           })}
@@ -151,7 +138,7 @@ export function StepLevelSelection({ enrollment, period, onNext }: StepLevelSele
           </p>
         </div>
 
-        <div className="bg-surface-dim/40 rounded-2xl p-6 space-y-4">
+        <div className="bg-surface-dim/40 space-y-4 rounded-2xl p-6">
           {isProfileLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-5 w-48" />
@@ -160,7 +147,7 @@ export function StepLevelSelection({ enrollment, period, onNext }: StepLevelSele
             </div>
           ) : profile ? (
             <>
-              <div className="flex items-center gap-3 mb-5">
+              <div className="mb-5 flex items-center gap-3">
                 <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-xl">
                   <User className="h-5 w-5" />
                 </div>

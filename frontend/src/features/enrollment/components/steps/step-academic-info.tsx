@@ -37,13 +37,22 @@ function createEmptyEntry(isPrimary = false): MastersDegreeEntry {
 
 const JUSTIFICATION_MAX_LENGTH = 2000;
 
+// ── Phone mask ───────────────────────────────────────────────────────
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : '';
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 // ── Component ────────────────────────────────────────────────────────
 
-export function StepAcademicInfo({ enrollment, period, onNext, onBack }: StepAcademicInfoProps) {
+export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInfoProps) {
   const updateEnrollment = useUpdateEnrollment();
   const updateMastersDegrees = useUpdateMastersDegrees();
 
-  const isDoctoralLevel = (enrollment?.level ?? period.level) === 'doutorado';
+  const isDoctoralLevel = enrollment?.level === 'doctoral';
 
   // ── Local state ──────────────────────────────────────────────────
   const [phone, setPhone] = useState(enrollment?.phone ?? '');
@@ -130,6 +139,11 @@ export function StepAcademicInfo({ enrollment, period, onNext, onBack }: StepAca
           }
           if (!entry.ira.trim() || isNaN(Number(entry.ira))) {
             newErrors[`masters_${i}_ira`] = 'IRA deve ser um número válido.';
+          } else {
+            const iraValue = Number(entry.ira);
+            if (iraValue < 0 || iraValue > 10) {
+              newErrors[`masters_${i}_ira`] = 'IRA deve estar entre 0 e 10.';
+            }
           }
         });
       }
@@ -194,7 +208,7 @@ export function StepAcademicInfo({ enrollment, period, onNext, onBack }: StepAca
             type="tel"
             value={phone}
             onChange={e => {
-              setPhone(e.target.value);
+              setPhone(formatPhone(e.target.value));
               setErrors(prev => {
                 const { phone: _, ...rest } = prev;
                 return rest;

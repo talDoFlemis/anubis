@@ -15,15 +15,19 @@ import { StepAcademicInfo } from '@/features/enrollment/components/steps/step-ac
 import { StepCvScoring } from '@/features/enrollment/components/steps/step-cv-scoring';
 import { StepLevelSelection } from '@/features/enrollment/components/steps/step-level-selection';
 import { StepPoscomp } from '@/features/enrollment/components/steps/step-poscomp';
+import { StepSigaa } from '@/features/enrollment/components/steps/step-sigaa';
 import { WizardStepper } from '@/features/enrollment/components/wizard-stepper';
 import { useActivePeriod, useMyEnrollments } from '@/features/enrollment/hooks/use-enrollment';
+import type { Enrollment } from '@/lib/api';
 
 // ── Search params ────────────────────────────────────────────────────
+
+const TOTAL_STEPS = 5;
 
 function validateSearch(search: Record<string, unknown>): { step?: number } {
   const step = Number(search.step);
   return {
-    step: Number.isFinite(step) && step >= 0 && step <= 3 ? step : undefined,
+    step: Number.isFinite(step) && step >= 0 && step < TOTAL_STEPS ? step : undefined,
   };
 }
 
@@ -31,6 +35,45 @@ export const Route = createFileRoute('/_app/enrollment/new')({
   validateSearch,
   component: EnrollmentWizardPage,
 });
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+/** Determine which steps are already filled from an existing enrollment. */
+function detectCompletedSteps(enrollment: Enrollment | null): number[] {
+  if (!enrollment) return [];
+  const completed: number[] = [];
+
+  // Step 0 — Level selection (always done if enrollment exists)
+  completed.push(0);
+
+  // Step 1 — Academic info (phone + justification)
+  if (enrollment.phone && enrollment.justification) {
+    completed.push(1);
+  }
+
+  // Step 2 — POSCOMP (poscomp data present)
+  if (enrollment.poscomp !== null) {
+    completed.push(2);
+  }
+
+  // Step 3 — CV scoring (checked via score or items — always accessible)
+  // We can't determine CV items from the enrollment itself, so mark as accessible but not complete
+
+  // Step 4 — SIGAA
+  if (enrollment.sigaaCode) {
+    completed.push(4);
+  }
+
+  return completed;
+}
+
+/** Find the first step not yet completed. */
+function findFirstIncompleteStep(completed: number[]): number {
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    if (!completed.includes(i)) return i;
+  }
+  return TOTAL_STEPS - 1;
+}
 
 // ── Page component ───────────────────────────────────────────────────
 
@@ -41,24 +84,31 @@ function EnrollmentWizardPage() {
   const { data: periods, isLoading: periodsLoading } = useActivePeriod();
   const { data: enrollments, isLoading: enrollmentsLoading } = useMyEnrollments();
 
-  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-
-  // Pick active period
+  // Pick the single active period
   const activePeriod = useMemo(() => {
     if (!periods?.length) return null;
-    return periods.find(p => p.status === 'open') ?? periods[0];
+    return periods.find(p => p.status === 'open') ?? null;
   }, [periods]);
 
   // Find draft enrollment for this period
   const enrollment = useMemo(() => {
     if (!enrollments?.length || !activePeriod) return null;
-    return (
-      enrollments.find(e => e.enrollmentPeriodId === activePeriod.id && e.status === 'draft') ??
-      null
-    );
+    return enrollments.find(e => e.enrollmentPeriodId === activePeriod.id && e.status === 'draft') ?? null;
   }, [enrollments, activePeriod]);
 
-  const currentStep = searchStep ?? 0;
+  // Auto-detect completed steps from existing enrollment
+  const autoCompletedSteps = useMemo(() => detectCompletedSteps(enrollment), [enrollment]);
+
+  const [manualCompletedSteps, setManualCompletedSteps] = useState<number[]>([]);
+
+  // Merge auto-detected + manually completed steps
+  const completedSteps = useMemo(() => {
+    const set = new Set([...autoCompletedSteps, ...manualCompletedSteps]);
+    return Array.from(set).sort();
+  }, [autoCompletedSteps, manualCompletedSteps]);
+
+  // Determine initial step: use URL param, or first incomplete step
+  const currentStep = searchStep ?? (enrollment ? findFirstIncompleteStep(autoCompletedSteps) : 0);
 
   // ── Step navigation ─────────────────────────────────────────────
 
@@ -67,8 +117,8 @@ function EnrollmentWizardPage() {
   }
 
   function handleNext() {
-    setCompletedSteps(prev => (prev.includes(currentStep) ? prev : [...prev, currentStep]));
-    if (currentStep < 3) {
+    setManualCompletedSteps(prev => (prev.includes(currentStep) ? prev : [...prev, currentStep]));
+    if (currentStep < TOTAL_STEPS - 1) {
       goToStep(currentStep + 1);
     }
   }
@@ -80,7 +130,10 @@ function EnrollmentWizardPage() {
   }
 
   function handleStepClick(step: number) {
-    goToStep(step);
+    // Allow clicking on completed steps or the current step
+    if (completedSteps.includes(step) || step === currentStep) {
+      goToStep(step);
+    }
   }
 
   // ── Loading ─────────────────────────────────────────────────────
@@ -108,27 +161,27 @@ function EnrollmentWizardPage() {
 
   // ── Step rendering ──────────────────────────────────────────────
 
+  const stepProps = {
+    enrollment,
+    period: activePeriod,
+    onNext: handleNext,
+    onBack: currentStep > 0 ? handleBack : undefined,
+  };
+
   function renderStep() {
-    if (!activePeriod) return null;
-
-    const props = {
-      enrollment,
-      period: activePeriod,
-      onNext: handleNext,
-      onBack: currentStep > 0 ? handleBack : undefined,
-    };
-
     switch (currentStep) {
       case 0:
-        return <StepLevelSelection {...props} />;
+        return <StepLevelSelection {...stepProps} />;
       case 1:
-        return <StepAcademicInfo {...props} />;
+        return <StepAcademicInfo {...stepProps} />;
       case 2:
-        return <StepPoscomp {...props} />;
+        return <StepPoscomp {...stepProps} />;
       case 3:
-        return <StepCvScoring {...props} />;
+        return <StepCvScoring {...stepProps} />;
+      case 4:
+        return <StepSigaa {...stepProps} />;
       default:
-        return <StepLevelSelection {...props} />;
+        return null;
     }
   }
 

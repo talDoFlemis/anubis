@@ -28,6 +28,7 @@ function getHeaderNavItems(role: string | null): HeaderNavItem[] {
   if (role && MANAGEMENT_ROLES.has(role)) {
     items.push({ label: 'Gestao de docentes', to: '/manage/professors' });
     items.push({ label: 'Gestao de temas', to: '/manage/research-themes' });
+    items.push({ label: 'Períodos de Inscrição', to: '/manage/enrollment-periods' });
   } else {
     items.push({ label: 'Temas de Pesquisa', to: '/research-themes' });
   }

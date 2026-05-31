@@ -1,12 +1,22 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
-import { CalendarDays, ChevronRight, ClipboardList, Clock } from 'lucide-react';
+import { CalendarDays, ChevronRight, ClipboardList, Clock, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useActivePeriod, useMyEnrollments } from '@/features/enrollment/hooks/use-enrollment';
+import { useActivePeriod, useCancelEnrollment, useMyEnrollments } from '@/features/enrollment/hooks/use-enrollment';
 import type { Enrollment, EnrollmentPeriod } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
@@ -21,6 +31,8 @@ function getStatusBadge(status: string) {
       return { label: 'Submetida', className: 'bg-blue-100 text-blue-800' };
     case 'closed':
       return { label: 'Encerrada', className: 'bg-gray-100 text-gray-700' };
+    case 'cancelled':
+      return { label: 'Cancelada', className: 'bg-red-100 text-red-700' };
     default:
       return { label: status, className: 'bg-gray-100 text-gray-700' };
   }
@@ -28,9 +40,9 @@ function getStatusBadge(status: string) {
 
 function getLevelLabel(level: string) {
   switch (level) {
-    case 'mestrado':
+    case 'masters':
       return 'Mestrado';
-    case 'doutorado':
+    case 'doctoral':
       return 'Doutorado';
     default:
       return level;
@@ -58,13 +70,30 @@ function EnrollmentCard({
   const statusBadge = getStatusBadge(enrollment.status);
   const isPeriodOpen = period?.status === 'open';
   const isDraft = enrollment.status === 'draft';
+  const isSubmitted = enrollment.status === 'submitted';
+
+  const cancelEnrollment = useCancelEnrollment();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  function handleCancel() {
+    cancelEnrollment.mutate(enrollment.id, {
+      onSuccess: () => {
+        toast.success('Inscrição cancelada com sucesso.');
+        setShowCancelDialog(false);
+      },
+      onError: err => {
+        toast.error(err.message || 'Erro ao cancelar inscrição.');
+        setShowCancelDialog(false);
+      },
+    });
+  }
 
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="secondary">{getLevelLabel(enrollment.level)}</Badge>
-          <Badge className={cn('border-0', statusBadge.className)}>{statusBadge.label}</Badge>
+          <Badge variant="secondary" className="pointer-events-none">{getLevelLabel(enrollment.level)}</Badge>
+          <Badge className={cn('pointer-events-none border-0', statusBadge.className)}>{statusBadge.label}</Badge>
         </div>
 
         {period && (
@@ -111,22 +140,64 @@ function EnrollmentCard({
 
         {/* Action buttons */}
         {isDraft && isPeriodOpen && (
-          <div className="pt-2">
-            <Button asChild className="anubis-gradient-action gap-2 text-white">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Button asChild className="anubis-gradient-action gap-2 text-white hover:brightness-110 transition-all">
               <Link to="/enrollment/new" search={{ step: 0 }}>
                 Continuar Inscrição
                 <ChevronRight className="h-4 w-4" />
               </Link>
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="text-destructive hover:bg-destructive/10"
+              onClick={() => setShowCancelDialog(true)}
+            >
+              Cancelar Inscrição
+            </Button>
           </div>
         )}
 
-        {enrollment.status === 'submitted' && (
+        {isSubmitted && (
           <p className="text-muted-foreground pt-2 text-sm italic">
             Sua inscrição foi submetida e está em análise.
           </p>
         )}
       </CardContent>
+
+      {/* Cancel confirmation dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar inscrição</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja cancelar esta inscrição? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={cancelEnrollment.isPending}>
+                Voltar
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleCancel}
+              disabled={cancelEnrollment.isPending}
+            >
+              {cancelEnrollment.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                'Confirmar Cancelamento'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
@@ -179,10 +250,12 @@ export function EnrollmentDashboard() {
     return periods.find(p => p.status === 'open') ?? periods[0];
   }, [periods]);
 
-  // Match enrollments to the active period
+  // Match enrollments to the active period (ignore cancelled)
   const activeEnrollment = useMemo(() => {
     if (!enrollments?.length || !activePeriod) return null;
-    return enrollments.find(e => e.enrollmentPeriodId === activePeriod.id) ?? null;
+    return enrollments.find(
+      e => e.enrollmentPeriodId === activePeriod.id && e.status !== 'cancelled',
+    ) ?? null;
   }, [enrollments, activePeriod]);
 
   // Other enrollments (past / different periods)

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { AlertTriangle, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -23,10 +23,11 @@ import {
   useCvItems,
   useRemoveCvItem,
   useScoringCategories,
+  useUpdateCvItem,
 } from '@/features/enrollment/hooks/use-cv-scoring';
-import { useSubmitEnrollment } from '@/features/enrollment/hooks/use-enrollment';
+
 import type { CvItem, Enrollment, EnrollmentPeriod, ScoringCategory } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
 
 // ── Props ────────────────────────────────────────────────────────────
 
@@ -41,15 +42,11 @@ interface StepCvScoringProps {
 
 interface AddItemFormState {
   description: string;
-  quantity: number;
-  isInArea: boolean;
   file: File | null;
 }
 
 const INITIAL_FORM_STATE: AddItemFormState = {
   description: '',
-  quantity: 1,
-  isInArea: false,
   file: null,
 };
 
@@ -75,7 +72,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
 
   const createItem = useCreateCvItem();
   const removeItem = useRemoveCvItem();
-  const submitEnrollment = useSubmitEnrollment();
+  const updateItem = useUpdateCvItem();
 
   // Which category has the inline form open
   const [openFormCategoryId, setOpenFormCategoryId] = useState<string | null>(null);
@@ -86,8 +83,8 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
     null,
   );
 
-  // Submit confirmation dialog
-  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  // File replace state
+  const [replaceFileItemId, setReplaceFileItemId] = useState<string | null>(null);
 
   // ── Computed values ──────────────────────────────────────────────
 
@@ -136,8 +133,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
         payload: {
           scoringCategoryId: openFormCategoryId,
           description: formState.description.trim(),
-          quantity: formState.quantity,
-          isInArea: formState.isInArea || undefined,
+          quantity: 1,
         },
         file: formState.file ?? undefined,
       },
@@ -152,6 +148,32 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
       },
     );
   }, [openFormCategoryId, enrollmentId, formState, createItem, handleCloseForm]);
+
+  const handleDownloadFile = useCallback(async (itemId: string) => {
+    if (!enrollmentId) return;
+    try {
+      const url = await api.cvItems.getFileUrl(enrollmentId, itemId);
+      window.open(url, '_blank');
+    } catch {
+      toast.error('Erro ao obter o arquivo.');
+    }
+  }, [enrollmentId]);
+
+  const handleReplaceFile = useCallback((itemId: string, file: File) => {
+    if (!enrollmentId) return;
+    updateItem.mutate(
+      { enrollmentId, itemId, payload: {}, file },
+      {
+        onSuccess: () => {
+          toast.success('Arquivo substitudo com sucesso.');
+          setReplaceFileItemId(null);
+        },
+        onError: err => {
+          toast.error(err.message || 'Erro ao substituir arquivo.');
+        },
+      },
+    );
+  }, [enrollmentId, updateItem]);
 
   const handleDeleteItem = useCallback(() => {
     if (!deleteTarget || !enrollmentId) return;
@@ -170,21 +192,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
     );
   }, [deleteTarget, enrollmentId, removeItem]);
 
-  const handleSubmit = useCallback(() => {
-    if (!enrollmentId) return;
 
-    submitEnrollment.mutate(enrollmentId, {
-      onSuccess: () => {
-        toast.success('Inscrição submetida com sucesso!');
-        setShowSubmitDialog(false);
-        onNext();
-      },
-      onError: err => {
-        toast.error(err.message || 'Erro ao submeter inscrição.');
-        setShowSubmitDialog(false);
-      },
-    });
-  }, [enrollmentId, submitEnrollment, onNext]);
 
   // ── Loading state ───────────────────────────────────────────────
 
@@ -249,7 +257,6 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                     <p className="text-muted-foreground text-xs">
                       {category.pointsPerItem} ponto(s) por item • Máximo {category.maxPoints}{' '}
                       ponto(s)
-                      {category.requiresAreaVerification && ' • Aceita verificação de área'}
                     </p>
                   </div>
                   <div className="font-label text-right text-sm font-semibold whitespace-nowrap">
@@ -273,27 +280,77 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                     {items.map(item => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                        className="space-y-2 py-3 first:pt-0 last:pb-0"
                       >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{item.description}</p>
-                          <p className="text-muted-foreground text-xs">
-                            Qtd: {item.quantity}
-                            {item.isInArea && ' • Na área'}
-                            {item.score !== null && ` • ${parseFloat(item.score).toFixed(1)} pts`}
-                          </p>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{item.description}</p>
+                            <p className="text-muted-foreground text-xs">
+                              {item.proofFileName && item.proofFileName}
+                              {item.proofFileName && item.score !== null && ' · '}
+                              {!item.proofFileName && item.proofFileId && 'Comprovante enviado'}
+                              {!item.proofFileName && item.proofFileId && item.score !== null && ' · '}
+                              {item.score !== null && `${parseFloat(item.score).toFixed(1)} pts`}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1">
+                            {item.proofFileId && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                                  onClick={() => handleDownloadFile(item.id)}
+                                  title="Baixar comprovante"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                                  onClick={() => setReplaceFileItemId(item.id)}
+                                  title="Substituir comprovante"
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-muted-foreground hover:text-destructive h-8 w-8"
+                              onClick={() =>
+                                setDeleteTarget({ itemId: item.id, description: item.description })
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
-                          onClick={() =>
-                            setDeleteTarget({ itemId: item.id, description: item.description })
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {replaceFileItemId === item.id && (
+                          <div className="flex items-center gap-2 pl-1">
+                            <input
+                              type="file"
+                              className="text-sm"
+                              onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (file) handleReplaceFile(item.id, file);
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setReplaceFileItemId(null)}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -312,34 +369,6 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor={`qty-${category.id}`}>Quantidade</Label>
-                      <Input
-                        id={`qty-${category.id}`}
-                        type="number"
-                        min={1}
-                        value={formState.quantity}
-                        onChange={e =>
-                          setFormState(s => ({
-                            ...s,
-                            quantity: Math.max(1, parseInt(e.target.value) || 1),
-                          }))
-                        }
-                        className="max-w-32"
-                      />
-                    </div>
-
-                    {category.requiresAreaVerification && (
-                      <label className="flex items-center gap-3 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={formState.isInArea}
-                          onChange={e => setFormState(s => ({ ...s, isInArea: e.target.checked }))}
-                          className="accent-primary h-4 w-4 rounded"
-                        />
-                        Item na área de concentração
-                      </label>
-                    )}
 
                     <FileUploadField
                       label="Comprovante"
@@ -407,7 +436,8 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
       {/* Navigation */}
       <div className="flex items-center justify-between pt-2">
         {onBack ? (
-          <Button type="button" variant="outline" onClick={onBack}>
+          <Button type="button" variant="ghost" onClick={onBack} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
         ) : (
@@ -415,10 +445,10 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
         )}
         <Button
           type="button"
-          className={cn('min-w-44', 'anubis-gradient-action text-white')}
-          onClick={() => setShowSubmitDialog(true)}
+          onClick={onNext}
+          className="min-w-32"
         >
-          Finalizar e Submeter
+          Próximo
         </Button>
       </div>
 
@@ -452,52 +482,6 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                 </>
               ) : (
                 'Remover'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Submit confirmation dialog ────────────────────────────── */}
-      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="text-primary h-5 w-5" />
-              Submeter inscrição
-            </DialogTitle>
-            <DialogDescription>
-              Após a submissão, você não poderá mais editar sua inscrição. Certifique-se de que
-              todos os dados e documentos estão corretos antes de confirmar.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="bg-surface-dim/40 rounded-2xl p-4">
-            <p className="text-sm">
-              <span className="text-muted-foreground">Pontuação do currículo:</span>{' '}
-              <strong>{totalScore.toFixed(1)} pontos</strong>
-            </p>
-          </div>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={submitEnrollment.isPending}>
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button
-              type="button"
-              className="anubis-gradient-action text-white"
-              onClick={handleSubmit}
-              disabled={submitEnrollment.isPending}
-            >
-              {submitEnrollment.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Submetendo...
-                </>
-              ) : (
-                'Confirmar Submissão'
               )}
             </Button>
           </DialogFooter>

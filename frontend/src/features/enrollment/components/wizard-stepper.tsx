@@ -1,8 +1,10 @@
-import { Check } from 'lucide-react';
+import { Check, FileCheck } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-const STEP_LABELS = ['Dados Pessoais', 'Informações Acadêmicas', 'POSCOMP', 'Currículo'] as const;
+const STEP_LABELS = ['Nível', 'Acadêmico', 'POSCOMP', 'Currículo', 'SIGAA'] as const;
+
+const STEP_ICONS = [null, null, null, null, FileCheck] as const;
 
 interface WizardStepperProps {
   currentStep: number;
@@ -37,7 +39,13 @@ export function WizardStepper({ currentStep, completedSteps, onStepClick }: Wiza
                     isFuture && 'bg-surface-high text-muted-foreground cursor-default',
                   )}
                 >
-                  {isCompleted ? <Check className="h-5 w-5" /> : <span>{index + 1}</span>}
+                  {isCompleted ? (
+                    <Check className="h-5 w-5" />
+                  ) : STEP_ICONS[index] ? (
+                    <>{(() => { const Icon = STEP_ICONS[index]!; return <Icon className="h-5 w-5" />; })()}</>
+                  ) : (
+                    <span>{index + 1}</span>
+                  )}
                 </button>
                 <span
                   className={cn(

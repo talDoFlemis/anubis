@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Download, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { FileUploadField } from '@/features/enrollment/components/file-upload-field';
 import { useUpdateEnrollment } from '@/features/enrollment/hooks/use-enrollment';
 import type { Enrollment, EnrollmentPeriod, PoscompData } from '@/lib/api';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 // ── Props ────────────────────────────────────────────────────────────
@@ -22,7 +24,8 @@ interface StepPoscompProps {
 
 // ── Component ────────────────────────────────────────────────────────
 
-export function StepPoscomp({ enrollment, period: _period, onNext, onBack }: StepPoscompProps) {
+export function StepPoscomp({ enrollment, onNext, onBack }: StepPoscompProps) {
+  const queryClient = useQueryClient();
   const updateEnrollment = useUpdateEnrollment();
 
   // ── State from existing enrollment ───────────────────────────────
@@ -39,6 +42,40 @@ export function StepPoscomp({ enrollment, period: _period, onNext, onBack }: Ste
   );
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // File state
+  const hasExistingReceipt = !!existingPoscomp?.receiptFileId;
+  const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
+  const [showReplaceFile, setShowReplaceFile] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Fetch the existing receipt file name
+  useEffect(() => {
+    if (hasExistingReceipt && enrollment) {
+      api.enrollments.getPoscompReceiptInfo(enrollment.id).then(info => {
+        setReceiptFileName(info.fileName);
+      }).catch(() => {});
+    }
+  }, [hasExistingReceipt, enrollment]);
+
+  const uploadReceipt = useMutation({
+    mutationFn: async ({ enrollmentId, file }: { enrollmentId: string; file: File }) => {
+      return api.enrollments.uploadPoscompReceipt(enrollmentId, file);
+    },
+    onSuccess: () => {
+      if (enrollment) {
+        queryClient.invalidateQueries({ queryKey: ['enrollments', enrollment.id] });
+        queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
+      }
+      toast.success('Comprovante POSCOMP enviado com sucesso.');
+      setReceiptFileName(receiptFile?.name ?? null);
+      setReceiptFile(null);
+      setShowReplaceFile(false);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Erro ao enviar comprovante.');
+    },
+  });
 
   // ── Validation ───────────────────────────────────────────────────
   function validate(): boolean {
@@ -81,39 +118,92 @@ export function StepPoscomp({ enrollment, period: _period, onNext, onBack }: Ste
   }
 
   // ── Submit ───────────────────────────────────────────────────────
-  function handleNext() {
+  async function handleNext() {
     if (!validate()) return;
     if (!enrollment) return;
 
-    const poscomp: PoscompData = hasPoscomp
-      ? {
-          hasPoscomp: true,
-          year: Number(year),
-          mathScore: Number(mathScore),
-          fundamentalsScore: Number(fundamentalsScore),
-          technologyScore: Number(technologyScore),
-          receiptFileId: existingPoscomp?.receiptFileId ?? undefined,
-        }
-      : { hasPoscomp: false };
+    try {
+      const poscomp: PoscompData = hasPoscomp
+        ? {
+            hasPoscomp: true,
+            year: Number(year),
+            mathScore: Number(mathScore),
+            fundamentalsScore: Number(fundamentalsScore),
+            technologyScore: Number(technologyScore),
+            receiptFileId: existingPoscomp?.receiptFileId ?? undefined,
+          }
+        : { hasPoscomp: false };
 
-    updateEnrollment.mutate(
-      {
+      await updateEnrollment.mutateAsync({
         id: enrollment.id,
         payload: { poscomp },
-      },
-      {
-        onSuccess: () => onNext(),
-        onError: err => {
-          toast.error(err.message || 'Erro ao salvar dados do POSCOMP.');
-        },
-      },
-    );
+      });
+
+      // Upload receipt if a new file was selected
+      if (receiptFile) {
+        await uploadReceipt.mutateAsync({
+          enrollmentId: enrollment.id,
+          file: receiptFile,
+        });
+      }
+
+      onNext();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao salvar dados do POSCOMP.';
+      toast.error(message);
+    }
+  }
+
+  async function handleUploadReceipt() {
+    if (!receiptFile || !enrollment) return;
+
+    // Save poscomp data first (required by backend)
+    if (!validate()) return;
+
+    const poscomp: PoscompData = {
+      hasPoscomp: true,
+      year: Number(year),
+      mathScore: Number(mathScore),
+      fundamentalsScore: Number(fundamentalsScore),
+      technologyScore: Number(technologyScore),
+      receiptFileId: existingPoscomp?.receiptFileId ?? undefined,
+    };
+
+    try {
+      await updateEnrollment.mutateAsync({
+        id: enrollment.id,
+        payload: { poscomp },
+      });
+
+      await uploadReceipt.mutateAsync({
+        enrollmentId: enrollment.id,
+        file: receiptFile,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao enviar comprovante.';
+      toast.error(message);
+    }
+  }
+
+  async function handleDownloadReceipt() {
+    if (!enrollment) return;
+    setIsDownloading(true);
+    try {
+      const info = await api.enrollments.getPoscompReceiptInfo(enrollment.id);
+      window.open(info.url, '_blank');
+    } catch {
+      toast.error('Erro ao baixar comprovante.');
+    } finally {
+      setIsDownloading(false);
+    }
   }
 
   function handleTogglePoscomp() {
     setHasPoscomp(prev => !prev);
     setErrors({});
   }
+
+  const isPending = updateEnrollment.isPending || uploadReceipt.isPending;
 
   return (
     <div className="space-y-10">
@@ -161,6 +251,8 @@ export function StepPoscomp({ enrollment, period: _period, onNext, onBack }: Ste
                 id="poscomp-year"
                 type="number"
                 inputMode="numeric"
+                min={2000}
+                max={2100}
                 value={year}
                 onChange={e => {
                   setYear(e.target.value);
@@ -254,14 +346,86 @@ export function StepPoscomp({ enrollment, period: _period, onNext, onBack }: Ste
             </Field>
           </div>
 
-          {/* Receipt upload */}
-          <FileUploadField
-            accept=".pdf"
-            label="Comprovante POSCOMP"
-            value={receiptFile}
-            existingFileName={existingPoscomp?.receiptFileId ? 'Comprovante enviado' : null}
-            onChange={setReceiptFile}
-          />
+          {/* Receipt upload / download / replace */}
+          <div className="space-y-3">
+            {hasExistingReceipt && !showReplaceFile ? (
+              /* Existing file: show name + download + replace buttons */
+              <div className="bg-surface-dim/40 flex items-center justify-between rounded-2xl p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-label text-sm font-semibold">Comprovante POSCOMP</p>
+                  <p className="text-muted-foreground truncate text-xs">
+                    {receiptFileName ?? 'Arquivo enviado'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDownloadReceipt}
+                    disabled={isDownloading}
+                    className="gap-1.5"
+                  >
+                    <Download className="h-4 w-4" />
+                    Baixar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowReplaceFile(true)}
+                    className="gap-1.5"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Substituir
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* No file or replacing: show upload field + save button */
+              <div className="space-y-3">
+                <FileUploadField
+                  accept=".pdf"
+                  label="Comprovante POSCOMP"
+                  value={receiptFile}
+                  existingFileName={null}
+                  onChange={setReceiptFile}
+                />
+                {receiptFile && (
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleUploadReceipt}
+                      disabled={uploadReceipt.isPending}
+                    >
+                      {uploadReceipt.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        'Salvar comprovante'
+                      )}
+                    </Button>
+                    {showReplaceFile && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowReplaceFile(false);
+                          setReceiptFile(null);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -279,10 +443,10 @@ export function StepPoscomp({ enrollment, period: _period, onNext, onBack }: Ste
         <Button
           type="button"
           onClick={handleNext}
-          disabled={updateEnrollment.isPending}
+          disabled={isPending}
           className="min-w-32"
         >
-          {updateEnrollment.isPending ? (
+          {isPending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Salvando...

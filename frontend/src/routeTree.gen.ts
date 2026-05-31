@@ -26,6 +26,7 @@ import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboa
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
 import { Route as AppManageResearchThemesRouteImport } from './routes/_app/manage/research-themes'
 import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/professors'
+import { Route as AppManageEnrollmentPeriodsRouteImport } from './routes/_app/manage/enrollment-periods'
 import { Route as AppEnrollmentNewRouteImport } from './routes/_app/enrollment/new'
 
 const AuthRoute = AuthRouteImport.update({
@@ -112,6 +113,12 @@ const AppManageProfessorsRoute = AppManageProfessorsRouteImport.update({
   path: '/manage/professors',
   getParentRoute: () => AppRoute,
 } as any)
+const AppManageEnrollmentPeriodsRoute =
+  AppManageEnrollmentPeriodsRouteImport.update({
+    id: '/manage/enrollment-periods',
+    path: '/manage/enrollment-periods',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppEnrollmentNewRoute = AppEnrollmentNewRouteImport.update({
   id: '/enrollment/new',
   path: '/enrollment/new',
@@ -130,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/enrollment/new': typeof AppEnrollmentNewRoute
+  '/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
@@ -149,6 +157,7 @@ export interface FileRoutesByTo {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/': typeof AppIndexRoute
   '/enrollment/new': typeof AppEnrollmentNewRoute
+  '/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
@@ -170,6 +179,7 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/_app/': typeof AppIndexRoute
   '/_app/enrollment/new': typeof AppEnrollmentNewRoute
+  '/_app/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/_app/manage/professors': typeof AppManageProfessorsRoute
   '/_app/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/enrollment/new'
+    | '/manage/enrollment-periods'
     | '/manage/professors'
     | '/manage/research-themes'
     | '/auth/onboarding/professor'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/'
     | '/enrollment/new'
+    | '/manage/enrollment-periods'
     | '/manage/professors'
     | '/manage/research-themes'
     | '/auth/onboarding/professor'
@@ -230,6 +242,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/_app/'
     | '/_app/enrollment/new'
+    | '/_app/manage/enrollment-periods'
     | '/_app/manage/professors'
     | '/_app/manage/research-themes'
     | '/auth/onboarding/professor'
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppManageProfessorsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/manage/enrollment-periods': {
+      id: '/_app/manage/enrollment-periods'
+      path: '/manage/enrollment-periods'
+      fullPath: '/manage/enrollment-periods'
+      preLoaderRoute: typeof AppManageEnrollmentPeriodsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/enrollment/new': {
       id: '/_app/enrollment/new'
       path: '/enrollment/new'
@@ -378,6 +398,7 @@ interface AppRouteChildren {
   AppResearchThemesRoute: typeof AppResearchThemesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEnrollmentNewRoute: typeof AppEnrollmentNewRoute
+  AppManageEnrollmentPeriodsRoute: typeof AppManageEnrollmentPeriodsRoute
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
   AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
   AppEnrollmentIndexRoute: typeof AppEnrollmentIndexRoute
@@ -387,6 +408,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppResearchThemesRoute: AppResearchThemesRoute,
   AppIndexRoute: AppIndexRoute,
   AppEnrollmentNewRoute: AppEnrollmentNewRoute,
+  AppManageEnrollmentPeriodsRoute: AppManageEnrollmentPeriodsRoute,
   AppManageProfessorsRoute: AppManageProfessorsRoute,
   AppManageResearchThemesRoute: AppManageResearchThemesRoute,
   AppEnrollmentIndexRoute: AppEnrollmentIndexRoute,
