@@ -21,10 +21,12 @@ import { Route as AuthConfirmEmailRouteImport } from './routes/auth/confirm-emai
 import { Route as AuthChangePasswordRouteImport } from './routes/auth/change-password'
 import { Route as AppResearchThemesRouteImport } from './routes/_app/research-themes'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
+import { Route as AppEnrollmentIndexRouteImport } from './routes/_app/enrollment/index'
 import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboarding/secretary'
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
 import { Route as AppManageResearchThemesRouteImport } from './routes/_app/manage/research-themes'
 import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/professors'
+import { Route as AppEnrollmentNewRouteImport } from './routes/_app/enrollment/new'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -85,6 +87,11 @@ const AuthOnboardingIndexRoute = AuthOnboardingIndexRouteImport.update({
   path: '/onboarding/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppEnrollmentIndexRoute = AppEnrollmentIndexRouteImport.update({
+  id: '/enrollment/',
+  path: '/enrollment/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AuthOnboardingSecretaryRoute = AuthOnboardingSecretaryRouteImport.update({
   id: '/onboarding/secretary',
   path: '/onboarding/secretary',
@@ -105,6 +112,11 @@ const AppManageProfessorsRoute = AppManageProfessorsRouteImport.update({
   path: '/manage/professors',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEnrollmentNewRoute = AppEnrollmentNewRouteImport.update({
+  id: '/enrollment/new',
+  path: '/enrollment/new',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -117,10 +129,12 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/enrollment/new': typeof AppEnrollmentNewRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
+  '/enrollment/': typeof AppEnrollmentIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
 }
 export interface FileRoutesByTo {
@@ -134,10 +148,12 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/': typeof AppIndexRoute
+  '/enrollment/new': typeof AppEnrollmentNewRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
+  '/enrollment': typeof AppEnrollmentIndexRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
 }
 export interface FileRoutesById {
@@ -153,10 +169,12 @@ export interface FileRoutesById {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/enrollment/new': typeof AppEnrollmentNewRoute
   '/_app/manage/professors': typeof AppManageProfessorsRoute
   '/_app/manage/research-themes': typeof AppManageResearchThemesRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
+  '/_app/enrollment/': typeof AppEnrollmentIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
 }
 export interface FileRouteTypes {
@@ -172,10 +190,12 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/enrollment/new'
     | '/manage/professors'
     | '/manage/research-themes'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
+    | '/enrollment/'
     | '/auth/onboarding/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -189,10 +209,12 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/'
+    | '/enrollment/new'
     | '/manage/professors'
     | '/manage/research-themes'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
+    | '/enrollment'
     | '/auth/onboarding'
   id:
     | '__root__'
@@ -207,10 +229,12 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/_app/'
+    | '/_app/enrollment/new'
     | '/_app/manage/professors'
     | '/_app/manage/research-themes'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
+    | '/_app/enrollment/'
     | '/auth/onboarding/'
   fileRoutesById: FileRoutesById
 }
@@ -305,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_app/enrollment/': {
+      id: '/_app/enrollment/'
+      path: '/enrollment'
+      fullPath: '/enrollment/'
+      preLoaderRoute: typeof AppEnrollmentIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/auth/onboarding/secretary': {
       id: '/auth/onboarding/secretary'
       path: '/onboarding/secretary'
@@ -333,21 +364,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppManageProfessorsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/enrollment/new': {
+      id: '/_app/enrollment/new'
+      path: '/enrollment/new'
+      fullPath: '/enrollment/new'
+      preLoaderRoute: typeof AppEnrollmentNewRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppResearchThemesRoute: typeof AppResearchThemesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppEnrollmentNewRoute: typeof AppEnrollmentNewRoute
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
   AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
+  AppEnrollmentIndexRoute: typeof AppEnrollmentIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppResearchThemesRoute: AppResearchThemesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppEnrollmentNewRoute: AppEnrollmentNewRoute,
   AppManageProfessorsRoute: AppManageProfessorsRoute,
   AppManageResearchThemesRoute: AppManageResearchThemesRoute,
+  AppEnrollmentIndexRoute: AppEnrollmentIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

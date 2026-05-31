@@ -32,6 +32,10 @@ function getHeaderNavItems(role: string | null): HeaderNavItem[] {
     items.push({ label: 'Temas de Pesquisa', to: '/research-themes' });
   }
 
+  if (role === 'candidate') {
+    items.push({ label: 'Minha Inscrição', to: '/enrollment' });
+  }
+
   return items;
 }
 
