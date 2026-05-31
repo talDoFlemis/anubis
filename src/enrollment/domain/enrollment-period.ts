@@ -8,16 +8,17 @@ export class EnrollmentPeriod {
   createdAt!: Date;
   updatedAt!: Date;
 
-  static toDomain(row: Record<string, any>): EnrollmentPeriod {
+  static toDomain(row: Record<string, unknown>): EnrollmentPeriod {
     const entity = new EnrollmentPeriod();
-    entity.id = row.id;
-    entity.name = row.name;
-    entity.semester = row.semester;
-    entity.startDate = row.startDate;
-    entity.endDate = row.endDate;
-    entity.status = row.status;
-    entity.createdAt = row.createdAt;
-    entity.updatedAt = row.updatedAt;
+    const r = row as unknown as EnrollmentPeriod;
+    entity.id = r.id;
+    entity.name = r.name;
+    entity.semester = r.semester;
+    entity.startDate = r.startDate;
+    entity.endDate = r.endDate;
+    entity.status = r.status;
+    entity.createdAt = r.createdAt;
+    entity.updatedAt = r.updatedAt;
     return entity;
   }
 }

@@ -9,16 +9,18 @@ import { getLoggerToken } from 'nestjs-pino';
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { RoleEnum } from '../roles/roles.enum';
 import { UsersService } from '../users/users.service';
+import { EnrollmentLevel } from './dto/enrollment-level.enum';
+import { EnrollmentStatusUpdate } from './dto/update-enrollment-status.dto';
 import { EnrollmentPeriodService } from './enrollment-period.service';
 import { EnrollmentService } from './enrollment.service';
 import { EnrollmentRepository } from './infrastructure/persistence/enrollment.repository';
 
 describe('EnrollmentService', () => {
   let service: EnrollmentService;
-  let mockRepository: any;
-  let mockUsersService: any;
-  let mockEnrollmentPeriodService: any;
-  let mockFileStorageService: any;
+  let mockRepository: Record<string, jest.Mock>;
+  let mockUsersService: Record<string, jest.Mock>;
+  let mockEnrollmentPeriodService: Record<string, jest.Mock>;
+  let mockFileStorageService: Record<string, jest.Mock>;
 
   const mockUser = {
     id: 'user-uuid',
@@ -121,7 +123,7 @@ describe('EnrollmentService', () => {
       mockRepository.findByCandidateAndPeriod.mockResolvedValueOnce(null);
 
       const result = await service.create('user-uuid', {
-        level: 'masters' as any,
+        level: EnrollmentLevel.Masters,
         enrollmentPeriodId: 'period-uuid',
       });
 
@@ -138,7 +140,7 @@ describe('EnrollmentService', () => {
 
       await expect(
         service.create('user-uuid', {
-          level: 'masters' as any,
+          level: EnrollmentLevel.Masters,
           enrollmentPeriodId: 'period-uuid',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -152,7 +154,7 @@ describe('EnrollmentService', () => {
 
       await expect(
         service.create('user-uuid', {
-          level: 'masters' as any,
+          level: EnrollmentLevel.Masters,
           enrollmentPeriodId: 'period-uuid',
         }),
       ).rejects.toThrow(ForbiddenException);
@@ -166,7 +168,7 @@ describe('EnrollmentService', () => {
 
       await expect(
         service.create('user-uuid', {
-          level: 'masters' as any,
+          level: EnrollmentLevel.Masters,
           enrollmentPeriodId: 'period-uuid',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -177,7 +179,7 @@ describe('EnrollmentService', () => {
 
       await expect(
         service.create('user-uuid', {
-          level: 'masters' as any,
+          level: EnrollmentLevel.Masters,
           enrollmentPeriodId: 'period-uuid',
         }),
       ).rejects.toThrow(ConflictException);
@@ -333,7 +335,7 @@ describe('EnrollmentService', () => {
       mockRepository.update.mockResolvedValueOnce(closedEnrollment);
 
       const result = await service.updateStatus('enrollment-uuid', {
-        status: 'closed' as any,
+        status: EnrollmentStatusUpdate.Closed,
       });
 
       expect(result.status).toBe('closed');

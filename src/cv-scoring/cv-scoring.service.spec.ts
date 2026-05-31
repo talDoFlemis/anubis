@@ -6,7 +6,7 @@ import { CvScoringRepository } from './infrastructure/persistence/cv-scoring.rep
 
 describe('CvScoringService', () => {
   let service: CvScoringService;
-  let mockRepository: any;
+  let mockRepository: Record<string, jest.Mock>;
 
   const now = new Date();
 

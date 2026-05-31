@@ -8,7 +8,7 @@ import { FileStorageRepository } from './infrastructure/persistence/file-storage
 describe('FileStorageService', () => {
   let service: FileStorageService;
   let mockRepository: jest.Mocked<FileStorageRepository>;
-  let mockS3: any;
+  let mockS3: { send: jest.Mock };
 
   const mockFile = {
     originalname: 'test.pdf',

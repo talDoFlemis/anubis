@@ -10,18 +10,19 @@ export class CvScoringCategory {
   createdAt!: Date;
   updatedAt!: Date;
 
-  static toDomain(row: Record<string, any>): CvScoringCategory {
+  static toDomain(row: Record<string, unknown>): CvScoringCategory {
     const entity = new CvScoringCategory();
-    entity.id = row.id;
-    entity.enrollmentPeriodId = row.enrollmentPeriodId;
-    entity.name = row.name;
-    entity.description = row.description;
-    entity.pointsPerItem = row.pointsPerItem;
-    entity.maxPoints = row.maxPoints;
-    entity.level = row.level;
-    entity.sortOrder = row.sortOrder;
-    entity.createdAt = row.createdAt;
-    entity.updatedAt = row.updatedAt;
+    const r = row as unknown as CvScoringCategory;
+    entity.id = r.id;
+    entity.enrollmentPeriodId = r.enrollmentPeriodId;
+    entity.name = r.name;
+    entity.description = r.description;
+    entity.pointsPerItem = r.pointsPerItem;
+    entity.maxPoints = r.maxPoints;
+    entity.level = r.level;
+    entity.sortOrder = r.sortOrder;
+    entity.createdAt = r.createdAt;
+    entity.updatedAt = r.updatedAt;
     return entity;
   }
 }

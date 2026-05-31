@@ -18,7 +18,7 @@ export class Enrollment {
   createdAt!: Date;
   updatedAt!: Date;
 
-  static toDomain(row: Record<string, any>): Enrollment {
+  static toDomain(row: Record<string, unknown>): Enrollment {
     const entity = new Enrollment();
     Object.assign(entity, row);
     return entity;
