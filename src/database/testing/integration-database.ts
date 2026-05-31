@@ -2,8 +2,14 @@ import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as candidatesSchema from '../schema/candidates';
+import * as cvItemsSchema from '../schema/cv-items';
+import * as cvScoringSchema from '../schema/cv-scoring';
+import * as enrollmentPeriodsSchema from '../schema/enrollment-periods';
+import * as enrollmentsSchema from '../schema/enrollments';
+import * as filesSchema from '../schema/files';
 import * as researchThemesSchema from '../schema/research-themes';
 import * as sessionsSchema from '../schema/sessions';
+import * as universitiesSchema from '../schema/universities';
 import * as usersSchema from '../schema/users';
 
 const schema = {
@@ -11,6 +17,12 @@ const schema = {
   ...sessionsSchema,
   ...candidatesSchema,
   ...researchThemesSchema,
+  ...enrollmentPeriodsSchema,
+  ...enrollmentsSchema,
+  ...cvScoringSchema,
+  ...cvItemsSchema,
+  ...filesSchema,
+  ...universitiesSchema,
 };
 
 export type TestDrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
@@ -41,6 +53,6 @@ export function createTestDrizzle(): { db: TestDrizzleDB; pool: Pool } {
  */
 export async function truncateAllTables(db: TestDrizzleDB): Promise<void> {
   await db.execute(
-    sql`TRUNCATE TABLE research_themes, candidates, users, session RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE cv_items, cv_scoring_categories, courses, universities, files, enrollments, enrollment_periods, research_themes, candidates, users, session RESTART IDENTITY CASCADE`,
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "enrollment_periods" DROP COLUMN "level";
