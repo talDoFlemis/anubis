@@ -1,12 +1,12 @@
 export class EnrollmentPeriod {
-  id: string;
-  name: string;
-  semester: string;
-  startDate: Date;
-  endDate: Date;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
+  id!: string;
+  name!: string;
+  semester!: string;
+  startDate!: Date;
+  endDate!: Date;
+  status!: string;
+  createdAt!: Date;
+  updatedAt!: Date;
 
   static toDomain(row: Record<string, any>): EnrollmentPeriod {
     const entity = new EnrollmentPeriod();

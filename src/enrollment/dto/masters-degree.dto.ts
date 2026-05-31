@@ -13,20 +13,20 @@ export class MastersDegreeDto {
   @ApiProperty({ example: 'Universidade Federal do Ceará' })
   @IsNotEmpty()
   @IsString()
-  university: string;
+  university!: string;
 
   @ApiProperty({ example: 'Ciência da Computação' })
   @IsNotEmpty()
   @IsString()
-  graduateProgram: string;
+  graduateProgram!: string;
 
   @ApiProperty({ example: 8.5 })
   @IsNumber()
-  ira: number;
+  ira!: number;
 
   @ApiPropertyOptional({ default: false })
   @IsBoolean()
-  isPrimary: boolean;
+  isPrimary!: boolean;
 }
 
 export class UpdateMastersDegreesDto {
@@ -34,5 +34,5 @@ export class UpdateMastersDegreesDto {
   @ValidateNested({ each: true })
   @Type(() => MastersDegreeDto)
   @ArrayMinSize(1)
-  mastersDegrees: MastersDegreeDto[];
+  mastersDegrees!: MastersDegreeDto[];
 }

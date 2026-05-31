@@ -6,7 +6,7 @@ export class SearchCoursesDto {
   @ApiProperty({ description: 'Search query', minLength: 2 })
   @IsString()
   @MinLength(2)
-  q: string;
+  q!: string;
 
   @ApiPropertyOptional()
   @IsOptional()

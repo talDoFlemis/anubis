@@ -2,31 +2,31 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UniversityResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: '"name (abbreviation)" or just "name"' })
-  label: string;
+  label!: string;
 }
 
 export class UniversityDetailResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional()
-  abbreviation: string | null;
+  abbreviation!: string | null;
 
   @ApiPropertyOptional()
-  state: string | null;
+  state!: string | null;
 
   @ApiPropertyOptional()
-  city: string | null;
+  city!: string | null;
 
   @ApiProperty()
-  isManual: boolean;
+  isManual!: boolean;
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt!: Date;
 }

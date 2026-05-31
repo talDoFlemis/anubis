@@ -6,7 +6,7 @@ export class CreateCourseDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(500)
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional()
   @IsOptional()

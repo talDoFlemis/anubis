@@ -2,32 +2,32 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CvItemResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty()
-  enrollmentId: string;
+  enrollmentId!: string;
 
   @ApiProperty()
-  scoringCategoryId: string;
+  scoringCategoryId!: string;
 
   @ApiProperty()
-  description: string;
+  description!: string;
 
   @ApiProperty()
-  quantity: number;
+  quantity!: number;
 
   @ApiPropertyOptional()
-  proofFileId: string | null;
+  proofFileId!: string | null;
 
   @ApiPropertyOptional()
-  proofFileName: string | null;
+  proofFileName!: string | null;
 
   @ApiPropertyOptional()
-  score: string | null;
+  score!: string | null;
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

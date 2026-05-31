@@ -5,12 +5,12 @@ import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-vali
 export class CreateCvItemDto {
   @ApiProperty()
   @IsUUID()
-  scoringCategoryId: string;
+  scoringCategoryId!: string;
 
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  description: string;
+  description!: string;
 
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()

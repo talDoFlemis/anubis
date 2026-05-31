@@ -4,7 +4,7 @@ import { IsBoolean, IsNumber, IsOptional, IsString, ValidateIf } from 'class-val
 export class PoscompDto {
   @ApiProperty()
   @IsBoolean()
-  hasPoscomp: boolean;
+  hasPoscomp!: boolean;
 
   @ApiPropertyOptional()
   @ValidateIf(o => o.hasPoscomp)

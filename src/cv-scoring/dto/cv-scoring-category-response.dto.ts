@@ -2,32 +2,32 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CvScoringCategoryResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty()
-  enrollmentPeriodId: string;
+  enrollmentPeriodId!: string;
 
   @ApiProperty()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional()
-  description: string | null;
+  description!: string | null;
 
   @ApiProperty()
-  pointsPerItem: string;
+  pointsPerItem!: string;
 
   @ApiProperty()
-  maxPoints: string;
+  maxPoints!: string;
 
   @ApiProperty()
-  level: string;
+  level!: string;
 
   @ApiProperty()
-  sortOrder: number;
+  sortOrder!: number;
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

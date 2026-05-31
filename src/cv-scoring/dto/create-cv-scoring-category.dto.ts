@@ -6,7 +6,7 @@ export class CreateCvScoringCategoryDto {
   @ApiProperty({ example: 'Projetos de pesquisa e IC' })
   @IsNotEmpty()
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -16,16 +16,16 @@ export class CreateCvScoringCategoryDto {
   @ApiProperty({ example: 0.5 })
   @IsNumber()
   @Min(0)
-  pointsPerItem: number;
+  pointsPerItem!: number;
 
   @ApiProperty({ example: 2.0 })
   @IsNumber()
   @Min(0)
-  maxPoints: number;
+  maxPoints!: number;
 
   @ApiProperty({ enum: EnrollmentLevel })
   @IsEnum(EnrollmentLevel)
-  level: EnrollmentLevel;
+  level!: EnrollmentLevel;
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()

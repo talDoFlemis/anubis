@@ -5,9 +5,9 @@ import { EnrollmentLevel } from './enrollment-level.enum';
 export class CreateEnrollmentDto {
   @ApiProperty({ enum: EnrollmentLevel })
   @IsEnum(EnrollmentLevel)
-  level: EnrollmentLevel;
+  level!: EnrollmentLevel;
 
   @ApiProperty()
   @IsUUID()
-  enrollmentPeriodId: string;
+  enrollmentPeriodId!: string;
 }

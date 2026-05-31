@@ -2,25 +2,25 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CourseResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: 'Course name' })
-  label: string;
+  label!: string;
 }
 
 export class CourseDetailResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional()
-  universityId: string | null;
+  universityId!: string | null;
 
   @ApiProperty()
-  isManual: boolean;
+  isManual!: boolean;
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt!: Date;
 }

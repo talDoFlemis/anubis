@@ -9,5 +9,5 @@ export enum EnrollmentStatusUpdate {
 export class UpdateEnrollmentStatusDto {
   @ApiProperty({ enum: EnrollmentStatusUpdate })
   @IsEnum(EnrollmentStatusUpdate)
-  status: EnrollmentStatusUpdate;
+  status!: EnrollmentStatusUpdate;
 }
