@@ -11,6 +11,7 @@ import type { UpdateCvItemDto } from './dto/update-cv-item.dto';
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { CvScoringService } from './cv-scoring.service';
 import { CvItem } from './domain/cv-item';
+import type { UpdateCvItemData } from './infrastructure/persistence/cv-item.repository';
 import { CvItemRepository } from './infrastructure/persistence/cv-item.repository';
 
 @Injectable()
@@ -77,7 +78,7 @@ export class CvItemService {
     await this.getAndValidateEnrollment(enrollmentId, userId);
     const existingItem = await this.findById(enrollmentId, itemId);
 
-    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    const updateData: UpdateCvItemData = { updatedAt: new Date() };
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.quantity !== undefined) updateData.quantity = dto.quantity;
     if (dto.scoringCategoryId !== undefined) {
@@ -98,7 +99,7 @@ export class CvItemService {
       updateData.proofFileId = fileRecord.id;
     }
 
-    const item = await this.cvItemRepository.update(itemId, updateData as any);
+    const item = await this.cvItemRepository.update(itemId, updateData);
 
     await this.recalculateScore(enrollmentId);
     return item;

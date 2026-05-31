@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import type { Readable } from 'stream';
 
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { CvItemService } from './cv-item.service';
@@ -8,9 +9,9 @@ import { CvItemRepository } from './infrastructure/persistence/cv-item.repositor
 
 describe('CvItemService', () => {
   let service: CvItemService;
-  let mockCvItemRepository: any;
-  let mockCvScoringService: any;
-  let mockFileStorageService: any;
+  let mockCvItemRepository: Record<string, jest.Mock>;
+  let mockCvScoringService: Record<string, jest.Mock>;
+  let mockFileStorageService: Record<string, jest.Mock>;
 
   const mockEnrollment = {
     id: 'enrollment-uuid',
@@ -55,7 +56,7 @@ describe('CvItemService', () => {
     mimetype: 'application/pdf',
     size: 1024,
     buffer: Buffer.from('test'),
-    stream: null as any,
+    stream: null as unknown as Readable,
     destination: '',
     filename: '',
     path: '',
@@ -113,7 +114,9 @@ describe('CvItemService', () => {
    *   3. create item
    *   4. recalculateScore → findEnrollmentById + findByEnrollment + updateEnrollmentScore
    */
-  function setupCreateMocks(overrides: { enrollment?: any; category?: any; item?: any } = {}) {
+  function setupCreateMocks(
+    overrides: { enrollment?: unknown; category?: unknown; item?: unknown } = {},
+  ) {
     const enrollment = overrides.enrollment ?? mockEnrollment;
     const category = overrides.category ?? mockCategory;
     const item = overrides.item ?? mockCvItem;

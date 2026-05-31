@@ -6,7 +6,7 @@ import { EnrollmentPeriodRepository } from './infrastructure/persistence/enrollm
 
 describe('EnrollmentPeriodService', () => {
   let service: EnrollmentPeriodService;
-  let mockRepository: any;
+  let mockRepository: Record<string, jest.Mock>;
 
   const mockPeriod = {
     id: 'period-uuid',

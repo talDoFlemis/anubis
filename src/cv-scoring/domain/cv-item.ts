@@ -10,7 +10,7 @@ export class CvItem {
   createdAt!: Date;
   updatedAt!: Date;
 
-  static toDomain(row: Record<string, any>): CvItem {
+  static toDomain(row: Record<string, unknown>): CvItem {
     const entity = new CvItem();
     Object.assign(entity, row);
     return entity;

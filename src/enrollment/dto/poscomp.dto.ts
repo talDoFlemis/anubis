@@ -7,22 +7,22 @@ export class PoscompDto {
   hasPoscomp!: boolean;
 
   @ApiPropertyOptional()
-  @ValidateIf(o => o.hasPoscomp)
+  @ValidateIf((o: PoscompDto) => o.hasPoscomp)
   @IsNumber()
   year?: number;
 
   @ApiPropertyOptional()
-  @ValidateIf(o => o.hasPoscomp)
+  @ValidateIf((o: PoscompDto) => o.hasPoscomp)
   @IsNumber()
   mathScore?: number;
 
   @ApiPropertyOptional()
-  @ValidateIf(o => o.hasPoscomp)
+  @ValidateIf((o: PoscompDto) => o.hasPoscomp)
   @IsNumber()
   fundamentalsScore?: number;
 
   @ApiPropertyOptional()
-  @ValidateIf(o => o.hasPoscomp)
+  @ValidateIf((o: PoscompDto) => o.hasPoscomp)
   @IsNumber()
   technologyScore?: number;
 
