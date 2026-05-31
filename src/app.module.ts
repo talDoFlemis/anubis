@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -10,6 +11,8 @@ import { CandidateModule } from './candidate/candidate.module';
 import { LoggingModule } from './common/logging.module';
 import { HttpLoggerMiddleware } from './common/middlewares/http-logger.middleware';
 import { DatabaseModule } from './database/database.module';
+import { CvScoringModule } from './cv-scoring/cv-scoring.module';
+import { EnrollmentModule } from './enrollment/enrollment.module';
 import { validate } from './env.validation';
 import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
@@ -18,6 +21,7 @@ import { ResearchThemeModule } from './research-theme/research-theme.module';
 import { SecretaryModule } from './secretary/secretary.module';
 import { SessionModule } from './session/session.module';
 import { SystemModule } from './system/system.module';
+import { UniversityModule } from './university/university.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -34,12 +38,14 @@ import { UsersModule } from './users/users.module';
         limit: 100,
       },
     ]),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     UsersModule,
     ProfessorModule,
     ResearchThemeModule,
     SecretaryModule,
     CandidateModule,
+    UniversityModule,
     AuthModule,
     AuthEmailModule,
     AuthGoogleModule,
@@ -47,6 +53,8 @@ import { UsersModule } from './users/users.module';
     MailModule,
     HealthModule,
     SystemModule,
+    EnrollmentModule,
+    CvScoringModule,
   ],
   controllers: [AppController],
   providers: [AppService],
