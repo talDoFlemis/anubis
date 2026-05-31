@@ -5,10 +5,10 @@ export class ResearchThemeReferenceDto {
   @ApiProperty()
   @IsString()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @ApiProperty()
   @IsUrl()
   @MaxLength(2048)
-  url: string;
+  url!: string;
 }

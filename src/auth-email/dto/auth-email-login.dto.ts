@@ -7,10 +7,10 @@ export class AuthEmailLoginDto {
   @Transform(({ value }) => (value as string).toLowerCase().trim())
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @ApiProperty()
   @IsNotEmpty()
   @MaxLength(72)
-  password: string;
+  password!: string;
 }

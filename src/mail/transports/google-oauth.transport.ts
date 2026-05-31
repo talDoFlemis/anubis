@@ -40,7 +40,7 @@ export class GoogleOauthTransport implements MailTransport, OnModuleDestroy {
       responseData !== null &&
       typeof responseData === 'object' &&
       'expiry_date' in responseData &&
-      typeof (responseData as { expiry_date: unknown }).expiry_date === 'number'
+      typeof responseData.expiry_date === 'number'
         ? (responseData as { expiry_date: number }).expiry_date
         : null;
     this.tokenExpiresAt = typeof expiryDate === 'number' ? expiryDate : Date.now() + 3600_000;

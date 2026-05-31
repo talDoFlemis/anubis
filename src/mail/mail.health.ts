@@ -19,7 +19,7 @@ export class MailHealthIndicator {
       isHealthy = await this.transport.verify();
     } catch (error) {
       this.logger.error('Mail Transport health check failed', {
-        errorMessage: error as unknown,
+        errorMessage: error,
       });
     }
 

@@ -28,38 +28,38 @@ enum MailTransport {
 export class EnvironmentVariables {
   // Database
   @IsNotEmpty()
-  DATABASE_USER: string;
+  DATABASE_USER!: string;
 
   @IsNotEmpty()
-  DATABASE_PASSWORD: string;
+  DATABASE_PASSWORD!: string;
 
   @IsNotEmpty()
-  DATABASE_NAME: string;
+  DATABASE_NAME!: string;
 
   @IsNotEmpty()
-  DATABASE_HOST: string;
+  DATABASE_HOST!: string;
 
   @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(65535)
-  DATABASE_PORT: number;
+  DATABASE_PORT!: number;
 
   // App
   @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(65535)
-  APP_PORT: number;
+  APP_PORT!: number;
 
   @IsNotEmpty()
   @IsUrl({
     require_tld: false,
   })
-  APP_CORS_ORIGIN: string;
+  APP_CORS_ORIGIN!: string;
 
   @MinLength(32)
-  APP_SESSION_SECRET: string;
+  APP_SESSION_SECRET!: string;
 
   @IsOptional()
   @IsBoolean()
@@ -80,16 +80,16 @@ export class EnvironmentVariables {
   // Google OAuth (login)
   @IsNotEmpty()
   @IsString()
-  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_ID!: string;
 
   @IsNotEmpty()
   @IsString()
-  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_CLIENT_SECRET!: string;
 
   // Auth tokens (for email confirmation / forgot password)
   @IsNotEmpty()
   @MinLength(32)
-  AUTH_CONFIRM_EMAIL_SECRET: string;
+  AUTH_CONFIRM_EMAIL_SECRET!: string;
 
   @IsOptional()
   @IsString()
@@ -97,7 +97,7 @@ export class EnvironmentVariables {
 
   @IsNotEmpty()
   @MinLength(32)
-  AUTH_FORGOT_SECRET: string;
+  AUTH_FORGOT_SECRET!: string;
 
   @IsOptional()
   @IsString()
@@ -106,7 +106,7 @@ export class EnvironmentVariables {
   // Frontend URL (for email links)
   @IsNotEmpty()
   @IsUrl({ require_tld: false })
-  FRONTEND_URL: string;
+  FRONTEND_URL!: string;
 
   // Mail transport
   @IsOptional()
@@ -156,7 +156,7 @@ export class EnvironmentVariables {
 
   @IsNotEmpty()
   @MinLength(32)
-  SYSTEM_SECRET: string;
+  SYSTEM_SECRET!: string;
 }
 
 export function validate(config: Record<string, unknown>) {

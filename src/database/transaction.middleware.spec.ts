@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { EventEmitter } from 'node:events';
 import type { DrizzleDB } from './drizzle.provider';
 import { transactionStorage } from './transaction.cls';
@@ -145,7 +145,7 @@ describe('TransactionMiddleware', () => {
       }
     });
 
-    middleware.use(req, res, next as unknown as NextFunction);
+    middleware.use(req, res, next);
   });
 
   it('should not call next(err) if headers already sent on rollback', done => {

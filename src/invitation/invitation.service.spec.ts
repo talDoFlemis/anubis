@@ -75,11 +75,7 @@ describe('InvitationService', () => {
       ],
     ]);
 
-    const mailPayload = mailService.send.mock.calls[0]?.[0] as {
-      to: string;
-      title: string;
-      body: string;
-    };
+    const mailPayload = mailService.send.mock.calls[0]?.[0];
     expect(mailPayload).toEqual(
       expect.objectContaining({
         to: 'test@ufc.br',
@@ -100,11 +96,7 @@ describe('InvitationService', () => {
       emailBody: '<p>Custom body</p>',
     });
 
-    const mailPayload = mailService.send.mock.calls[0]?.[0] as {
-      to: string;
-      title: string;
-      body: string;
-    };
+    const mailPayload = mailService.send.mock.calls[0]?.[0];
     expect(mailPayload.body).toBe('<p>Custom body</p>');
   });
 

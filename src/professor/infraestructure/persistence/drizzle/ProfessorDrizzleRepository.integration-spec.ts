@@ -1,7 +1,6 @@
 import { AuthProvidersEnum } from '@/auth/auth-providers.enum';
 import { RoleEnum } from '@/roles/roles.enum';
 import { StatusEnum } from '@/statuses/statuses.enum';
-import type { DrizzleDB } from '@database/drizzle.provider';
 import { professors } from '@database/schema/professor';
 import { users } from '@database/schema/users';
 import {
@@ -37,7 +36,7 @@ describe('ProfessorDrizzleRepository (integration)', () => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-    repository = new ProfessorDrizzleRepository(db as unknown as DrizzleDB);
+    repository = new ProfessorDrizzleRepository(db);
   });
 
   afterEach(async () => {

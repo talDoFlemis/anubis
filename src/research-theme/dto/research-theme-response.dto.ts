@@ -5,45 +5,45 @@ import { ResearchThemeLevelEnum } from '../research-theme-level.enum';
 
 export class ResearchThemeProfessorDto {
   @ApiProperty({ format: 'uuid' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ required: false, nullable: true })
-  firstName: string | null;
+  firstName!: string | null;
 
   @ApiProperty({ required: false, nullable: true })
-  lastName: string | null;
+  lastName!: string | null;
 
   @ApiProperty({ required: false, nullable: true })
-  email: string | null;
+  email!: string | null;
 }
 
 export class ResearchThemeResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty({ format: 'uuid' })
-  professorId: string;
+  professorId!: string;
 
   @ApiProperty()
-  title: string;
+  title!: string;
 
   @ApiProperty()
-  description: string;
+  description!: string;
 
   @ApiProperty()
-  vacancies: number;
+  vacancies!: number;
 
   @ApiProperty({ enum: ResearchThemeLevelEnum })
-  level: ResearchThemeLevelEnum;
+  level!: ResearchThemeLevelEnum;
 
   @ApiProperty({ type: Object, isArray: true })
-  references: ResearchThemeReference[];
+  references!: ResearchThemeReference[];
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @ApiProperty({ type: ResearchThemeProfessorDto, required: false })
   professor?: ResearchThemeProfessorDto;

@@ -1,5 +1,4 @@
 import type { Pool } from 'pg';
-import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import { sessions } from '../../../../database/schema/sessions';
 import {
   createTestDrizzle,
@@ -17,7 +16,7 @@ describe('SessionDrizzleRepository (integration)', () => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-    repository = new SessionDrizzleRepository(db as unknown as DrizzleDB);
+    repository = new SessionDrizzleRepository(db);
   });
 
   afterEach(async () => {

@@ -19,21 +19,21 @@ export class CreateResearchThemeDto {
   @ApiProperty()
   @IsString()
   @MaxLength(255)
-  title: string;
+  title!: string;
 
   @ApiProperty()
   @IsString()
   @MaxLength(5000)
-  description: string;
+  description!: string;
 
   @ApiProperty()
   @IsInt()
   @Min(1)
-  vacancies: number;
+  vacancies!: number;
 
   @ApiProperty({ enum: ResearchThemeLevelEnum })
   @IsEnum(ResearchThemeLevelEnum)
-  level: ResearchThemeLevelEnum;
+  level!: ResearchThemeLevelEnum;
 
   @ApiPropertyOptional({ type: ResearchThemeReferenceDto, isArray: true })
   @IsOptional()
