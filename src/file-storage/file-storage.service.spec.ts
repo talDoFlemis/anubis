@@ -1,13 +1,13 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { DRIZZLE_TX } from '../database/drizzle.constants';
 import { S3_CLIENT } from './file-storage.constants';
 import { FileStorageService } from './file-storage.service';
+import { FileStorageRepository } from './infrastructure/persistence/file-storage.repository';
 
 describe('FileStorageService', () => {
   let service: FileStorageService;
-  let mockDb: any;
+  let mockRepository: jest.Mocked<FileStorageRepository>;
   let mockS3: any;
 
   const mockFile = {
@@ -30,15 +30,10 @@ describe('FileStorageService', () => {
   };
 
   beforeEach(async () => {
-    mockDb = {
-      insert: jest.fn().mockReturnThis(),
-      values: jest.fn().mockReturnThis(),
-      returning: jest.fn().mockResolvedValue([mockFileRecord]),
-      select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockResolvedValue([mockFileRecord]),
-      delete: jest.fn().mockReturnThis(),
+    mockRepository = {
+      create: jest.fn().mockResolvedValue(mockFileRecord),
+      findById: jest.fn().mockResolvedValue(mockFileRecord),
+      delete: jest.fn().mockResolvedValue(undefined),
     };
 
     mockS3 = {
@@ -48,7 +43,7 @@ describe('FileStorageService', () => {
     const module = await Test.createTestingModule({
       providers: [
         FileStorageService,
-        { provide: DRIZZLE_TX, useValue: mockDb },
+        { provide: FileStorageRepository, useValue: mockRepository },
         { provide: S3_CLIENT, useValue: mockS3 },
         {
           provide: ConfigService,
@@ -68,7 +63,7 @@ describe('FileStorageService', () => {
       const result = await service.upload(mockFile, 'user-uuid', 'cv-items');
 
       expect(mockS3.send).toHaveBeenCalledTimes(1);
-      expect(mockDb.insert).toHaveBeenCalled();
+      expect(mockRepository.create).toHaveBeenCalled();
       expect(result).toEqual(mockFileRecord);
     });
 
@@ -129,7 +124,7 @@ describe('FileStorageService', () => {
     });
 
     it('throws NotFoundException when file not found', async () => {
-      mockDb.limit = jest.fn().mockResolvedValue([]);
+      mockRepository.findById.mockResolvedValue(null);
 
       await expect(service.findById('missing-uuid')).rejects.toThrow(NotFoundException);
     });
@@ -140,7 +135,7 @@ describe('FileStorageService', () => {
       await service.delete('file-uuid');
 
       expect(mockS3.send).toHaveBeenCalledTimes(1);
-      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockRepository.delete).toHaveBeenCalledWith('file-uuid');
     });
   });
 });

@@ -1,12 +1,12 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getLoggerToken } from 'nestjs-pino';
-import { DRIZZLE_TX } from '../database/drizzle.constants';
 import { EnrollmentPeriodService } from './enrollment-period.service';
+import { EnrollmentPeriodRepository } from './infrastructure/persistence/enrollment-period.repository';
 
 describe('EnrollmentPeriodService', () => {
   let service: EnrollmentPeriodService;
-  let mockDb: any;
+  let mockRepository: any;
 
   const mockPeriod = {
     id: 'period-uuid',
@@ -20,24 +20,22 @@ describe('EnrollmentPeriodService', () => {
   };
 
   beforeEach(async () => {
-    mockDb = {
-      select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockResolvedValue([]),
-      orderBy: jest.fn().mockReturnThis(),
-      insert: jest.fn().mockReturnThis(),
-      values: jest.fn().mockReturnThis(),
-      returning: jest.fn().mockResolvedValue([mockPeriod]),
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
+    mockRepository = {
+      findAll: jest.fn().mockResolvedValue([]),
+      findById: jest.fn().mockResolvedValue(null),
+      findByStatus: jest.fn().mockResolvedValue([]),
+      findOverlapping: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue(mockPeriod),
+      update: jest.fn().mockResolvedValue(mockPeriod),
+      remove: jest.fn().mockResolvedValue(undefined),
+      hasEnrollments: jest.fn().mockResolvedValue(false),
+      syncStatuses: jest.fn().mockResolvedValue({ opened: [], closed: [], skipped: [] }),
     };
 
     const module = await Test.createTestingModule({
       providers: [
         EnrollmentPeriodService,
-        { provide: DRIZZLE_TX, useValue: mockDb },
+        { provide: EnrollmentPeriodRepository, useValue: mockRepository },
         {
           provide: getLoggerToken(EnrollmentPeriodService.name),
           useValue: {
@@ -62,14 +60,11 @@ describe('EnrollmentPeriodService', () => {
         endDate: '2026-02-15T23:59:59.000Z',
       };
 
-      // No overlapping periods found
-      mockDb.limit.mockResolvedValueOnce([]);
-
       const result = await service.create(dto);
 
       expect(result.id).toBe(mockPeriod.id);
       expect(result.name).toBe(mockPeriod.name);
-      expect(mockDb.insert).toHaveBeenCalled();
+      expect(mockRepository.create).toHaveBeenCalled();
     });
 
     it('rejects when startDate >= endDate', async () => {
@@ -91,8 +86,7 @@ describe('EnrollmentPeriodService', () => {
         endDate: '2026-02-15T23:59:59.000Z',
       };
 
-      // Overlapping period found
-      mockDb.limit.mockResolvedValueOnce([
+      mockRepository.findOverlapping.mockResolvedValueOnce([
         {
           id: 'existing-uuid',
           name: 'Seleção 2026.1',
@@ -107,7 +101,7 @@ describe('EnrollmentPeriodService', () => {
 
   describe('findById', () => {
     it('finds period by id', async () => {
-      mockDb.limit.mockResolvedValueOnce([mockPeriod]);
+      mockRepository.findById.mockResolvedValueOnce(mockPeriod);
 
       const result = await service.findById('period-uuid');
 
@@ -116,7 +110,7 @@ describe('EnrollmentPeriodService', () => {
     });
 
     it('throws when period not found', async () => {
-      mockDb.limit.mockResolvedValueOnce([]);
+      mockRepository.findById.mockResolvedValueOnce(null);
 
       await expect(service.findById('missing-uuid')).rejects.toThrow(NotFoundException);
     });
@@ -124,37 +118,30 @@ describe('EnrollmentPeriodService', () => {
 
   describe('close', () => {
     it('manual close works', async () => {
-      // findById will return the period
-      mockDb.limit.mockResolvedValueOnce([mockPeriod]);
+      mockRepository.findById.mockResolvedValueOnce(mockPeriod);
 
       const closedPeriod = { ...mockPeriod, status: 'closed' };
-      mockDb.returning.mockResolvedValueOnce([closedPeriod]);
+      mockRepository.update.mockResolvedValueOnce(closedPeriod);
 
       const result = await service.close('period-uuid');
 
       expect(result.status).toBe('closed');
-      expect(mockDb.update).toHaveBeenCalled();
+      expect(mockRepository.update).toHaveBeenCalled();
     });
   });
 
   describe('remove', () => {
     it('removes period with no enrollments', async () => {
-      // findById returns period
-      mockDb.limit
-        .mockResolvedValueOnce([mockPeriod])
-        // no enrollments found
-        .mockResolvedValueOnce([]);
+      mockRepository.findById.mockResolvedValueOnce(mockPeriod);
+      mockRepository.hasEnrollments.mockResolvedValueOnce(false);
 
       await expect(service.remove('period-uuid')).resolves.toBeUndefined();
-      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockRepository.remove).toHaveBeenCalled();
     });
 
     it('rejects deletion when enrollments exist', async () => {
-      // findById returns period
-      mockDb.limit
-        .mockResolvedValueOnce([mockPeriod])
-        // enrollments found
-        .mockResolvedValueOnce([{ id: 'enrollment-uuid' }]);
+      mockRepository.findById.mockResolvedValueOnce(mockPeriod);
+      mockRepository.hasEnrollments.mockResolvedValueOnce(true);
 
       await expect(service.remove('period-uuid')).rejects.toThrow(ConflictException);
     });
@@ -162,20 +149,22 @@ describe('EnrollmentPeriodService', () => {
 
   describe('syncStatuses', () => {
     it('opens scheduled periods whose start date has passed', async () => {
-      mockDb.returning
-        .mockResolvedValueOnce([{ id: 'opened-uuid' }])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
+      mockRepository.syncStatuses.mockResolvedValueOnce({
+        opened: [{ id: 'opened-uuid' }],
+        closed: [],
+        skipped: [],
+      });
 
       await expect(service.syncStatuses()).resolves.toBeUndefined();
-      expect(mockDb.update).toHaveBeenCalled();
+      expect(mockRepository.syncStatuses).toHaveBeenCalled();
     });
 
     it('closes expired open periods', async () => {
-      mockDb.returning
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 'closed-uuid' }])
-        .mockResolvedValueOnce([]);
+      mockRepository.syncStatuses.mockResolvedValueOnce({
+        opened: [],
+        closed: [{ id: 'closed-uuid' }],
+        skipped: [],
+      });
 
       await expect(service.syncStatuses()).resolves.toBeUndefined();
     });
@@ -183,11 +172,10 @@ describe('EnrollmentPeriodService', () => {
 
   describe('update', () => {
     it('updates a period successfully', async () => {
-      // findById returns the period
-      mockDb.limit.mockResolvedValueOnce([mockPeriod]);
+      mockRepository.findById.mockResolvedValueOnce(mockPeriod);
 
       const updatedPeriod = { ...mockPeriod, name: 'Updated Name' };
-      mockDb.returning.mockResolvedValueOnce([updatedPeriod]);
+      mockRepository.update.mockResolvedValueOnce(updatedPeriod);
 
       const result = await service.update('period-uuid', {
         name: 'Updated Name',
@@ -197,8 +185,7 @@ describe('EnrollmentPeriodService', () => {
     });
 
     it('rejects update when dates are invalid', async () => {
-      // findById returns the period
-      mockDb.limit.mockResolvedValueOnce([mockPeriod]);
+      mockRepository.findById.mockResolvedValueOnce(mockPeriod);
 
       await expect(
         service.update('period-uuid', {
@@ -211,7 +198,7 @@ describe('EnrollmentPeriodService', () => {
 
   describe('findAll', () => {
     it('returns all periods ordered by startDate desc', async () => {
-      mockDb.orderBy.mockResolvedValueOnce([mockPeriod]);
+      mockRepository.findAll.mockResolvedValueOnce([mockPeriod]);
 
       const result = await service.findAll();
 
@@ -220,20 +207,18 @@ describe('EnrollmentPeriodService', () => {
     });
 
     it('returns periods ordered by createdAt descending', async () => {
-      mockDb.orderBy.mockResolvedValueOnce([mockPeriod]);
+      mockRepository.findAll.mockResolvedValueOnce([mockPeriod]);
 
       await service.findAll();
 
-      expect(mockDb.orderBy).toHaveBeenCalled();
-      const orderByArg = mockDb.orderBy.mock.calls[0][0];
-      expect(orderByArg).toBeDefined();
+      expect(mockRepository.findAll).toHaveBeenCalled();
     });
   });
 
   describe('findCurrentOpen', () => {
     it('returns open periods', async () => {
       const openPeriod = { ...mockPeriod, status: 'open' };
-      mockDb.orderBy.mockResolvedValueOnce([openPeriod]);
+      mockRepository.findByStatus.mockResolvedValueOnce([openPeriod]);
 
       const result = await service.findCurrentOpen();
 

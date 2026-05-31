@@ -1,29 +1,22 @@
 import {
   BadRequestException,
   ForbiddenException,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
 
 import type { CreateCvItemDto } from './dto/create-cv-item.dto';
 import type { UpdateCvItemDto } from './dto/update-cv-item.dto';
 
-import { DRIZZLE_TX } from '../database/drizzle.constants';
-import type { DrizzleDB } from '../database/drizzle.provider';
-import { cvItems } from '../database/schema/cv-items';
-import { cvScoringCategories } from '../database/schema/cv-scoring';
-import { enrollments } from '../database/schema/enrollments';
-import { files } from '../database/schema/files';
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { CvScoringService } from './cv-scoring.service';
 import { CvItem } from './domain/cv-item';
+import { CvItemRepository } from './infrastructure/persistence/cv-item.repository';
 
 @Injectable()
 export class CvItemService {
   constructor(
-    @Inject(DRIZZLE_TX) private readonly db: DrizzleDB,
+    private readonly cvItemRepository: CvItemRepository,
     private readonly cvScoringService: CvScoringService,
     private readonly fileStorageService: FileStorageService,
   ) {}
@@ -48,43 +41,30 @@ export class CvItemService {
       proofFileId = fileRecord.id;
     }
 
-    const [row] = await this.db
-      .insert(cvItems)
-      .values({
-        enrollmentId,
-        scoringCategoryId: dto.scoringCategoryId,
-        description: dto.description,
-        quantity: dto.quantity ?? 1,
-        proofFileId,
-      })
-      .returning();
+    const item = await this.cvItemRepository.create({
+      enrollmentId,
+      scoringCategoryId: dto.scoringCategoryId,
+      description: dto.description,
+      quantity: dto.quantity ?? 1,
+      proofFileId,
+    });
 
     await this.recalculateScore(enrollmentId);
-    return CvItem.toDomain(row);
+    return item;
   }
 
   async findByEnrollment(enrollmentId: string): Promise<CvItem[]> {
-    const rows = await this.db
-      .select({
-        cvItem: cvItems,
-        proofFileName: files.originalName,
-      })
-      .from(cvItems)
-      .leftJoin(files, eq(cvItems.proofFileId, files.id))
-      .where(eq(cvItems.enrollmentId, enrollmentId))
-      .orderBy(cvItems.createdAt);
-
-    return rows.map(row => CvItem.toDomain({ ...row.cvItem, proofFileName: row.proofFileName }));
+    return this.cvItemRepository.findByEnrollment(enrollmentId);
   }
 
   async findById(enrollmentId: string, itemId: string): Promise<CvItem> {
-    const [row] = await this.db.select().from(cvItems).where(eq(cvItems.id, itemId)).limit(1);
+    const item = await this.cvItemRepository.findById(itemId);
 
-    if (!row || row.enrollmentId !== enrollmentId) {
+    if (!item || item.enrollmentId !== enrollmentId) {
       throw new NotFoundException('Item do CV não encontrado.');
     }
 
-    return CvItem.toDomain(row);
+    return item;
   }
 
   async update(
@@ -118,14 +98,10 @@ export class CvItemService {
       updateData.proofFileId = fileRecord.id;
     }
 
-    const [row] = await this.db
-      .update(cvItems)
-      .set(updateData)
-      .where(eq(cvItems.id, itemId))
-      .returning();
+    const item = await this.cvItemRepository.update(itemId, updateData as any);
 
     await this.recalculateScore(enrollmentId);
-    return CvItem.toDomain(row);
+    return item;
   }
 
   async remove(userId: string, enrollmentId: string, itemId: string): Promise<void> {
@@ -136,16 +112,12 @@ export class CvItemService {
       await this.fileStorageService.delete(item.proofFileId);
     }
 
-    await this.db.delete(cvItems).where(eq(cvItems.id, itemId));
+    await this.cvItemRepository.remove(itemId);
     await this.recalculateScore(enrollmentId);
   }
 
   private async getEnrollment(enrollmentId: string) {
-    const [enrollment] = await this.db
-      .select()
-      .from(enrollments)
-      .where(eq(enrollments.id, enrollmentId))
-      .limit(1);
+    const enrollment = await this.cvItemRepository.findEnrollmentById(enrollmentId);
 
     if (!enrollment) {
       throw new NotFoundException('Inscrição não encontrada.');
@@ -172,11 +144,7 @@ export class CvItemService {
     periodId: string,
     level: string,
   ): Promise<void> {
-    const [category] = await this.db
-      .select()
-      .from(cvScoringCategories)
-      .where(eq(cvScoringCategories.id, categoryId))
-      .limit(1);
+    const category = await this.cvItemRepository.findScoringCategoryById(categoryId);
 
     if (!category) {
       throw new NotFoundException('Categoria de pontuação não encontrada.');
@@ -206,12 +174,9 @@ export class CvItemService {
 
     const breakdown = this.cvScoringService.calculateScoreFromItems(scoringItems, categories);
 
-    await this.db
-      .update(enrollments)
-      .set({
-        scoreDraft: String(breakdown.total.toFixed(2)),
-        updatedAt: new Date(),
-      })
-      .where(eq(enrollments.id, enrollmentId));
+    await this.cvItemRepository.updateEnrollmentScore(
+      enrollmentId,
+      String(breakdown.total.toFixed(2)),
+    );
   }
 }

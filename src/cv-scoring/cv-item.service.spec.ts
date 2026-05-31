@@ -1,46 +1,14 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
-import { DRIZZLE_TX } from '../database/drizzle.constants';
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { CvItemService } from './cv-item.service';
 import { CvScoringService } from './cv-scoring.service';
-
-/**
- * Creates a chainable mock DB that supports both select and mutation chains.
- *
- * Terminal methods:
- *   - `limit()` for select chains
- *   - `returning()` for insert/update chains
- *   - the `where()` on `delete` chains resolves directly
- *
- * We track calls via queued return values on terminal methods.
- */
-function createMockDb() {
-  const db: any = {};
-
-  // terminal methods — push values with mockResolvedValueOnce
-  db.limit = jest.fn().mockResolvedValue([]);
-  db.returning = jest.fn().mockResolvedValue([]);
-  db.orderBy = jest.fn().mockResolvedValue([]);
-
-  // chainable methods — always return db so the chain continues
-  db.select = jest.fn().mockReturnValue(db);
-  db.from = jest.fn().mockReturnValue(db);
-  db.leftJoin = jest.fn().mockReturnValue(db);
-  db.where = jest.fn().mockReturnValue(db);
-  db.insert = jest.fn().mockReturnValue(db);
-  db.values = jest.fn().mockReturnValue(db);
-  db.update = jest.fn().mockReturnValue(db);
-  db.set = jest.fn().mockReturnValue(db);
-  db.delete = jest.fn().mockReturnValue(db);
-
-  return db;
-}
+import { CvItemRepository } from './infrastructure/persistence/cv-item.repository';
 
 describe('CvItemService', () => {
   let service: CvItemService;
-  let mockDb: ReturnType<typeof createMockDb>;
+  let mockCvItemRepository: any;
   let mockCvScoringService: any;
   let mockFileStorageService: any;
 
@@ -74,6 +42,7 @@ describe('CvItemService', () => {
     description: 'Artigo publicado',
     quantity: 1,
     proofFileId: null,
+    proofFileName: null,
     score: null,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -93,7 +62,16 @@ describe('CvItemService', () => {
   };
 
   beforeEach(async () => {
-    mockDb = createMockDb();
+    mockCvItemRepository = {
+      create: jest.fn().mockResolvedValue(mockCvItem),
+      findByEnrollment: jest.fn().mockResolvedValue([]),
+      findById: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue(mockCvItem),
+      remove: jest.fn().mockResolvedValue(undefined),
+      findEnrollmentById: jest.fn().mockResolvedValue(null),
+      findScoringCategoryById: jest.fn().mockResolvedValue(null),
+      updateEnrollmentScore: jest.fn().mockResolvedValue(undefined),
+    };
 
     mockCvScoringService = {
       getCategoriesForPeriod: jest.fn().mockResolvedValue([mockCategory]),
@@ -119,7 +97,7 @@ describe('CvItemService', () => {
     const module = await Test.createTestingModule({
       providers: [
         CvItemService,
-        { provide: DRIZZLE_TX, useValue: mockDb },
+        { provide: CvItemRepository, useValue: mockCvItemRepository },
         { provide: CvScoringService, useValue: mockCvScoringService },
         { provide: FileStorageService, useValue: mockFileStorageService },
       ],
@@ -130,28 +108,23 @@ describe('CvItemService', () => {
 
   /**
    * Helper to set up mocks for a successful create flow:
-   *   1. getAndValidateEnrollment → getEnrollment (limit)
-   *   2. validateScoringCategory (limit)
-   *   3. insert → returning
-   *   4. recalculateScore → getEnrollment (limit)
-   *   5. recalculateScore → findByEnrollment (orderBy)
-   *   6. recalculateScore → update enrollment (returning — ignored)
+   *   1. getAndValidateEnrollment → findEnrollmentById
+   *   2. validateScoringCategory → findScoringCategoryById
+   *   3. create item
+   *   4. recalculateScore → findEnrollmentById + findByEnrollment + updateEnrollmentScore
    */
   function setupCreateMocks(overrides: { enrollment?: any; category?: any; item?: any } = {}) {
     const enrollment = overrides.enrollment ?? mockEnrollment;
     const category = overrides.category ?? mockCategory;
     const item = overrides.item ?? mockCvItem;
 
-    mockDb.limit
-      .mockResolvedValueOnce([enrollment]) // getAndValidateEnrollment
-      .mockResolvedValueOnce([category]); // validateScoringCategory
+    mockCvItemRepository.findEnrollmentById
+      .mockResolvedValueOnce(enrollment) // getAndValidateEnrollment
+      .mockResolvedValueOnce(enrollment); // recalculateScore → getEnrollment
 
-    mockDb.returning.mockResolvedValueOnce([item]); // insert
-
-    // recalculateScore
-    mockDb.limit.mockResolvedValueOnce([enrollment]); // getEnrollment
-    mockDb.orderBy.mockResolvedValueOnce([{ cvItem: item, proofFileName: null }]); // findByEnrollment
-    // update enrollment (set().where() — where returns db, no terminal needed)
+    mockCvItemRepository.findScoringCategoryById.mockResolvedValueOnce(category);
+    mockCvItemRepository.create.mockResolvedValueOnce(item);
+    mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([item]); // recalculateScore
   }
 
   describe('create', () => {
@@ -165,7 +138,7 @@ describe('CvItemService', () => {
 
       expect(result.id).toBe('item-uuid');
       expect(result.description).toBe('Artigo publicado');
-      expect(mockDb.insert).toHaveBeenCalled();
+      expect(mockCvItemRepository.create).toHaveBeenCalled();
     });
 
     it('creates a CV item with file upload', async () => {
@@ -187,7 +160,10 @@ describe('CvItemService', () => {
     });
 
     it('rejects when enrollment is not draft', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ ...mockEnrollment, status: 'submitted' }]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce({
+        ...mockEnrollment,
+        status: 'submitted',
+      });
 
       await expect(
         service.create('user-uuid', 'enrollment-uuid', {
@@ -198,7 +174,10 @@ describe('CvItemService', () => {
     });
 
     it('rejects when user is not the owner', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ ...mockEnrollment, candidateId: 'other-user-uuid' }]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce({
+        ...mockEnrollment,
+        candidateId: 'other-user-uuid',
+      });
 
       await expect(
         service.create('user-uuid', 'enrollment-uuid', {
@@ -209,9 +188,11 @@ describe('CvItemService', () => {
     });
 
     it('rejects when scoring category does not belong to the period', async () => {
-      mockDb.limit
-        .mockResolvedValueOnce([mockEnrollment])
-        .mockResolvedValueOnce([{ ...mockCategory, enrollmentPeriodId: 'other-period-uuid' }]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
+      mockCvItemRepository.findScoringCategoryById.mockResolvedValueOnce({
+        ...mockCategory,
+        enrollmentPeriodId: 'other-period-uuid',
+      });
 
       await expect(
         service.create('user-uuid', 'enrollment-uuid', {
@@ -222,9 +203,11 @@ describe('CvItemService', () => {
     });
 
     it('rejects when scoring category level does not match enrollment', async () => {
-      mockDb.limit
-        .mockResolvedValueOnce([mockEnrollment])
-        .mockResolvedValueOnce([{ ...mockCategory, level: 'doctoral' }]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
+      mockCvItemRepository.findScoringCategoryById.mockResolvedValueOnce({
+        ...mockCategory,
+        level: 'doctoral',
+      });
 
       await expect(
         service.create('user-uuid', 'enrollment-uuid', {
@@ -235,7 +218,8 @@ describe('CvItemService', () => {
     });
 
     it('rejects when scoring category is not found', async () => {
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]).mockResolvedValueOnce([]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
+      mockCvItemRepository.findScoringCategoryById.mockResolvedValueOnce(null);
 
       await expect(
         service.create('user-uuid', 'enrollment-uuid', {
@@ -248,7 +232,7 @@ describe('CvItemService', () => {
 
   describe('findByEnrollment', () => {
     it('returns items for an enrollment', async () => {
-      mockDb.orderBy.mockResolvedValueOnce([{ cvItem: mockCvItem, proofFileName: null }]);
+      mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([mockCvItem]);
 
       const result = await service.findByEnrollment('enrollment-uuid');
 
@@ -257,7 +241,7 @@ describe('CvItemService', () => {
     });
 
     it('returns empty array when no items exist', async () => {
-      mockDb.orderBy.mockResolvedValueOnce([]);
+      mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([]);
 
       const result = await service.findByEnrollment('enrollment-uuid');
 
@@ -267,7 +251,7 @@ describe('CvItemService', () => {
 
   describe('findById', () => {
     it('returns item when found', async () => {
-      mockDb.limit.mockResolvedValueOnce([mockCvItem]);
+      mockCvItemRepository.findById.mockResolvedValueOnce(mockCvItem);
 
       const result = await service.findById('enrollment-uuid', 'item-uuid');
 
@@ -275,7 +259,7 @@ describe('CvItemService', () => {
     });
 
     it('throws NotFoundException when item not found', async () => {
-      mockDb.limit.mockResolvedValueOnce([]);
+      mockCvItemRepository.findById.mockResolvedValueOnce(null);
 
       await expect(service.findById('enrollment-uuid', 'missing-uuid')).rejects.toThrow(
         NotFoundException,
@@ -283,9 +267,10 @@ describe('CvItemService', () => {
     });
 
     it('throws NotFoundException when item belongs to different enrollment', async () => {
-      mockDb.limit.mockResolvedValueOnce([
-        { ...mockCvItem, enrollmentId: 'other-enrollment-uuid' },
-      ]);
+      mockCvItemRepository.findById.mockResolvedValueOnce({
+        ...mockCvItem,
+        enrollmentId: 'other-enrollment-uuid',
+      });
 
       await expect(service.findById('enrollment-uuid', 'item-uuid')).rejects.toThrow(
         NotFoundException,
@@ -297,16 +282,16 @@ describe('CvItemService', () => {
     it('updates a CV item', async () => {
       const updatedItem = { ...mockCvItem, description: 'Updated' };
 
-      // getAndValidateEnrollment → getEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      // getAndValidateEnrollment
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // findById
-      mockDb.limit.mockResolvedValueOnce([mockCvItem]);
-      // update returning
-      mockDb.returning.mockResolvedValueOnce([updatedItem]);
+      mockCvItemRepository.findById.mockResolvedValueOnce(mockCvItem);
+      // update
+      mockCvItemRepository.update.mockResolvedValueOnce(updatedItem);
       // recalculateScore → getEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // recalculateScore → findByEnrollment
-      mockDb.orderBy.mockResolvedValueOnce([{ cvItem: updatedItem, proofFileName: null }]);
+      mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([updatedItem]);
 
       const result = await service.update('user-uuid', 'enrollment-uuid', 'item-uuid', {
         description: 'Updated',
@@ -320,15 +305,15 @@ describe('CvItemService', () => {
       const updatedItem = { ...itemWithFile, proofFileId: 'file-uuid' };
 
       // getAndValidateEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // findById
-      mockDb.limit.mockResolvedValueOnce([itemWithFile]);
-      // update returning
-      mockDb.returning.mockResolvedValueOnce([updatedItem]);
+      mockCvItemRepository.findById.mockResolvedValueOnce(itemWithFile);
+      // update
+      mockCvItemRepository.update.mockResolvedValueOnce(updatedItem);
       // recalculateScore → getEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // recalculateScore → findByEnrollment
-      mockDb.orderBy.mockResolvedValueOnce([{ cvItem: updatedItem, proofFileName: null }]);
+      mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([updatedItem]);
 
       await service.update('user-uuid', 'enrollment-uuid', 'item-uuid', {}, mockFile);
 
@@ -338,13 +323,16 @@ describe('CvItemService', () => {
 
     it('validates new scoring category on update', async () => {
       // getAndValidateEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // findById
-      mockDb.limit.mockResolvedValueOnce([mockCvItem]);
+      mockCvItemRepository.findById.mockResolvedValueOnce(mockCvItem);
       // getEnrollment for category validation
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // validateScoringCategory — wrong period
-      mockDb.limit.mockResolvedValueOnce([{ ...mockCategory, enrollmentPeriodId: 'wrong-period' }]);
+      mockCvItemRepository.findScoringCategoryById.mockResolvedValueOnce({
+        ...mockCategory,
+        enrollmentPeriodId: 'wrong-period',
+      });
 
       await expect(
         service.update('user-uuid', 'enrollment-uuid', 'item-uuid', {
@@ -359,34 +347,34 @@ describe('CvItemService', () => {
       const itemWithFile = { ...mockCvItem, proofFileId: 'file-uuid' };
 
       // getAndValidateEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // findById
-      mockDb.limit.mockResolvedValueOnce([itemWithFile]);
+      mockCvItemRepository.findById.mockResolvedValueOnce(itemWithFile);
       // recalculateScore → getEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // recalculateScore → findByEnrollment
-      mockDb.orderBy.mockResolvedValueOnce([]);
+      mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([]);
 
       await service.remove('user-uuid', 'enrollment-uuid', 'item-uuid');
 
       expect(mockFileStorageService.delete).toHaveBeenCalledWith('file-uuid');
-      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockCvItemRepository.remove).toHaveBeenCalledWith('item-uuid');
     });
 
     it('removes a CV item without file', async () => {
       // getAndValidateEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // findById
-      mockDb.limit.mockResolvedValueOnce([mockCvItem]);
+      mockCvItemRepository.findById.mockResolvedValueOnce(mockCvItem);
       // recalculateScore → getEnrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
       // recalculateScore → findByEnrollment
-      mockDb.orderBy.mockResolvedValueOnce([]);
+      mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([]);
 
       await service.remove('user-uuid', 'enrollment-uuid', 'item-uuid');
 
       expect(mockFileStorageService.delete).not.toHaveBeenCalled();
-      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockCvItemRepository.remove).toHaveBeenCalledWith('item-uuid');
     });
   });
 
@@ -404,7 +392,7 @@ describe('CvItemService', () => {
         'masters',
       );
       expect(mockCvScoringService.calculateScoreFromItems).toHaveBeenCalled();
-      expect(mockDb.update).toHaveBeenCalled();
+      expect(mockCvItemRepository.updateEnrollmentScore).toHaveBeenCalled();
     });
   });
 });

@@ -1,28 +1,23 @@
 import {
   BadRequestException,
   ConflictException,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, gt, lte, ne, or } from 'drizzle-orm';
 
-import { DRIZZLE_TX } from '../database/drizzle.constants';
-import type { DrizzleDB } from '../database/drizzle.provider';
-import { enrollmentPeriods } from '../database/schema/enrollment-periods';
-import { enrollments } from '../database/schema/enrollments';
 import type { PeriodStatus } from './constants/enrollment-status';
 import { PERIOD_STATUS } from './constants/enrollment-status';
-import { EnrollmentPeriod } from './domain/enrollment-period';
+import type { EnrollmentPeriod } from './domain/enrollment-period';
 import type { CreateEnrollmentPeriodDto } from './dto/create-enrollment-period.dto';
 import type { UpdateEnrollmentPeriodDto } from './dto/update-enrollment-period.dto';
+import { EnrollmentPeriodRepository } from './infrastructure/persistence/enrollment-period.repository';
 
 @Injectable()
 export class EnrollmentPeriodService {
   private readonly logger = new Logger(EnrollmentPeriodService.name);
 
-  constructor(@Inject(DRIZZLE_TX) private readonly db: DrizzleDB) {}
+  constructor(private readonly enrollmentPeriodRepository: EnrollmentPeriodRepository) {}
 
   async create(dto: CreateEnrollmentPeriodDto): Promise<EnrollmentPeriod> {
     const startDate = new Date(dto.startDate);
@@ -32,26 +27,7 @@ export class EnrollmentPeriodService {
       throw new BadRequestException('A data de início deve ser anterior à data de término.');
     }
 
-    const overlapping = await this.db
-      .select({
-        id: enrollmentPeriods.id,
-        name: enrollmentPeriods.name,
-        startDate: enrollmentPeriods.startDate,
-        endDate: enrollmentPeriods.endDate,
-      })
-      .from(enrollmentPeriods)
-      .where(
-        and(
-          ne(enrollmentPeriods.status, PERIOD_STATUS.CLOSED),
-          or(
-            and(
-              lte(enrollmentPeriods.startDate, endDate),
-              gt(enrollmentPeriods.endDate, startDate),
-            ),
-          ),
-        ),
-      )
-      .limit(1);
+    const overlapping = await this.enrollmentPeriodRepository.findOverlapping(startDate, endDate);
 
     if (overlapping.length > 0) {
       const conflict = overlapping[0];
@@ -69,52 +45,34 @@ export class EnrollmentPeriodService {
       status = PERIOD_STATUS.CLOSED;
     }
 
-    const [row] = await this.db
-      .insert(enrollmentPeriods)
-      .values({
-        name: dto.name,
-        semester: dto.semester,
-        startDate,
-        endDate,
-        status,
-      })
-      .returning();
+    const period = await this.enrollmentPeriodRepository.create({
+      name: dto.name,
+      semester: dto.semester,
+      startDate,
+      endDate,
+      status,
+    });
 
     this.logger.log('Período de inscrição criado');
-    return EnrollmentPeriod.toDomain(row);
+    return period;
   }
 
   async findAll(): Promise<EnrollmentPeriod[]> {
-    const rows = await this.db
-      .select()
-      .from(enrollmentPeriods)
-      .orderBy(desc(enrollmentPeriods.createdAt));
-
-    return rows.map(row => EnrollmentPeriod.toDomain(row));
+    return this.enrollmentPeriodRepository.findAll();
   }
 
   async findById(id: string): Promise<EnrollmentPeriod> {
-    const [row] = await this.db
-      .select()
-      .from(enrollmentPeriods)
-      .where(eq(enrollmentPeriods.id, id))
-      .limit(1);
+    const period = await this.enrollmentPeriodRepository.findById(id);
 
-    if (!row) {
+    if (!period) {
       throw new NotFoundException('Período de inscrição não encontrado.');
     }
 
-    return EnrollmentPeriod.toDomain(row);
+    return period;
   }
 
   async findCurrentOpen(): Promise<EnrollmentPeriod[]> {
-    const rows = await this.db
-      .select()
-      .from(enrollmentPeriods)
-      .where(eq(enrollmentPeriods.status, PERIOD_STATUS.OPEN))
-      .orderBy(desc(enrollmentPeriods.startDate));
-
-    return rows.map(row => EnrollmentPeriod.toDomain(row));
+    return this.enrollmentPeriodRepository.findByStatus(PERIOD_STATUS.OPEN);
   }
 
   async update(id: string, dto: UpdateEnrollmentPeriodDto): Promise<EnrollmentPeriod> {
@@ -127,103 +85,73 @@ export class EnrollmentPeriodService {
       throw new BadRequestException('A data de início deve ser anterior à data de término.');
     }
 
-    const updateData: Record<string, unknown> = { updatedAt: new Date() };
-    if (dto.name !== undefined) updateData.name = dto.name;
-    if (dto.semester !== undefined) updateData.semester = dto.semester;
-    if (dto.startDate !== undefined) updateData.startDate = startDate;
-    if (dto.endDate !== undefined) updateData.endDate = endDate;
+    const updated = await this.enrollmentPeriodRepository.update(id, {
+      name: dto.name,
+      semester: dto.semester,
+      startDate: dto.startDate ? startDate : undefined,
+      endDate: dto.endDate ? endDate : undefined,
+      updatedAt: new Date(),
+    });
 
-    const [row] = await this.db
-      .update(enrollmentPeriods)
-      .set(updateData)
-      .where(eq(enrollmentPeriods.id, id))
-      .returning();
+    if (!updated) {
+      throw new NotFoundException('Período de inscrição não encontrado.');
+    }
 
     this.logger.log('Período de inscrição atualizado');
-    return EnrollmentPeriod.toDomain(row);
+    return updated;
   }
 
   async close(id: string): Promise<EnrollmentPeriod> {
     await this.findById(id);
 
     const now = new Date();
-    const [row] = await this.db
-      .update(enrollmentPeriods)
-      .set({ status: PERIOD_STATUS.CLOSED, endDate: now, updatedAt: now })
-      .where(eq(enrollmentPeriods.id, id))
-      .returning();
+    const updated = await this.enrollmentPeriodRepository.update(id, {
+      status: PERIOD_STATUS.CLOSED,
+      endDate: now,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Período de inscrição não encontrado.');
+    }
 
     this.logger.log('Período de inscrição fechado manualmente');
-    return EnrollmentPeriod.toDomain(row);
+    return updated;
   }
 
   async remove(id: string): Promise<void> {
     await this.findById(id);
 
-    const [enrollment] = await this.db
-      .select({ id: enrollments.id })
-      .from(enrollments)
-      .where(eq(enrollments.enrollmentPeriodId, id))
-      .limit(1);
+    const hasEnrollments = await this.enrollmentPeriodRepository.hasEnrollments(id);
 
-    if (enrollment) {
+    if (hasEnrollments) {
       throw new ConflictException('Não é possível excluir um período que possui inscrições.');
     }
 
-    await this.db.delete(enrollmentPeriods).where(eq(enrollmentPeriods.id, id));
+    await this.enrollmentPeriodRepository.remove(id);
 
     this.logger.log('Período de inscrição removido');
   }
 
   async syncStatuses(): Promise<void> {
     const now = new Date();
+    const result = await this.enrollmentPeriodRepository.syncStatuses(now);
 
-    // Open scheduled periods whose start date has passed
-    const opened = await this.db
-      .update(enrollmentPeriods)
-      .set({ status: PERIOD_STATUS.OPEN, updatedAt: now })
-      .where(
-        and(
-          eq(enrollmentPeriods.status, PERIOD_STATUS.SCHEDULED),
-          lte(enrollmentPeriods.startDate, now),
-          gt(enrollmentPeriods.endDate, now),
-        ),
-      )
-      .returning({ id: enrollmentPeriods.id });
-
-    if (opened.length > 0) {
-      this.logger.log(`Períodos abertos automaticamente: ${opened.map(r => r.id).join(', ')}`);
-    }
-
-    // Close open periods whose end date has passed
-    const closed = await this.db
-      .update(enrollmentPeriods)
-      .set({ status: PERIOD_STATUS.CLOSED, updatedAt: now })
-      .where(
-        and(eq(enrollmentPeriods.status, PERIOD_STATUS.OPEN), lte(enrollmentPeriods.endDate, now)),
-      )
-      .returning({ id: enrollmentPeriods.id });
-
-    if (closed.length > 0) {
-      this.logger.log(`Períodos fechados automaticamente: ${closed.map(r => r.id).join(', ')}`);
-    }
-
-    // Also close scheduled periods whose end date has already passed
-    // (e.g. period was scheduled but start and end both in the past)
-    const skipped = await this.db
-      .update(enrollmentPeriods)
-      .set({ status: PERIOD_STATUS.CLOSED, updatedAt: now })
-      .where(
-        and(
-          eq(enrollmentPeriods.status, PERIOD_STATUS.SCHEDULED),
-          lte(enrollmentPeriods.endDate, now),
-        ),
-      )
-      .returning({ id: enrollmentPeriods.id });
-
-    if (skipped.length > 0) {
+    if (result.opened.length > 0) {
       this.logger.log(
-        `Períodos agendados expirados fechados: ${skipped.map(r => r.id).join(', ')}`,
+        `Períodos abertos automaticamente: ${result.opened.map(r => r.id).join(', ')}`,
+      );
+    }
+
+    if (result.closed.length > 0) {
+      this.logger.log(
+        `Períodos fechados automaticamente: ${result.closed.map(r => r.id).join(', ')}`,
+      );
+    }
+
+    if (result.skipped.length > 0) {
+      this.logger.log(
+        `Períodos agendados expirados fechados: ${result.skipped.map(r => r.id).join(', ')}`,
       );
     }
   }

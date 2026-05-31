@@ -9,9 +9,10 @@ import { CvItemService } from './cv-item.service';
 import { CvScoringCategoryService } from './cv-scoring-category.service';
 import { CvScoringController } from './cv-scoring.controller';
 import { CvScoringService } from './cv-scoring.service';
+import { CvScoringDrizzlePersistenceModule } from './infrastructure/persistence/drizzle/drizzle-persistence.module';
 
 @Module({
-  imports: [FileStorageModule],
+  imports: [FileStorageModule, CvScoringDrizzlePersistenceModule],
   controllers: [CvScoringController, CvItemController],
   providers: [
     CvScoringCategoryService,

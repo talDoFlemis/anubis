@@ -1,26 +1,17 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq, ilike, or } from 'drizzle-orm';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import type { CourseSelect, UniversitySelect } from '../database/schema/universities';
 
-import { DRIZZLE_TX } from '../database/drizzle.constants';
-import type { DrizzleDB } from '../database/drizzle.provider';
-import { courses, universities } from '../database/schema/universities';
 import type { CreateCourseDto } from './dto/create-course.dto';
 import type { CreateUniversityDto } from './dto/create-university.dto';
+import { UniversityRepository } from './infrastructure/persistence/university.repository';
 
 @Injectable()
 export class UniversityService {
-  constructor(@Inject(DRIZZLE_TX) private readonly db: DrizzleDB) {}
+  constructor(private readonly universityRepository: UniversityRepository) {}
 
   async searchUniversities(query: string, limit: number = 20): Promise<UniversitySelect[]> {
-    return this.db
-      .select()
-      .from(universities)
-      .where(
-        or(ilike(universities.name, `%${query}%`), ilike(universities.abbreviation, `%${query}%`)),
-      )
-      .limit(limit);
+    return this.universityRepository.searchUniversities(query, limit);
   }
 
   async searchCourses(
@@ -28,44 +19,28 @@ export class UniversityService {
     universityId?: string,
     limit: number = 20,
   ): Promise<CourseSelect[]> {
-    const nameCondition = ilike(courses.name, `%${query}%`);
-
-    const whereCondition = universityId
-      ? and(nameCondition, eq(courses.universityId, universityId))
-      : nameCondition;
-
-    return this.db.select().from(courses).where(whereCondition).limit(limit);
+    return this.universityRepository.searchCourses(query, universityId, limit);
   }
 
   async findUniversityById(id: string): Promise<UniversitySelect> {
-    const [row] = await this.db.select().from(universities).where(eq(universities.id, id)).limit(1);
+    const row = await this.universityRepository.findUniversityById(id);
 
     if (!row) throw new NotFoundException('Universidade não encontrada');
     return row;
   }
 
   async findCourseById(id: string): Promise<CourseSelect> {
-    const [row] = await this.db.select().from(courses).where(eq(courses.id, id)).limit(1);
+    const row = await this.universityRepository.findCourseById(id);
 
     if (!row) throw new NotFoundException('Curso não encontrado');
     return row;
   }
 
   async createUniversity(dto: CreateUniversityDto): Promise<UniversitySelect> {
-    const [row] = await this.db
-      .insert(universities)
-      .values({ ...dto, isManual: true })
-      .returning();
-
-    return row;
+    return this.universityRepository.createUniversity(dto);
   }
 
   async createCourse(dto: CreateCourseDto): Promise<CourseSelect> {
-    const [row] = await this.db
-      .insert(courses)
-      .values({ ...dto, isManual: true })
-      .returning();
-
-    return row;
+    return this.universityRepository.createCourse(dto);
   }
 }

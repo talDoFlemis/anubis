@@ -3,8 +3,10 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3_CLIENT } from './file-storage.constants';
 import { FileStorageService } from './file-storage.service';
+import { FileStorageDrizzlePersistenceModule } from './infrastructure/persistence/drizzle/drizzle-persistence.module';
 
 @Module({
+  imports: [FileStorageDrizzlePersistenceModule],
   providers: [
     {
       provide: S3_CLIENT,

@@ -1,12 +1,12 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
-import { DRIZZLE_TX } from '../database/drizzle.constants';
+import { UniversityRepository } from './infrastructure/persistence/university.repository';
 import { UniversityService } from './university.service';
 
 describe('UniversityService', () => {
   let service: UniversityService;
-  let mockDb: any;
+  let mockRepository: jest.Mocked<UniversityRepository>;
 
   const mockUniversity = {
     id: 'uni-uuid',
@@ -16,6 +16,7 @@ describe('UniversityService', () => {
     city: 'Fortaleza',
     isManual: false,
     createdAt: new Date(),
+    searchVector: '',
   };
 
   const mockCourse = {
@@ -24,21 +25,21 @@ describe('UniversityService', () => {
     universityId: 'uni-uuid',
     isManual: false,
     createdAt: new Date(),
+    searchVector: '',
   };
 
   beforeEach(async () => {
-    mockDb = {
-      select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockResolvedValue([mockUniversity]),
-      insert: jest.fn().mockReturnThis(),
-      values: jest.fn().mockReturnThis(),
-      returning: jest.fn().mockResolvedValue([mockUniversity]),
+    mockRepository = {
+      searchUniversities: jest.fn().mockResolvedValue([mockUniversity]),
+      searchCourses: jest.fn().mockResolvedValue([mockCourse]),
+      findUniversityById: jest.fn().mockResolvedValue(mockUniversity),
+      findCourseById: jest.fn().mockResolvedValue(mockCourse),
+      createUniversity: jest.fn().mockResolvedValue(mockUniversity),
+      createCourse: jest.fn().mockResolvedValue(mockCourse),
     };
 
     const module = await Test.createTestingModule({
-      providers: [UniversityService, { provide: DRIZZLE_TX, useValue: mockDb }],
+      providers: [UniversityService, { provide: UniversityRepository, useValue: mockRepository }],
     }).compile();
 
     service = module.get<UniversityService>(UniversityService);
@@ -48,15 +49,12 @@ describe('UniversityService', () => {
     it('returns matching results', async () => {
       const results = await service.searchUniversities('UFC');
 
-      expect(mockDb.select).toHaveBeenCalled();
-      expect(mockDb.from).toHaveBeenCalled();
-      expect(mockDb.where).toHaveBeenCalled();
-      expect(mockDb.limit).toHaveBeenCalledWith(20);
+      expect(mockRepository.searchUniversities).toHaveBeenCalledWith('UFC', 20);
       expect(results).toEqual([mockUniversity]);
     });
 
     it('returns empty array when no results match', async () => {
-      mockDb.limit = jest.fn().mockResolvedValue([]);
+      mockRepository.searchUniversities.mockResolvedValue([]);
 
       const results = await service.searchUniversities('NonExistent');
 
@@ -66,7 +64,7 @@ describe('UniversityService', () => {
     it('respects custom limit', async () => {
       await service.searchUniversities('UFC', 5);
 
-      expect(mockDb.limit).toHaveBeenCalledWith(5);
+      expect(mockRepository.searchUniversities).toHaveBeenCalledWith('UFC', 5);
     });
   });
 
@@ -74,18 +72,19 @@ describe('UniversityService', () => {
     it('returns university when found', async () => {
       const result = await service.findUniversityById('uni-uuid');
 
+      expect(mockRepository.findUniversityById).toHaveBeenCalledWith('uni-uuid');
       expect(result).toEqual(mockUniversity);
     });
 
     it('throws NotFoundException when not found', async () => {
-      mockDb.limit = jest.fn().mockResolvedValue([]);
+      mockRepository.findUniversityById.mockResolvedValue(null);
 
       await expect(service.findUniversityById('missing-uuid')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('createUniversity', () => {
-    it('creates university with isManual=true', async () => {
+    it('delegates to repository', async () => {
       const dto = {
         name: 'Nova Universidade',
         abbreviation: 'NU',
@@ -93,31 +92,23 @@ describe('UniversityService', () => {
         city: 'São Paulo',
       };
 
-      await service.createUniversity(dto);
+      const result = await service.createUniversity(dto);
 
-      expect(mockDb.insert).toHaveBeenCalled();
-      expect(mockDb.values).toHaveBeenCalledWith({
-        ...dto,
-        isManual: true,
-      });
+      expect(mockRepository.createUniversity).toHaveBeenCalledWith(dto);
+      expect(result).toEqual(mockUniversity);
     });
   });
 
   describe('searchCourses', () => {
     it('returns matching results', async () => {
-      mockDb.limit = jest.fn().mockResolvedValue([mockCourse]);
-
       const results = await service.searchCourses('Ciência');
 
-      expect(mockDb.select).toHaveBeenCalled();
-      expect(mockDb.from).toHaveBeenCalled();
-      expect(mockDb.where).toHaveBeenCalled();
-      expect(mockDb.limit).toHaveBeenCalledWith(20);
+      expect(mockRepository.searchCourses).toHaveBeenCalledWith('Ciência', undefined, 20);
       expect(results).toEqual([mockCourse]);
     });
 
     it('returns empty array when no results match', async () => {
-      mockDb.limit = jest.fn().mockResolvedValue([]);
+      mockRepository.searchCourses.mockResolvedValue([]);
 
       const results = await service.searchCourses('NonExistent');
 
@@ -127,36 +118,30 @@ describe('UniversityService', () => {
 
   describe('findCourseById', () => {
     it('returns course when found', async () => {
-      mockDb.limit = jest.fn().mockResolvedValue([mockCourse]);
-
       const result = await service.findCourseById('course-uuid');
 
+      expect(mockRepository.findCourseById).toHaveBeenCalledWith('course-uuid');
       expect(result).toEqual(mockCourse);
     });
 
     it('throws NotFoundException when not found', async () => {
-      mockDb.limit = jest.fn().mockResolvedValue([]);
+      mockRepository.findCourseById.mockResolvedValue(null);
 
       await expect(service.findCourseById('missing-uuid')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('createCourse', () => {
-    it('creates course with isManual=true', async () => {
-      mockDb.returning = jest.fn().mockResolvedValue([mockCourse]);
-
+    it('delegates to repository', async () => {
       const dto = {
         name: 'Engenharia de Software',
         universityId: 'uni-uuid',
       };
 
-      await service.createCourse(dto);
+      const result = await service.createCourse(dto);
 
-      expect(mockDb.insert).toHaveBeenCalled();
-      expect(mockDb.values).toHaveBeenCalledWith({
-        ...dto,
-        isManual: true,
-      });
+      expect(mockRepository.createCourse).toHaveBeenCalledWith(dto);
+      expect(result).toEqual(mockCourse);
     });
   });
 });

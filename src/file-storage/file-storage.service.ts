@@ -7,20 +7,17 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { DRIZZLE_TX } from '../database/drizzle.constants';
-import type { DrizzleDB } from '../database/drizzle.provider';
 import type { FileSelect } from '../database/schema/files';
-import { files } from '../database/schema/files';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES, S3_CLIENT } from './file-storage.constants';
+import { FileStorageRepository } from './infrastructure/persistence/file-storage.repository';
 
 @Injectable()
 export class FileStorageService {
   private readonly bucket: string;
 
   constructor(
-    @Inject(DRIZZLE_TX) private readonly db: DrizzleDB,
+    private readonly fileStorageRepository: FileStorageRepository,
     @Inject(S3_CLIENT) private readonly s3: S3Client,
     private readonly configService: ConfigService,
   ) {
@@ -46,20 +43,15 @@ export class FileStorageService {
       }),
     );
 
-    const [record] = await this.db
-      .insert(files)
-      .values({
-        originalName: file.originalname,
-        mimeType: file.mimetype,
-        sizeBytes: file.size,
-        bucket: this.bucket,
-        key,
-        uploadedBy,
-        purpose,
-      })
-      .returning();
-
-    return record;
+    return this.fileStorageRepository.create({
+      originalName: file.originalname,
+      mimeType: file.mimetype,
+      sizeBytes: file.size,
+      bucket: this.bucket,
+      key,
+      uploadedBy,
+      purpose,
+    });
   }
 
   async getSignedDownloadUrl(fileId: string, expiresInSeconds: number = 3600): Promise<string> {
@@ -83,11 +75,11 @@ export class FileStorageService {
       }),
     );
 
-    await this.db.delete(files).where(eq(files.id, fileId));
+    await this.fileStorageRepository.delete(fileId);
   }
 
   async findById(fileId: string): Promise<FileSelect> {
-    const [record] = await this.db.select().from(files).where(eq(files.id, fileId)).limit(1);
+    const record = await this.fileStorageRepository.findById(fileId);
 
     if (!record) {
       throw new NotFoundException('Arquivo não encontrado');

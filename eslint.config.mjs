@@ -43,5 +43,11 @@ export default defineConfig([
             'prettier/prettier': ['error', { endOfLine: 'auto' }],
         },
     },
+    {
+        files: ['**/*.spec.ts', '**/*.e2e-spec.ts', '**/*.integration-spec.ts'],
+        rules: {
+            '@typescript-eslint/unbound-method': 'off',
+        },
+    },
 ]);
 

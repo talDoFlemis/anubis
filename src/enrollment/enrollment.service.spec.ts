@@ -6,16 +6,16 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getLoggerToken } from 'nestjs-pino';
-import { DRIZZLE_TX } from '../database/drizzle.constants';
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { RoleEnum } from '../roles/roles.enum';
 import { UsersService } from '../users/users.service';
 import { EnrollmentPeriodService } from './enrollment-period.service';
 import { EnrollmentService } from './enrollment.service';
+import { EnrollmentRepository } from './infrastructure/persistence/enrollment.repository';
 
 describe('EnrollmentService', () => {
   let service: EnrollmentService;
-  let mockDb: any;
+  let mockRepository: any;
   let mockUsersService: any;
   let mockEnrollmentPeriodService: any;
   let mockFileStorageService: any;
@@ -60,19 +60,17 @@ describe('EnrollmentService', () => {
   };
 
   beforeEach(async () => {
-    mockDb = {
-      select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockResolvedValue([]),
-      orderBy: jest.fn().mockReturnThis(),
-      offset: jest.fn().mockResolvedValue([]),
-      insert: jest.fn().mockReturnThis(),
-      values: jest.fn().mockReturnThis(),
-      returning: jest.fn().mockResolvedValue([mockEnrollment]),
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
+    mockRepository = {
+      findById: jest.fn().mockResolvedValue(null),
+      findByCandidateId: jest.fn().mockResolvedValue([]),
+      findByCandidateAndPeriod: jest.fn().mockResolvedValue(null),
+      findAll: jest.fn().mockResolvedValue({
+        data: [],
+        pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+      }),
+      create: jest.fn().mockResolvedValue(mockEnrollment),
+      update: jest.fn().mockResolvedValue(mockEnrollment),
+      remove: jest.fn().mockResolvedValue(undefined),
     };
 
     mockUsersService = {
@@ -92,7 +90,7 @@ describe('EnrollmentService', () => {
     const module = await Test.createTestingModule({
       providers: [
         EnrollmentService,
-        { provide: DRIZZLE_TX, useValue: mockDb },
+        { provide: EnrollmentRepository, useValue: mockRepository },
         { provide: UsersService, useValue: mockUsersService },
         {
           provide: EnrollmentPeriodService,
@@ -120,7 +118,7 @@ describe('EnrollmentService', () => {
   describe('create', () => {
     it('creates enrollment for valid candidate', async () => {
       // No existing enrollment
-      mockDb.limit.mockResolvedValueOnce([]);
+      mockRepository.findByCandidateAndPeriod.mockResolvedValueOnce(null);
 
       const result = await service.create('user-uuid', {
         level: 'masters' as any,
@@ -129,7 +127,7 @@ describe('EnrollmentService', () => {
 
       expect(result.id).toBe(mockEnrollment.id);
       expect(result.candidateId).toBe('user-uuid');
-      expect(mockDb.insert).toHaveBeenCalled();
+      expect(mockRepository.create).toHaveBeenCalled();
     });
 
     it('rejects when period is not open', async () => {
@@ -175,8 +173,7 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects duplicate enrollment for same period', async () => {
-      // Existing enrollment found
-      mockDb.limit.mockResolvedValueOnce([{ id: 'existing-uuid' }]);
+      mockRepository.findByCandidateAndPeriod.mockResolvedValueOnce(mockEnrollment);
 
       await expect(
         service.create('user-uuid', {
@@ -189,7 +186,7 @@ describe('EnrollmentService', () => {
 
   describe('findById', () => {
     it('returns enrollment when found', async () => {
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(mockEnrollment);
 
       const result = await service.findById('enrollment-uuid');
 
@@ -197,7 +194,7 @@ describe('EnrollmentService', () => {
     });
 
     it('throws when enrollment not found', async () => {
-      mockDb.limit.mockResolvedValueOnce([]);
+      mockRepository.findById.mockResolvedValueOnce(null);
 
       await expect(service.findById('missing-uuid')).rejects.toThrow(NotFoundException);
     });
@@ -205,14 +202,13 @@ describe('EnrollmentService', () => {
 
   describe('update', () => {
     it('updates enrollment fields', async () => {
-      // findById returns enrollment
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(mockEnrollment);
 
       const updatedEnrollment = {
         ...mockEnrollment,
         phone: '11999999999',
       };
-      mockDb.returning.mockResolvedValueOnce([updatedEnrollment]);
+      mockRepository.update.mockResolvedValueOnce(updatedEnrollment);
 
       const result = await service.update('user-uuid', 'enrollment-uuid', {
         phone: '11999999999',
@@ -222,7 +218,7 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects update when enrollment is not draft', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ ...mockEnrollment, status: 'submitted' }]);
+      mockRepository.findById.mockResolvedValueOnce({ ...mockEnrollment, status: 'submitted' });
 
       await expect(
         service.update('user-uuid', 'enrollment-uuid', {
@@ -232,7 +228,10 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects update when user does not own enrollment', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ ...mockEnrollment, candidateId: 'other-user-uuid' }]);
+      mockRepository.findById.mockResolvedValueOnce({
+        ...mockEnrollment,
+        candidateId: 'other-user-uuid',
+      });
 
       await expect(
         service.update('user-uuid', 'enrollment-uuid', {
@@ -242,7 +241,7 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects update when period is not open', async () => {
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(mockEnrollment);
       mockEnrollmentPeriodService.findById.mockResolvedValueOnce({
         ...mockPeriod,
         status: 'closed',
@@ -263,14 +262,14 @@ describe('EnrollmentService', () => {
         phone: '11999999999',
         justification: 'Minha justificativa',
       };
-      mockDb.limit.mockResolvedValueOnce([readyEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(readyEnrollment);
 
       const submittedEnrollment = {
         ...readyEnrollment,
         status: 'submitted',
         submittedAt: new Date(),
       };
-      mockDb.returning.mockResolvedValueOnce([submittedEnrollment]);
+      mockRepository.update.mockResolvedValueOnce(submittedEnrollment);
 
       const result = await service.submit('user-uuid', 'enrollment-uuid');
 
@@ -284,7 +283,7 @@ describe('EnrollmentService', () => {
         phone: null,
         justification: 'Some justification',
       };
-      mockDb.limit.mockResolvedValueOnce([incompleteEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(incompleteEnrollment);
 
       await expect(service.submit('user-uuid', 'enrollment-uuid')).rejects.toThrow(
         BadRequestException,
@@ -297,7 +296,7 @@ describe('EnrollmentService', () => {
         phone: '11999999999',
         justification: null,
       };
-      mockDb.limit.mockResolvedValueOnce([incompleteEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(incompleteEnrollment);
 
       await expect(service.submit('user-uuid', 'enrollment-uuid')).rejects.toThrow(
         BadRequestException,
@@ -305,7 +304,7 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects submission when enrollment is not draft', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ ...mockEnrollment, status: 'submitted' }]);
+      mockRepository.findById.mockResolvedValueOnce({ ...mockEnrollment, status: 'submitted' });
 
       await expect(service.submit('user-uuid', 'enrollment-uuid')).rejects.toThrow(
         BadRequestException,
@@ -313,14 +312,12 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects submission when user does not own enrollment', async () => {
-      mockDb.limit.mockResolvedValueOnce([
-        {
-          ...mockEnrollment,
-          candidateId: 'other-user-uuid',
-          phone: '11999999999',
-          justification: 'test',
-        },
-      ]);
+      mockRepository.findById.mockResolvedValueOnce({
+        ...mockEnrollment,
+        candidateId: 'other-user-uuid',
+        phone: '11999999999',
+        justification: 'test',
+      });
 
       await expect(service.submit('user-uuid', 'enrollment-uuid')).rejects.toThrow(
         ForbiddenException,
@@ -330,10 +327,10 @@ describe('EnrollmentService', () => {
 
   describe('updateStatus', () => {
     it('updates enrollment status', async () => {
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(mockEnrollment);
 
       const closedEnrollment = { ...mockEnrollment, status: 'closed' };
-      mockDb.returning.mockResolvedValueOnce([closedEnrollment]);
+      mockRepository.update.mockResolvedValueOnce(closedEnrollment);
 
       const result = await service.updateStatus('enrollment-uuid', {
         status: 'closed' as any,
@@ -345,7 +342,7 @@ describe('EnrollmentService', () => {
 
   describe('findMine', () => {
     it('returns enrollments for user', async () => {
-      mockDb.where.mockResolvedValueOnce([mockEnrollment]);
+      mockRepository.findByCandidateId.mockResolvedValueOnce([mockEnrollment]);
 
       const result = await service.findMine('user-uuid');
 
@@ -372,13 +369,13 @@ describe('EnrollmentService', () => {
     };
 
     it('updates masters degrees for doctoral enrollment', async () => {
-      mockDb.limit.mockResolvedValueOnce([doctoralEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(doctoralEnrollment);
 
       const updatedEnrollment = {
         ...doctoralEnrollment,
         mastersDegrees: validDto.mastersDegrees,
       };
-      mockDb.returning.mockResolvedValueOnce([updatedEnrollment]);
+      mockRepository.update.mockResolvedValueOnce(updatedEnrollment);
 
       const result = await service.updateMastersDegrees('user-uuid', 'enrollment-uuid', validDto);
 
@@ -386,7 +383,7 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects when enrollment is not doctoral', async () => {
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]); // level: 'masters'
+      mockRepository.findById.mockResolvedValueOnce(mockEnrollment); // level: 'masters'
 
       await expect(
         service.updateMastersDegrees('user-uuid', 'enrollment-uuid', validDto),
@@ -394,9 +391,10 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects when user does not own enrollment', async () => {
-      mockDb.limit.mockResolvedValueOnce([
-        { ...doctoralEnrollment, candidateId: 'other-user-uuid' },
-      ]);
+      mockRepository.findById.mockResolvedValueOnce({
+        ...doctoralEnrollment,
+        candidateId: 'other-user-uuid',
+      });
 
       await expect(
         service.updateMastersDegrees('user-uuid', 'enrollment-uuid', validDto),
@@ -404,7 +402,7 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects when enrollment is not draft', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ ...doctoralEnrollment, status: 'submitted' }]);
+      mockRepository.findById.mockResolvedValueOnce({ ...doctoralEnrollment, status: 'submitted' });
 
       await expect(
         service.updateMastersDegrees('user-uuid', 'enrollment-uuid', validDto),
@@ -412,7 +410,7 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects when no entry is marked as primary', async () => {
-      mockDb.limit.mockResolvedValueOnce([doctoralEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(doctoralEnrollment);
 
       await expect(
         service.updateMastersDegrees('user-uuid', 'enrollment-uuid', {
@@ -429,7 +427,7 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects when multiple entries are marked as primary', async () => {
-      mockDb.limit.mockResolvedValueOnce([doctoralEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(doctoralEnrollment);
 
       await expect(
         service.updateMastersDegrees('user-uuid', 'enrollment-uuid', {
@@ -454,15 +452,15 @@ describe('EnrollmentService', () => {
 
   describe('cancel', () => {
     it('successfully cancels a draft enrollment', async () => {
-      mockDb.limit.mockResolvedValueOnce([mockEnrollment]);
+      mockRepository.findById.mockResolvedValueOnce(mockEnrollment);
 
       await service.cancel('user-uuid', 'enrollment-uuid');
 
-      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockRepository.remove).toHaveBeenCalled();
     });
 
     it('rejects cancellation of non-draft enrollment', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ ...mockEnrollment, status: 'submitted' }]);
+      mockRepository.findById.mockResolvedValueOnce({ ...mockEnrollment, status: 'submitted' });
 
       await expect(service.cancel('user-uuid', 'enrollment-uuid')).rejects.toThrow(
         BadRequestException,
@@ -470,7 +468,10 @@ describe('EnrollmentService', () => {
     });
 
     it('rejects cancellation when user does not own enrollment', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ ...mockEnrollment, candidateId: 'other-user-uuid' }]);
+      mockRepository.findById.mockResolvedValueOnce({
+        ...mockEnrollment,
+        candidateId: 'other-user-uuid',
+      });
 
       await expect(service.cancel('user-uuid', 'enrollment-uuid')).rejects.toThrow(
         ForbiddenException,

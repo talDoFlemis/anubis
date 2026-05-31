@@ -1,12 +1,12 @@
 import { Test } from '@nestjs/testing';
-import { DRIZZLE_TX } from '../database/drizzle.constants';
 import type { CvScoringCategorySelect } from '../database/schema/cv-scoring';
 import type { CvItemForScoring, ScoreBreakdown } from './cv-scoring.service';
 import { CvScoringService } from './cv-scoring.service';
+import { CvScoringRepository } from './infrastructure/persistence/cv-scoring.repository';
 
 describe('CvScoringService', () => {
   let service: CvScoringService;
-  let mockDb: any;
+  let mockRepository: any;
 
   const now = new Date();
 
@@ -27,15 +27,12 @@ describe('CvScoringService', () => {
   }
 
   beforeEach(async () => {
-    mockDb = {
-      select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockResolvedValue([]),
+    mockRepository = {
+      findByPeriodAndLevel: jest.fn().mockResolvedValue([]),
     };
 
     const module = await Test.createTestingModule({
-      providers: [CvScoringService, { provide: DRIZZLE_TX, useValue: mockDb }],
+      providers: [CvScoringService, { provide: CvScoringRepository, useValue: mockRepository }],
     }).compile();
 
     service = module.get<CvScoringService>(CvScoringService);
@@ -239,14 +236,14 @@ describe('CvScoringService', () => {
   });
 
   describe('getCategoriesForPeriod', () => {
-    it('queries the database for categories by period and level', async () => {
+    it('queries the repository for categories by period and level', async () => {
       const expected = [makeCategory()];
-      mockDb.orderBy.mockResolvedValueOnce(expected);
+      mockRepository.findByPeriodAndLevel.mockResolvedValueOnce(expected);
 
       const result = await service.getCategoriesForPeriod('period-1', 'masters');
 
       expect(result).toEqual(expected);
-      expect(mockDb.select).toHaveBeenCalled();
+      expect(mockRepository.findByPeriodAndLevel).toHaveBeenCalledWith('period-1', 'masters');
     });
   });
 });

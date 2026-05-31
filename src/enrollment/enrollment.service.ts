@@ -2,38 +2,31 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
 
 import type { PaginatedResult } from '../common/dto/paginated-response.dto';
-import { buildPaginatedResult } from '../common/dto/paginated-response.dto';
-import { DRIZZLE_TX } from '../database/drizzle.constants';
-import type { DrizzleDB } from '../database/drizzle.provider';
-import { enrollments } from '../database/schema/enrollments';
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { RoleEnum } from '../roles/roles.enum';
 import { UsersService } from '../users/users.service';
 import { ENROLLMENT_STATUS, PERIOD_STATUS } from './constants/enrollment-status';
-import { Enrollment } from './domain/enrollment';
+import type { Enrollment } from './domain/enrollment';
 import type { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import type { FindEnrollmentsDto } from './dto/find-enrollments.dto';
 import type { UpdateMastersDegreesDto } from './dto/masters-degree.dto';
 import type { UpdateEnrollmentStatusDto } from './dto/update-enrollment-status.dto';
 import type { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { EnrollmentPeriodService } from './enrollment-period.service';
-
-import type { SQL } from 'drizzle-orm';
+import { EnrollmentRepository } from './infrastructure/persistence/enrollment.repository';
 
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger(EnrollmentService.name);
 
   constructor(
-    @Inject(DRIZZLE_TX) private readonly db: DrizzleDB,
+    private readonly enrollmentRepository: EnrollmentRepository,
     private readonly usersService: UsersService,
     private readonly enrollmentPeriodService: EnrollmentPeriodService,
     private readonly fileStorageService: FileStorageService,
@@ -59,95 +52,51 @@ export class EnrollmentService {
       throw new BadRequestException('O período de inscrição não está aberto.');
     }
 
-    const [existing] = await this.db
-      .select({ id: enrollments.id })
-      .from(enrollments)
-      .where(
-        and(
-          eq(enrollments.candidateId, userId),
-          eq(enrollments.enrollmentPeriodId, dto.enrollmentPeriodId),
-        ),
-      )
-      .limit(1);
+    const existing = await this.enrollmentRepository.findByCandidateAndPeriod(
+      userId,
+      dto.enrollmentPeriodId,
+    );
 
     if (existing) {
       throw new ConflictException('Já existe uma inscrição para este período.');
     }
 
-    const [row] = await this.db
-      .insert(enrollments)
-      .values({
-        candidateId: userId,
-        enrollmentPeriodId: dto.enrollmentPeriodId,
-        level: dto.level,
-        status: ENROLLMENT_STATUS.DRAFT,
-      })
-      .returning();
+    const enrollment = await this.enrollmentRepository.create({
+      candidateId: userId,
+      enrollmentPeriodId: dto.enrollmentPeriodId,
+      level: dto.level,
+      status: ENROLLMENT_STATUS.DRAFT,
+    });
 
-    this.logger.log(`Inscrição criada: ${row.id} para usuário ${userId}`);
-    return Enrollment.toDomain(row);
+    this.logger.log(`Inscrição criada: ${enrollment.id} para usuário ${userId}`);
+    return enrollment;
   }
 
   async findMine(userId: string): Promise<Enrollment[]> {
-    const rows = await this.db
-      .select()
-      .from(enrollments)
-      .where(eq(enrollments.candidateId, userId));
-
-    return rows.map(row => Enrollment.toDomain(row));
+    return this.enrollmentRepository.findByCandidateId(userId);
   }
 
   async findById(id: string): Promise<Enrollment> {
-    const [row] = await this.db.select().from(enrollments).where(eq(enrollments.id, id)).limit(1);
+    const enrollment = await this.enrollmentRepository.findById(id);
 
-    if (!row) {
+    if (!enrollment) {
       throw new NotFoundException('Inscrição não encontrada.');
     }
 
-    return Enrollment.toDomain(row);
+    return enrollment;
   }
 
   async findAll(filters: FindEnrollmentsDto): Promise<PaginatedResult<Enrollment>> {
-    const conditions: SQL[] = [];
     const page = filters.page ?? 1;
     const limit = filters.limit ?? 20;
-    const offset = (page - 1) * limit;
 
-    if (filters.candidateId) {
-      conditions.push(eq(enrollments.candidateId, filters.candidateId));
-    }
-    if (filters.enrollmentPeriodId) {
-      conditions.push(eq(enrollments.enrollmentPeriodId, filters.enrollmentPeriodId));
-    }
-    if (filters.status) {
-      conditions.push(
-        eq(enrollments.status, filters.status as 'draft' | 'submitted' | 'closed' | 'cancelled'),
-      );
-    }
-    if (filters.level) {
-      conditions.push(eq(enrollments.level, filters.level as 'masters' | 'doctoral'));
-    }
-
-    const whereClause = conditions.length ? and(...conditions) : undefined;
-
-    const rows = await this.db
-      .select()
-      .from(enrollments)
-      .where(whereClause)
-      .orderBy(enrollments.createdAt)
-      .limit(limit)
-      .offset(offset);
-
-    const [totalRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(enrollments)
-      .where(whereClause);
-
-    return buildPaginatedResult({
-      data: rows.map(row => Enrollment.toDomain(row)),
+    return this.enrollmentRepository.findAll({
+      candidateId: filters.candidateId,
+      enrollmentPeriodId: filters.enrollmentPeriodId,
+      status: filters.status,
+      level: filters.level,
       page,
       limit,
-      total: totalRow?.count ?? 0,
     });
   }
 
@@ -174,14 +123,14 @@ export class EnrollmentService {
     if (dto.declaration !== undefined) updateData.declaration = dto.declaration;
     if (dto.poscomp !== undefined) updateData.poscomp = dto.poscomp;
 
-    const [row] = await this.db
-      .update(enrollments)
-      .set(updateData)
-      .where(eq(enrollments.id, id))
-      .returning();
+    const updated = await this.enrollmentRepository.update(id, updateData);
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
 
     this.logger.log(`Inscrição atualizada: ${id}`);
-    return Enrollment.toDomain(row);
+    return updated;
   }
 
   async submit(userId: string, id: string): Promise<Enrollment> {
@@ -211,35 +160,35 @@ export class EnrollmentService {
     }
 
     const now = new Date();
-    const [row] = await this.db
-      .update(enrollments)
-      .set({
-        status: ENROLLMENT_STATUS.SUBMITTED,
-        submittedAt: now,
-        updatedAt: now,
-      })
-      .where(eq(enrollments.id, id))
-      .returning();
+    const updated = await this.enrollmentRepository.update(id, {
+      status: ENROLLMENT_STATUS.SUBMITTED,
+      submittedAt: now,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
 
     this.logger.log(`Inscrição submetida: ${id} por ${userId}`);
-    return Enrollment.toDomain(row);
+    return updated;
   }
 
   async updateStatus(id: string, dto: UpdateEnrollmentStatusDto): Promise<Enrollment> {
     await this.findById(id);
 
     const now = new Date();
-    const [row] = await this.db
-      .update(enrollments)
-      .set({
-        status: dto.status,
-        updatedAt: now,
-      })
-      .where(eq(enrollments.id, id))
-      .returning();
+    const updated = await this.enrollmentRepository.update(id, {
+      status: dto.status,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
 
     this.logger.log(`Status da inscrição ${id} atualizado para ${dto.status}`);
-    return Enrollment.toDomain(row);
+    return updated;
   }
 
   async updateMastersDegrees(
@@ -271,17 +220,17 @@ export class EnrollmentService {
     }
 
     const now = new Date();
-    const [row] = await this.db
-      .update(enrollments)
-      .set({
-        mastersDegrees: dto.mastersDegrees,
-        updatedAt: now,
-      })
-      .where(eq(enrollments.id, id))
-      .returning();
+    const updated = await this.enrollmentRepository.update(id, {
+      mastersDegrees: dto.mastersDegrees,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
 
     this.logger.log(`Informações de mestrado atualizadas: ${id}`);
-    return Enrollment.toDomain(row);
+    return updated;
   }
 
   async getMastersDegrees(id: string): Promise<Enrollment['mastersDegrees']> {
@@ -300,7 +249,7 @@ export class EnrollmentService {
       throw new BadRequestException('Apenas inscrições em rascunho podem ser canceladas.');
     }
 
-    await this.db.delete(enrollments).where(eq(enrollments.id, id));
+    await this.enrollmentRepository.remove(id);
 
     this.logger.log(`Inscrição cancelada e removida: ${id}`);
   }
@@ -327,17 +276,17 @@ export class EnrollmentService {
     const fileRecord = await this.fileStorageService.upload(file, userId, 'sigaa-receipts');
 
     const now = new Date();
-    const [row] = await this.db
-      .update(enrollments)
-      .set({
-        sigaaReceiptFileId: fileRecord.id,
-        updatedAt: now,
-      })
-      .where(eq(enrollments.id, id))
-      .returning();
+    const updated = await this.enrollmentRepository.update(id, {
+      sigaaReceiptFileId: fileRecord.id,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
 
     this.logger.log(`Comprovante SIGAA enviado para inscrição: ${id}`);
-    return Enrollment.toDomain(row);
+    return updated;
   }
 
   async getSigaaReceiptUrl(userId: string, id: string): Promise<{ url: string; fileName: string }> {
@@ -385,17 +334,17 @@ export class EnrollmentService {
 
     const updatedPoscomp = { ...poscomp, receiptFileId: fileRecord.id };
     const now = new Date();
-    const [row] = await this.db
-      .update(enrollments)
-      .set({
-        poscomp: updatedPoscomp,
-        updatedAt: now,
-      })
-      .where(eq(enrollments.id, id))
-      .returning();
+    const updated = await this.enrollmentRepository.update(id, {
+      poscomp: updatedPoscomp,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
 
     this.logger.log(`Comprovante POSCOMP enviado para inscrição: ${id}`);
-    return Enrollment.toDomain(row);
+    return updated;
   }
 
   async getPoscompReceiptUrl(
