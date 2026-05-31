@@ -89,3 +89,14 @@ export function useUpdateMastersDegrees() {
     },
   });
 }
+
+export function useCancelEnrollment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.enrollments.cancel(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
+    },
+  });
+}

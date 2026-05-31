@@ -116,4 +116,44 @@ export const enrollmentsApi = {
     const { data } = await apiClient.get(`/enrollments/${id}/masters-degrees`);
     return (data as MastersDegreeData[] | null) ?? null;
   },
+
+  cancel: async (id: string): Promise<void> => {
+    await apiClient.delete(`/enrollments/${id}`);
+  },
+
+  uploadSigaaReceipt: async (id: string, file: File): Promise<Enrollment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return normalizeEnrollment(
+      (
+        await apiClient.post(`/enrollments/${id}/sigaa-receipt`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      ).data,
+    );
+  },
+
+  getSigaaReceiptInfo: async (id: string): Promise<{ url: string; fileName: string }> => {
+    const { data } = await apiClient.get(`/enrollments/${id}/sigaa-receipt`);
+    const r = data as Record<string, unknown>;
+    return { url: asString(r.url), fileName: asString(r.fileName) };
+  },
+
+  uploadPoscompReceipt: async (id: string, file: File): Promise<Enrollment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return normalizeEnrollment(
+      (
+        await apiClient.post(`/enrollments/${id}/poscomp-receipt`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      ).data,
+    );
+  },
+
+  getPoscompReceiptInfo: async (id: string): Promise<{ url: string; fileName: string }> => {
+    const { data } = await apiClient.get(`/enrollments/${id}/poscomp-receipt`);
+    const r = data as Record<string, unknown>;
+    return { url: asString(r.url), fileName: asString(r.fileName) };
+  },
 };

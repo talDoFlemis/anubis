@@ -9,8 +9,8 @@ export interface CvItem {
   scoringCategoryId: string;
   description: string;
   quantity: number;
-  isInArea: boolean | null;
   proofFileId: string | null;
+  proofFileName: string | null;
   score: string | null;
   createdAt: string;
   updatedAt: string;
@@ -20,14 +20,12 @@ export interface CreateCvItemPayload {
   scoringCategoryId: string;
   description: string;
   quantity?: number;
-  isInArea?: boolean;
 }
 
 export interface UpdateCvItemPayload {
   scoringCategoryId?: string;
   description?: string;
   quantity?: number;
-  isInArea?: boolean;
 }
 
 // ── Normalizers ──────────────────────────────────────────────────────
@@ -40,8 +38,8 @@ function normalizeCvItem(data: unknown): CvItem {
     scoringCategoryId: asString(r.scoringCategoryId),
     description: asString(r.description),
     quantity: typeof r.quantity === 'number' ? r.quantity : 1,
-    isInArea: r.isInArea != null ? Boolean(r.isInArea) : null,
     proofFileId: asNullableString(r.proofFileId),
+    proofFileName: asNullableString(r.proofFileName),
     score: asNullableString(r.score),
     createdAt: asString(r.createdAt),
     updatedAt: asString(r.updatedAt),
@@ -60,9 +58,6 @@ function buildFormData(payload: CreateCvItemPayload | UpdateCvItemPayload, file?
   }
   if (payload.quantity != null) {
     formData.append('quantity', String(payload.quantity));
-  }
-  if (payload.isInArea != null) {
-    formData.append('isInArea', String(payload.isInArea));
   }
   if (file) {
     formData.append('file', file);

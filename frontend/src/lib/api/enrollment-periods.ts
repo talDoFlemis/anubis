@@ -6,7 +6,6 @@ import { asRecord, asString } from './normalizers';
 export interface EnrollmentPeriod {
   id: string;
   name: string;
-  level: string;
   semester: string;
   startDate: string;
   endDate: string;
@@ -22,7 +21,6 @@ function normalizeEnrollmentPeriod(data: unknown): EnrollmentPeriod {
   return {
     id: asString(r.id),
     name: asString(r.name),
-    level: asString(r.level),
     semester: asString(r.semester),
     startDate: asString(r.startDate),
     endDate: asString(r.endDate),
@@ -30,6 +28,13 @@ function normalizeEnrollmentPeriod(data: unknown): EnrollmentPeriod {
     createdAt: asString(r.createdAt),
     updatedAt: asString(r.updatedAt),
   };
+}
+
+export interface CreateEnrollmentPeriodPayload {
+  name: string;
+  semester: string;
+  startDate: string;
+  endDate: string;
 }
 
 // ── Endpoints ────────────────────────────────────────────────────────
@@ -47,5 +52,17 @@ export const enrollmentPeriodsApi = {
 
   findById: async (id: string): Promise<EnrollmentPeriod> => {
     return normalizeEnrollmentPeriod((await apiClient.get(`/enrollment-periods/${id}`)).data);
+  },
+
+  create: async (payload: CreateEnrollmentPeriodPayload): Promise<EnrollmentPeriod> => {
+    return normalizeEnrollmentPeriod(
+      (await apiClient.post('/enrollment-periods', payload)).data,
+    );
+  },
+
+  close: async (id: string): Promise<EnrollmentPeriod> => {
+    return normalizeEnrollmentPeriod(
+      (await apiClient.post(`/enrollment-periods/${id}/close`)).data,
+    );
   },
 };

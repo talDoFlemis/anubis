@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { asBool, asNullableString, asRecord, asString } from './normalizers';
+import { asNullableString, asRecord, asString } from './normalizers';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -11,7 +11,6 @@ export interface ScoringCategory {
   pointsPerItem: string;
   maxPoints: string;
   level: string;
-  requiresAreaVerification: boolean;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -29,11 +28,30 @@ function normalizeScoringCategory(data: unknown): ScoringCategory {
     pointsPerItem: asString(r.pointsPerItem),
     maxPoints: asString(r.maxPoints),
     level: asString(r.level),
-    requiresAreaVerification: asBool(r.requiresAreaVerification),
     sortOrder: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
     createdAt: asString(r.createdAt),
     updatedAt: asString(r.updatedAt),
   };
+}
+
+// ── Payloads ─────────────────────────────────────────────────────────
+
+export interface CreateScoringCategoryPayload {
+  name: string;
+  description?: string;
+  pointsPerItem: number;
+  maxPoints: number;
+  level: 'masters' | 'doctoral';
+  sortOrder?: number;
+}
+
+export interface UpdateScoringCategoryPayload {
+  name?: string;
+  description?: string;
+  pointsPerItem?: number;
+  maxPoints?: number;
+  level?: 'masters' | 'doctoral';
+  sortOrder?: number;
 }
 
 // ── Endpoints ────────────────────────────────────────────────────────
@@ -44,6 +62,37 @@ export const cvScoringApi = {
     const { data } = await apiClient.get(`/enrollment-periods/${periodId}/scoring-categories`, {
       params,
     });
+    return (data as unknown[]).map(normalizeScoringCategory);
+  },
+
+  createCategory: async (
+    periodId: string,
+    payload: CreateScoringCategoryPayload,
+  ): Promise<ScoringCategory> => {
+    const { data } = await apiClient.post(
+      `/enrollment-periods/${periodId}/scoring-categories`,
+      payload,
+    );
+    return normalizeScoringCategory(data);
+  },
+
+  updateCategory: async (
+    id: string,
+    payload: UpdateScoringCategoryPayload,
+  ): Promise<ScoringCategory> => {
+    const { data } = await apiClient.patch(`/scoring-categories/${id}`, payload);
+    return normalizeScoringCategory(data);
+  },
+
+  removeCategory: async (id: string): Promise<void> => {
+    await apiClient.delete(`/scoring-categories/${id}`);
+  },
+
+  copyFromPeriod: async (targetPeriodId: string, sourcePeriodId: string): Promise<ScoringCategory[]> => {
+    const { data } = await apiClient.post(
+      `/enrollment-periods/${targetPeriodId}/scoring-categories/copy`,
+      { sourcePeriodId },
+    );
     return (data as unknown[]).map(normalizeScoringCategory);
   },
 };
