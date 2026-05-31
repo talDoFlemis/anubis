@@ -5,5 +5,5 @@ import { CreateResearchThemeDto } from './create-research-theme.dto';
 export class CreateResearchThemeOnBehalfDto extends CreateResearchThemeDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
-  professorId: string;
+  professorId!: string;
 }

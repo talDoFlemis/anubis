@@ -51,7 +51,7 @@ describe('ProfessorController', () => {
   });
 
   it('calls invite on service', async () => {
-    professorService.invite.mockResolvedValue({} as never);
+    professorService.invite.mockResolvedValue({});
 
     await controller.invite({
       email: 'prof@ufc.br',
@@ -64,7 +64,7 @@ describe('ProfessorController', () => {
   });
 
   it('calls findOne on service', async () => {
-    professorService.findOne.mockResolvedValue({} as never);
+    professorService.findOne.mockResolvedValue({});
 
     await controller.findOne('user-1');
 
@@ -84,7 +84,7 @@ describe('ProfessorController', () => {
   });
 
   it('calls update on service', async () => {
-    professorService.update.mockResolvedValue({} as never);
+    professorService.update.mockResolvedValue({});
 
     await controller.update('user-1', { institution: 'UFC' });
 
@@ -92,7 +92,7 @@ describe('ProfessorController', () => {
   });
 
   it('calls remove on service', async () => {
-    professorService.remove.mockResolvedValue({} as never);
+    professorService.remove.mockResolvedValue({});
 
     await controller.remove('user-1');
 
@@ -100,7 +100,7 @@ describe('ProfessorController', () => {
   });
 
   it('calls disableAccount on service', async () => {
-    professorService.disableAccount.mockResolvedValue({} as never);
+    professorService.disableAccount.mockResolvedValue({});
 
     await controller.disableAccount('user-1', { id: 'sec-1' } as never);
 
@@ -111,7 +111,7 @@ describe('ProfessorController', () => {
   });
 
   it('calls enableAccount on service', async () => {
-    professorService.enableAccount.mockResolvedValue({} as never);
+    professorService.enableAccount.mockResolvedValue({});
 
     await controller.enableAccount('user-1', { id: 'sec-1' } as never);
 

@@ -4,10 +4,10 @@ import { IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 export class AuthResetPasswordDto {
   @ApiProperty()
   @IsNotEmpty()
-  hash: string;
+  hash!: string;
 
   @ApiProperty()
   @MinLength(6)
   @MaxLength(72)
-  password: string;
+  password!: string;
 }

@@ -5,43 +5,43 @@ import { StatusEnum } from '../../statuses/statuses.enum';
 
 export class CandidateResponseDto {
   @ApiProperty()
-  userId: string;
+  userId!: string;
 
   @ApiProperty({ nullable: true })
-  email: string | null;
+  email!: string | null;
 
   @ApiProperty({ nullable: true })
-  cpf: string | null;
+  cpf!: string | null;
 
   @ApiProperty({ nullable: true })
-  firstName: string | null;
+  firstName!: string | null;
 
   @ApiProperty({ nullable: true })
-  lastName: string | null;
+  lastName!: string | null;
 
   @ApiProperty({ enum: RoleEnum })
-  role: RoleEnum;
+  role!: RoleEnum;
 
   @ApiProperty({ enum: StatusEnum })
-  status: StatusEnum;
+  status!: StatusEnum;
 
   @ApiProperty()
-  onboardingCompleted: boolean;
+  onboardingCompleted!: boolean;
 
   @ApiProperty()
-  universityOfOrigin: string;
+  universityOfOrigin!: string;
 
   @ApiProperty({ nullable: true })
-  ira: string | null;
+  ira!: string | null;
 
   @ApiProperty({ nullable: true })
-  poscomp: number | null;
+  poscomp!: number | null;
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 
 export class PaginatedCandidateResponseDto extends PaginatedResponseDto<CandidateResponseDto> {

@@ -1,4 +1,3 @@
-import type { DrizzleDB } from '@/database/drizzle.provider';
 import { professors } from '@/database/schema/professor';
 import { users } from '@/database/schema/users';
 import {
@@ -22,7 +21,7 @@ describe('ResearchThemeDrizzleRepository (integration)', () => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-    repository = new ResearchThemeDrizzleRepository(db as unknown as DrizzleDB);
+    repository = new ResearchThemeDrizzleRepository(db);
   });
 
   afterEach(async () => {

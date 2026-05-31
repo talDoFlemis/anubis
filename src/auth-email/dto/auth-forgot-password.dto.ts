@@ -6,5 +6,5 @@ export class AuthForgotPasswordDto {
   @ApiProperty({ example: 'test@example.com', type: String })
   @Transform(({ value }) => (value as string).toLowerCase().trim())
   @IsEmail()
-  email: string;
+  email!: string;
 }

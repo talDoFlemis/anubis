@@ -22,7 +22,7 @@ export class TransactionMiddleware implements NestMiddleware {
 
     db.transaction(async tx => {
       return new Promise<void>((resolve, reject) => {
-        transactionStorage.run({ tx: tx as unknown as DrizzleDB }, () => {
+        transactionStorage.run({ tx: tx }, () => {
           res.on('finish', () => {
             if (res.statusCode >= 400) {
               reject(new Error(`HTTP ${res.statusCode}`));

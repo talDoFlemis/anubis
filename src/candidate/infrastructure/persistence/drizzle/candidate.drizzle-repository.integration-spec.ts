@@ -1,6 +1,5 @@
 import type { Pool } from 'pg';
 import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
-import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import {
   createTestDrizzle,
   truncateAllTables,
@@ -21,8 +20,8 @@ describe('CandidateDrizzleRepository (integration)', () => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-    candidateRepository = new CandidateDrizzleRepository(db as unknown as DrizzleDB);
-    userRepository = new UserDrizzleRepository(db as unknown as DrizzleDB);
+    candidateRepository = new CandidateDrizzleRepository(db);
+    userRepository = new UserDrizzleRepository(db);
   });
 
   afterEach(async () => {

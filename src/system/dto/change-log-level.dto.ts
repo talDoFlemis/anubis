@@ -7,5 +7,5 @@ export enum LogLevel {
 }
 export class ChangeLogLevelDto {
   @IsEnum(LogLevel)
-  level: LogLevel;
+  level!: LogLevel;
 }
