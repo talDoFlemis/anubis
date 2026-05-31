@@ -154,6 +154,36 @@ export class EnvironmentVariables {
   @IsEmail()
   MAIL_GOOGLE_USER: string = '';
 
+  // S3 / MinIO
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  S3_ENDPOINT: string = 'http://localhost:9000';
+
+  @IsOptional()
+  @IsString()
+  S3_REGION: string = 'us-east-1';
+
+  @IsOptional()
+  @IsString()
+  S3_BUCKET: string = 'anubis';
+
+  @IsOptional()
+  @IsString()
+  S3_ACCESS_KEY_ID: string = 'minioadmin';
+
+  @IsOptional()
+  @IsString()
+  S3_SECRET_ACCESS_KEY: string = 'minioadmin';
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  })
+  S3_FORCE_PATH_STYLE: boolean = true;
+
   @IsNotEmpty()
   @MinLength(32)
   SYSTEM_SECRET!: string;

@@ -64,6 +64,12 @@ services:
 
       SYSTEM_SECRET: supersecrethereasdfasasdfasdasdfasdfjhlkasdsdlfkjhasdfsdflkjashflldasdfasdflf
 
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET: anubis
+      S3_REGION: us-east-1
+
     depends_on:
       postgres:
         condition: service_healthy
@@ -126,5 +132,36 @@ services:
       postgres:
         condition: service_healthy
 
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  createbuckets:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/anubis --ignore-existing;
+      exit 0;
+      "
+
 volumes:
   postgres_data:
+  minio_data:

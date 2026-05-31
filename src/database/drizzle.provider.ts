@@ -7,8 +7,14 @@ import type { PgDatabase } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
 import { DRIZZLE } from './drizzle.constants';
 import * as candidatesSchema from './schema/candidates';
+import * as cvItemsSchema from './schema/cv-items';
+import * as cvScoringSchema from './schema/cv-scoring';
+import * as enrollmentPeriodsSchema from './schema/enrollment-periods';
+import * as enrollmentsSchema from './schema/enrollments';
+import * as filesSchema from './schema/files';
 import * as researchThemesSchema from './schema/research-themes';
 import * as sessionsSchema from './schema/sessions';
+import * as universitiesSchema from './schema/universities';
 import * as usersSchema from './schema/users';
 
 const schema = {
@@ -16,6 +22,12 @@ const schema = {
   ...sessionsSchema,
   ...candidatesSchema,
   ...researchThemesSchema,
+  ...enrollmentPeriodsSchema,
+  ...enrollmentsSchema,
+  ...filesSchema,
+  ...universitiesSchema,
+  ...cvScoringSchema,
+  ...cvItemsSchema,
 };
 
 export type DrizzleSchema = typeof schema;

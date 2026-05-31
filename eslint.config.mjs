@@ -32,6 +32,7 @@ export default defineConfig([
             '@typescript-eslint/no-floating-promises': 'warn',
             '@typescript-eslint/no-unsafe-argument': 'warn',
             '@typescript-eslint/no-unsafe-assignment': 'warn',
+            '@typescript-eslint/no-unsafe-call': 'warn',
             '@typescript-eslint/no-unsafe-member-access': 'warn',
             '@typescript-eslint/no-unsafe-return': 'warn',
             '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
@@ -40,6 +41,12 @@ export default defineConfig([
             'no-console': ['warn', { allow: ['warn', 'error'] }],
 
             'prettier/prettier': ['error', { endOfLine: 'auto' }],
+        },
+    },
+    {
+        files: ['**/*.spec.ts', '**/*.e2e-spec.ts', '**/*.integration-spec.ts'],
+        rules: {
+            '@typescript-eslint/unbound-method': 'off',
         },
     },
 ]);
