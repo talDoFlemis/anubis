@@ -42,7 +42,12 @@ export function WizardStepper({ currentStep, completedSteps, onStepClick }: Wiza
                   {isCompleted ? (
                     <Check className="h-5 w-5" />
                   ) : STEP_ICONS[index] ? (
-                    <>{(() => { const Icon = STEP_ICONS[index]!; return <Icon className="h-5 w-5" />; })()}</>
+                    <>
+                      {(() => {
+                        const Icon = STEP_ICONS[index]!;
+                        return <Icon className="h-5 w-5" />;
+                      })()}
+                    </>
                   ) : (
                     <span>{index + 1}</span>
                   )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   addMonths,
@@ -13,12 +13,7 @@ import {
   subMonths,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import {
-  CalendarIcon,
-  CheckIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from 'lucide-react';
+import { CalendarIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -67,8 +62,7 @@ function MonthYearPicker({
     return (
       <div className="grid grid-cols-3 gap-1 p-2">
         {years.map(year => {
-          const isDisabled =
-            (min && year < getYear(min)) || (max && year > getYear(max));
+          const isDisabled = (min && year < getYear(min)) || (max && year > getYear(max));
           return (
             <Button
               key={year}
@@ -130,38 +124,35 @@ export function DatePicker({
   const [month, setMonth] = useState<Date>(initDate);
   const [date, setDate] = useState<Date | undefined>(value);
 
-  // Reset internal state when popover opens
-  useEffect(() => {
-    if (open) {
-      setDate(value);
-      setMonth(value || new Date());
-      setMonthYearPicker(false);
-    }
-  }, [open, value]);
-
-  const onDaySelected = useCallback(
-    (d: Date | undefined) => {
-      setDate(d);
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      setOpen(nextOpen);
+      if (nextOpen) {
+        setDate(value);
+        setMonth(value || new Date());
+        setMonthYearPicker(false);
+      }
     },
-    [],
+    [value],
   );
+
+  const onDaySelected = useCallback((d: Date | undefined) => {
+    setDate(d);
+  }, []);
 
   const onSubmit = useCallback(() => {
     onChange?.(date);
     setOpen(false);
   }, [date, onChange]);
 
-  const onMonthYearChanged = useCallback(
-    (d: Date, mode: 'month' | 'year') => {
-      setMonth(d);
-      if (mode === 'year') {
-        setMonthYearPicker('month');
-      } else {
-        setMonthYearPicker(false);
-      }
-    },
-    [],
-  );
+  const onMonthYearChanged = useCallback((d: Date, mode: 'month' | 'year') => {
+    setMonth(d);
+    if (mode === 'year') {
+      setMonthYearPicker('month');
+    } else {
+      setMonthYearPicker(false);
+    }
+  }, []);
 
   const onNextMonth = useCallback(() => setMonth(m => addMonths(m, 1)), []);
   const onPrevMonth = useCallback(() => setMonth(m => subMonths(m, 1)), []);
@@ -177,7 +168,7 @@ export function DatePicker({
   }, [displayValue, placeholder]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -238,10 +229,7 @@ export function DatePicker({
               onMonthChange={setMonth}
               locale={ptBR}
               showOutsideDays
-              disabled={[
-                ...(min ? [{ before: min }] : []),
-                ...(max ? [{ after: max }] : []),
-              ]}
+              disabled={[...(min ? [{ before: min }] : []), ...(max ? [{ after: max }] : [])]}
               classNames={{
                 root: 'p-2',
                 months: 'flex flex-col',

@@ -93,7 +93,10 @@ function EnrollmentWizardPage() {
   // Find draft enrollment for this period
   const enrollment = useMemo(() => {
     if (!enrollments?.length || !activePeriod) return null;
-    return enrollments.find(e => e.enrollmentPeriodId === activePeriod.id && e.status === 'draft') ?? null;
+    return (
+      enrollments.find(e => e.enrollmentPeriodId === activePeriod.id && e.status === 'draft') ??
+      null
+    );
   }, [enrollments, activePeriod]);
 
   // Auto-detect completed steps from existing enrollment

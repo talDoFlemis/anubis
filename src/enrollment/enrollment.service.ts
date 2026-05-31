@@ -17,14 +17,13 @@ import { enrollments } from '../database/schema/enrollments';
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { RoleEnum } from '../roles/roles.enum';
 import { UsersService } from '../users/users.service';
+import { ENROLLMENT_STATUS, PERIOD_STATUS } from './constants/enrollment-status';
 import { Enrollment } from './domain/enrollment';
 import type { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import type { FindEnrollmentsDto } from './dto/find-enrollments.dto';
 import type { UpdateMastersDegreesDto } from './dto/masters-degree.dto';
 import type { UpdateEnrollmentStatusDto } from './dto/update-enrollment-status.dto';
 import type { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
-import { ENROLLMENT_STATUS } from './constants/enrollment-status';
-import { PERIOD_STATUS } from './constants/enrollment-status';
 import { EnrollmentPeriodService } from './enrollment-period.service';
 
 import type { SQL } from 'drizzle-orm';
@@ -233,7 +232,7 @@ export class EnrollmentService {
     const [row] = await this.db
       .update(enrollments)
       .set({
-        status: dto.status as 'submitted' | 'closed' | 'cancelled',
+        status: dto.status,
         updatedAt: now,
       })
       .where(eq(enrollments.id, id))
@@ -399,7 +398,10 @@ export class EnrollmentService {
     return Enrollment.toDomain(row);
   }
 
-  async getPoscompReceiptUrl(userId: string, id: string): Promise<{ url: string; fileName: string }> {
+  async getPoscompReceiptUrl(
+    userId: string,
+    id: string,
+  ): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
     if (enrollment.candidateId !== userId) {
@@ -416,4 +418,3 @@ export class EnrollmentService {
     return { url, fileName: fileRecord.originalName };
   }
 }
-

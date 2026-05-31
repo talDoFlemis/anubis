@@ -19,7 +19,7 @@ export type {
 export type { CandidateProfile } from './candidates';
 export type { CreateCvItemPayload, CvItem, UpdateCvItemPayload } from './cv-items';
 export type { ScoringCategory } from './cv-scoring';
-export type { EnrollmentPeriod, CreateEnrollmentPeriodPayload } from './enrollment-periods';
+export type { CreateEnrollmentPeriodPayload, EnrollmentPeriod } from './enrollment-periods';
 export type {
   CreateEnrollmentPayload,
   Enrollment,

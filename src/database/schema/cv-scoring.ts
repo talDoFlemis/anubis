@@ -1,12 +1,4 @@
-import {
-  integer,
-  numeric,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { integer, numeric, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { enrollmentLevelEnum, enrollmentPeriods } from './enrollment-periods';
 
 export const cvScoringCategories = pgTable('cv_scoring_categories', {

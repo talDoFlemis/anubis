@@ -149,31 +149,37 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
     );
   }, [openFormCategoryId, enrollmentId, formState, createItem, handleCloseForm]);
 
-  const handleDownloadFile = useCallback(async (itemId: string) => {
-    if (!enrollmentId) return;
-    try {
-      const url = await api.cvItems.getFileUrl(enrollmentId, itemId);
-      window.open(url, '_blank');
-    } catch {
-      toast.error('Erro ao obter o arquivo.');
-    }
-  }, [enrollmentId]);
+  const handleDownloadFile = useCallback(
+    async (itemId: string) => {
+      if (!enrollmentId) return;
+      try {
+        const url = await api.cvItems.getFileUrl(enrollmentId, itemId);
+        window.open(url, '_blank');
+      } catch {
+        toast.error('Erro ao obter o arquivo.');
+      }
+    },
+    [enrollmentId],
+  );
 
-  const handleReplaceFile = useCallback((itemId: string, file: File) => {
-    if (!enrollmentId) return;
-    updateItem.mutate(
-      { enrollmentId, itemId, payload: {}, file },
-      {
-        onSuccess: () => {
-          toast.success('Arquivo substitudo com sucesso.');
-          setReplaceFileItemId(null);
+  const handleReplaceFile = useCallback(
+    (itemId: string, file: File) => {
+      if (!enrollmentId) return;
+      updateItem.mutate(
+        { enrollmentId, itemId, payload: {}, file },
+        {
+          onSuccess: () => {
+            toast.success('Arquivo substitudo com sucesso.');
+            setReplaceFileItemId(null);
+          },
+          onError: err => {
+            toast.error(err.message || 'Erro ao substituir arquivo.');
+          },
         },
-        onError: err => {
-          toast.error(err.message || 'Erro ao substituir arquivo.');
-        },
-      },
-    );
-  }, [enrollmentId, updateItem]);
+      );
+    },
+    [enrollmentId, updateItem],
+  );
 
   const handleDeleteItem = useCallback(() => {
     if (!deleteTarget || !enrollmentId) return;
@@ -191,8 +197,6 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
       },
     );
   }, [deleteTarget, enrollmentId, removeItem]);
-
-
 
   // ── Loading state ───────────────────────────────────────────────
 
@@ -278,10 +282,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                 {items.length > 0 && (
                   <div className="divide-y divide-surface-dim">
                     {items.map(item => (
-                      <div
-                        key={item.id}
-                        className="space-y-2 py-3 first:pt-0 last:pb-0"
-                      >
+                      <div key={item.id} className="space-y-2 py-3 first:pt-0 last:pb-0">
                         <div className="flex items-center justify-between gap-4">
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">{item.description}</p>
@@ -289,7 +290,10 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                               {item.proofFileName && item.proofFileName}
                               {item.proofFileName && item.score !== null && ' · '}
                               {!item.proofFileName && item.proofFileId && 'Comprovante enviado'}
-                              {!item.proofFileName && item.proofFileId && item.score !== null && ' · '}
+                              {!item.proofFileName &&
+                                item.proofFileId &&
+                                item.score !== null &&
+                                ' · '}
                               {item.score !== null && `${parseFloat(item.score).toFixed(1)} pts`}
                             </p>
                           </div>
@@ -369,7 +373,6 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                       />
                     </div>
 
-
                     <FileUploadField
                       label="Comprovante"
                       value={formState.file}
@@ -443,11 +446,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
         ) : (
           <div />
         )}
-        <Button
-          type="button"
-          onClick={onNext}
-          className="min-w-32"
-        >
+        <Button type="button" onClick={onNext} className="min-w-32">
           Próximo
         </Button>
       </div>

@@ -57,12 +57,7 @@ export class CvItemController {
     @Body() dto: CreateCvItemDto,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<CvItemResponseDto> {
-    return this.cvItemService.create(
-      user.id,
-      enrollmentId,
-      dto,
-      file,
-    ) as unknown as Promise<CvItemResponseDto>;
+    return this.cvItemService.create(user.id, enrollmentId, dto, file);
   }
 
   @Get()
@@ -72,9 +67,7 @@ export class CvItemController {
   findAll(
     @Param('enrollmentId', new ParseUUIDPipe()) enrollmentId: string,
   ): Promise<CvItemResponseDto[]> {
-    return this.cvItemService.findByEnrollment(enrollmentId) as unknown as Promise<
-      CvItemResponseDto[]
-    >;
+    return this.cvItemService.findByEnrollment(enrollmentId);
   }
 
   @Get(':itemId')
@@ -85,10 +78,7 @@ export class CvItemController {
     @Param('enrollmentId', new ParseUUIDPipe()) enrollmentId: string,
     @Param('itemId', new ParseUUIDPipe()) itemId: string,
   ): Promise<CvItemResponseDto> {
-    return this.cvItemService.findById(
-      enrollmentId,
-      itemId,
-    ) as unknown as Promise<CvItemResponseDto>;
+    return this.cvItemService.findById(enrollmentId, itemId);
   }
 
   @Patch(':itemId')
@@ -104,13 +94,7 @@ export class CvItemController {
     @Body() dto: UpdateCvItemDto,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<CvItemResponseDto> {
-    return this.cvItemService.update(
-      user.id,
-      enrollmentId,
-      itemId,
-      dto,
-      file,
-    ) as unknown as Promise<CvItemResponseDto>;
+    return this.cvItemService.update(user.id, enrollmentId, itemId, dto, file);
   }
 
   @Delete(':itemId')

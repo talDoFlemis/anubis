@@ -74,7 +74,8 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
     return Object.keys(newErrors).length === 0;
   }
 
-  const isPending = updateEnrollment.isPending || uploadReceipt.isPending || submitEnrollment.isPending;
+  const isPending =
+    updateEnrollment.isPending || uploadReceipt.isPending || submitEnrollment.isPending;
 
   async function handleSaveAndSubmit() {
     if (!validate()) return;
@@ -237,8 +238,8 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
               Submeter inscrição
             </DialogTitle>
             <DialogDescription>
-              Após a submissão, você não poderá mais editar sua inscrição. Certifique-se de que todos
-              os dados e documentos estão corretos antes de confirmar.
+              Após a submissão, você não poderá mais editar sua inscrição. Certifique-se de que
+              todos os dados e documentos estão corretos antes de confirmar.
             </DialogDescription>
           </DialogHeader>
 

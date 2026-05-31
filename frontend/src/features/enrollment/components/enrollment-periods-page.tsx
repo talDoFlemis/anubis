@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useState, type ReactElement } from 'react';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronUp, Copy, Eye, HelpCircle, Loader2, Plus, Settings, Trash2 } from 'lucide-react';
@@ -20,8 +20,8 @@ import {
 import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { api } from '@/lib/api';
 import type { EnrollmentPeriod } from '@/lib/api';
+import { api } from '@/lib/api';
 import type { CreateScoringCategoryPayload, ScoringCategory } from '@/lib/api/cv-scoring';
 import { cn } from '@/lib/utils';
 
@@ -179,8 +179,12 @@ function CategoryFormFields({
                 <TooltipTrigger asChild>
                   <HelpCircle className="text-muted-foreground h-3 w-3" />
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-52 border-0 bg-blue-50 text-[0.65rem] text-slate-400 shadow-none">
-                  Define a ordem de exibição das categorias para o candidato. Menor número aparece primeiro.
+                <TooltipContent
+                  side="top"
+                  className="max-w-52 border-0 bg-blue-50 text-[0.65rem] text-slate-400 shadow-none"
+                >
+                  Define a ordem de exibição das categorias para o candidato. Menor número aparece
+                  primeiro.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -332,12 +336,7 @@ function CategoryForm({
     <form onSubmit={handleSubmit} className="space-y-3 rounded-xl bg-slate-50/60 p-4">
       <CategoryFormFields form={form} errors={errors} level={level} setForm={setForm} />
       <div className="flex justify-end">
-        <Button
-          type="submit"
-          size="sm"
-          disabled={createMutation.isPending}
-          className="gap-1.5"
-        >
+        <Button type="submit" size="sm" disabled={createMutation.isPending} className="gap-1.5">
           {createMutation.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
@@ -431,7 +430,13 @@ function CategoryList({
 
 // ── Scoring categories panel for a period ────────────────────────────
 
-function ScoringCategoriesPanel({ periodId, readOnly = false }: { periodId: string; readOnly?: boolean }) {
+function ScoringCategoriesPanel({
+  periodId,
+  readOnly = false,
+}: {
+  periodId: string;
+  readOnly?: boolean;
+}) {
   return (
     <div className="space-y-6">
       <CategoryList periodId={periodId} level="masters" readOnly={readOnly} />
@@ -446,13 +451,18 @@ function PeriodCard({
   period,
   allPeriods,
   defaultExpanded = false,
+  onExpanded,
 }: {
   period: EnrollmentPeriod;
   allPeriods: EnrollmentPeriod[];
   defaultExpanded?: boolean;
+  onExpanded?: () => void;
 }) {
   const queryClient = useQueryClient();
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [expanded, setExpanded] = useState(() => {
+    if (defaultExpanded) onExpanded?.();
+    return defaultExpanded;
+  });
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [selectedSourceId, setSelectedSourceId] = useState('');
 
@@ -624,7 +634,7 @@ export function EnrollmentPeriodsPage(): ReactElement {
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [selectedCopySourceId, setSelectedCopySourceId] = useState('');
   const [isCopying, setIsCopying] = useState(false);
-  const newlyCreatedIdRef = useRef<string | null>(null);
+  const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
 
   const { data: periods = [], isLoading } = useQuery({
     queryKey: ['enrollment-periods'],
@@ -719,7 +729,7 @@ export function EnrollmentPeriodsPage(): ReactElement {
         ),
       );
 
-      newlyCreatedIdRef.current = created.id;
+      setNewlyCreatedId(created.id);
       queryClient.invalidateQueries({ queryKey: ['enrollment-periods'] });
       toast.success('Período de inscrição criado com sucesso!');
       setName('');
@@ -860,9 +870,7 @@ export function EnrollmentPeriodsPage(): ReactElement {
                 </div>
               </div>
 
-              {errors.categories && (
-                <p className="text-destructive text-sm">{errors.categories}</p>
-              )}
+              {errors.categories && <p className="text-destructive text-sm">{errors.categories}</p>}
             </div>
 
             {/* Copy from period dialog */}
@@ -902,7 +910,9 @@ export function EnrollmentPeriodsPage(): ReactElement {
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button type="button" variant="outline">Cancelar</Button>
+                    <Button type="button" variant="outline">
+                      Cancelar
+                    </Button>
                   </DialogClose>
                   <Button
                     type="button"
@@ -955,18 +965,17 @@ export function EnrollmentPeriodsPage(): ReactElement {
           </p>
         ) : (
           <div className="space-y-3">
-            {periods.map((period: EnrollmentPeriod) => {
-              const isNewlyCreated = newlyCreatedIdRef.current === period.id;
-              if (isNewlyCreated) newlyCreatedIdRef.current = null;
-              return (
-                <PeriodCard
-                  key={period.id}
-                  period={period}
-                  allPeriods={periods}
-                  defaultExpanded={isNewlyCreated}
-                />
-              );
-            })}
+            {periods.map((period: EnrollmentPeriod) => (
+              <PeriodCard
+                key={period.id}
+                period={period}
+                allPeriods={periods}
+                defaultExpanded={newlyCreatedId === period.id}
+                onExpanded={
+                  newlyCreatedId === period.id ? () => setNewlyCreatedId(null) : undefined
+                }
+              />
+            ))}
           </div>
         )}
       </div>

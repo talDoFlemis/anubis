@@ -76,7 +76,7 @@ describe('FileStorageService', () => {
       const largeFile = {
         ...mockFile,
         size: 11 * 1024 * 1024,
-      } as Express.Multer.File;
+      };
 
       await expect(service.upload(largeFile, 'user-uuid', 'cv-items')).rejects.toThrow(
         BadRequestException,
@@ -87,7 +87,7 @@ describe('FileStorageService', () => {
       const invalidFile = {
         ...mockFile,
         mimetype: 'text/plain',
-      } as Express.Multer.File;
+      };
 
       await expect(service.upload(invalidFile, 'user-uuid', 'cv-items')).rejects.toThrow(
         BadRequestException,
@@ -98,7 +98,7 @@ describe('FileStorageService', () => {
       const pdfFile = {
         ...mockFile,
         mimetype: 'application/pdf',
-      } as Express.Multer.File;
+      };
 
       await expect(service.upload(pdfFile, 'user-uuid', 'cv-items')).resolves.toBeDefined();
     });
@@ -107,7 +107,7 @@ describe('FileStorageService', () => {
       const pngFile = {
         ...mockFile,
         mimetype: 'image/png',
-      } as Express.Multer.File;
+      };
 
       await expect(service.upload(pngFile, 'user-uuid', 'cv-items')).resolves.toBeDefined();
     });
@@ -116,7 +116,7 @@ describe('FileStorageService', () => {
       const jpegFile = {
         ...mockFile,
         mimetype: 'image/jpeg',
-      } as Express.Multer.File;
+      };
 
       await expect(service.upload(jpegFile, 'user-uuid', 'cv-items')).resolves.toBeDefined();
     });

@@ -29,11 +29,7 @@ const LEVEL_OPTIONS = [
 
 // ── Component ────────────────────────────────────────────────────────
 
-export function StepLevelSelection({
-  enrollment,
-  period,
-  onNext,
-}: StepLevelSelectionProps) {
+export function StepLevelSelection({ enrollment, period, onNext }: StepLevelSelectionProps) {
   const { data: profile, isLoading: isProfileLoading } = useMyCandidateProfile();
   const createEnrollment = useCreateEnrollment();
 

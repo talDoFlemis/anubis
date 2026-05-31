@@ -199,7 +199,9 @@ export class EnrollmentPeriodService {
     const closed = await this.db
       .update(enrollmentPeriods)
       .set({ status: PERIOD_STATUS.CLOSED, updatedAt: now })
-      .where(and(eq(enrollmentPeriods.status, PERIOD_STATUS.OPEN), lte(enrollmentPeriods.endDate, now)))
+      .where(
+        and(eq(enrollmentPeriods.status, PERIOD_STATUS.OPEN), lte(enrollmentPeriods.endDate, now)),
+      )
       .returning({ id: enrollmentPeriods.id });
 
     if (closed.length > 0) {
@@ -211,7 +213,12 @@ export class EnrollmentPeriodService {
     const skipped = await this.db
       .update(enrollmentPeriods)
       .set({ status: PERIOD_STATUS.CLOSED, updatedAt: now })
-      .where(and(eq(enrollmentPeriods.status, PERIOD_STATUS.SCHEDULED), lte(enrollmentPeriods.endDate, now)))
+      .where(
+        and(
+          eq(enrollmentPeriods.status, PERIOD_STATUS.SCHEDULED),
+          lte(enrollmentPeriods.endDate, now),
+        ),
+      )
       .returning({ id: enrollmentPeriods.id });
 
     if (skipped.length > 0) {

@@ -173,10 +173,7 @@ export class EnrollmentController {
   @ApiOperation({ summary: 'Cancel and delete a draft enrollment' })
   @ApiUnauthorizedResponse({ description: 'No active session' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions' })
-  cancel(
-    @CurrentUser() user: User,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<void> {
+  cancel(@CurrentUser() user: User, @Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
     return this.enrollmentService.cancel(user.id, id);
   }
 
@@ -242,4 +239,3 @@ export class EnrollmentController {
     return this.enrollmentService.getPoscompReceiptUrl(user.id, id);
   }
 }
-

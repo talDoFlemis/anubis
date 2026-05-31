@@ -1,12 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { EnrollmentLevel } from '../../enrollment/dto/enrollment-level.enum';
 
 export class CreateCvScoringCategoryDto {
@@ -33,7 +26,6 @@ export class CreateCvScoringCategoryDto {
   @ApiProperty({ enum: EnrollmentLevel })
   @IsEnum(EnrollmentLevel)
   level: EnrollmentLevel;
-
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()

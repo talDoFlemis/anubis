@@ -16,7 +16,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useActivePeriod, useCancelEnrollment, useMyEnrollments } from '@/features/enrollment/hooks/use-enrollment';
+import {
+  useActivePeriod,
+  useCancelEnrollment,
+  useMyEnrollments,
+} from '@/features/enrollment/hooks/use-enrollment';
 import type { Enrollment, EnrollmentPeriod } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
@@ -92,8 +96,12 @@ function EnrollmentCard({
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="secondary" className="pointer-events-none">{getLevelLabel(enrollment.level)}</Badge>
-          <Badge className={cn('pointer-events-none border-0', statusBadge.className)}>{statusBadge.label}</Badge>
+          <Badge variant="secondary" className="pointer-events-none">
+            {getLevelLabel(enrollment.level)}
+          </Badge>
+          <Badge className={cn('pointer-events-none border-0', statusBadge.className)}>
+            {statusBadge.label}
+          </Badge>
         </div>
 
         {period && (
@@ -141,7 +149,10 @@ function EnrollmentCard({
         {/* Action buttons */}
         {isDraft && isPeriodOpen && (
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button asChild className="anubis-gradient-action gap-2 text-white hover:brightness-110 transition-all">
+            <Button
+              asChild
+              className="anubis-gradient-action gap-2 text-white hover:brightness-110 transition-all"
+            >
               <Link to="/enrollment/new" search={{ step: 0 }}>
                 Continuar Inscrição
                 <ChevronRight className="h-4 w-4" />
@@ -253,9 +264,10 @@ export function EnrollmentDashboard() {
   // Match enrollments to the active period (ignore cancelled)
   const activeEnrollment = useMemo(() => {
     if (!enrollments?.length || !activePeriod) return null;
-    return enrollments.find(
-      e => e.enrollmentPeriodId === activePeriod.id && e.status !== 'cancelled',
-    ) ?? null;
+    return (
+      enrollments.find(e => e.enrollmentPeriodId === activePeriod.id && e.status !== 'cancelled') ??
+      null
+    );
   }, [enrollments, activePeriod]);
 
   // Other enrollments (past / different periods)

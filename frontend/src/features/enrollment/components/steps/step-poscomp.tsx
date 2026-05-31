@@ -52,9 +52,12 @@ export function StepPoscomp({ enrollment, onNext, onBack }: StepPoscompProps) {
   // Fetch the existing receipt file name
   useEffect(() => {
     if (hasExistingReceipt && enrollment) {
-      api.enrollments.getPoscompReceiptInfo(enrollment.id).then(info => {
-        setReceiptFileName(info.fileName);
-      }).catch(() => {});
+      api.enrollments
+        .getPoscompReceiptInfo(enrollment.id)
+        .then(info => {
+          setReceiptFileName(info.fileName);
+        })
+        .catch(() => {});
     }
   }, [hasExistingReceipt, enrollment]);
 
@@ -440,12 +443,7 @@ export function StepPoscomp({ enrollment, onNext, onBack }: StepPoscompProps) {
           <span />
         )}
 
-        <Button
-          type="button"
-          onClick={handleNext}
-          disabled={isPending}
-          className="min-w-32"
-        >
+        <Button type="button" onClick={handleNext} disabled={isPending} className="min-w-32">
           {isPending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />

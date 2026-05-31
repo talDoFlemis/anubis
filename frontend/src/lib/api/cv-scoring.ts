@@ -88,7 +88,10 @@ export const cvScoringApi = {
     await apiClient.delete(`/scoring-categories/${id}`);
   },
 
-  copyFromPeriod: async (targetPeriodId: string, sourcePeriodId: string): Promise<ScoringCategory[]> => {
+  copyFromPeriod: async (
+    targetPeriodId: string,
+    sourcePeriodId: string,
+  ): Promise<ScoringCategory[]> => {
     const { data } = await apiClient.post(
       `/enrollment-periods/${targetPeriodId}/scoring-categories/copy`,
       { sourcePeriodId },

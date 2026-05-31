@@ -55,9 +55,7 @@ export const enrollmentPeriodsApi = {
   },
 
   create: async (payload: CreateEnrollmentPeriodPayload): Promise<EnrollmentPeriod> => {
-    return normalizeEnrollmentPeriod(
-      (await apiClient.post('/enrollment-periods', payload)).data,
-    );
+    return normalizeEnrollmentPeriod((await apiClient.post('/enrollment-periods', payload)).data);
   },
 
   close: async (id: string): Promise<EnrollmentPeriod> => {
