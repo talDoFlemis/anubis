@@ -6,7 +6,8 @@ import { users } from '@/database/schema/users';
 import { ResearchTheme } from '@/research-theme/domain/research-theme';
 import { FindResearchThemesDto } from '@/research-theme/dto/find-research-themes.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
+import { and, eq, exists, ilike, or, sql, type SQL } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type {
   CreateResearchThemeData,
   UpdateResearchThemeData,
@@ -14,6 +15,13 @@ import type {
 import { ResearchThemeRepository } from '../research-theme.repository';
 
 type ResearchThemeRow = typeof researchThemes.$inferSelect;
+
+type AssociatedProfessorRow = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+};
 
 @Injectable()
 export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
@@ -57,6 +65,8 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
   }
 
   private async findByIdWithTx(id: string, tx: DrizzleDB): Promise<ResearchTheme | null> {
+    const assocUsers = alias(users, 'assoc_users');
+
     const [row] = await tx
       .select({
         theme: researchThemes,
@@ -66,29 +76,37 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
           lastName: users.lastName,
           email: users.email,
         },
+        associatedProfessors: sql<AssociatedProfessorRow[]>`
+          coalesce(
+            json_agg(
+              json_build_object(
+                'id', ${assocUsers.id},
+                'firstName', ${assocUsers.firstName},
+                'lastName', ${assocUsers.lastName},
+                'email', ${assocUsers.email}
+              )
+            ) filter (where ${assocUsers.id} is not null),
+            '[]'::json
+          )
+        `,
       })
       .from(researchThemes)
       .leftJoin(users, eq(users.id, researchThemes.professorId))
+      .leftJoin(
+        researchThemeProfessors,
+        eq(researchThemeProfessors.researchThemeId, researchThemes.id),
+      )
+      .leftJoin(assocUsers, eq(assocUsers.id, researchThemeProfessors.professorId))
       .where(eq(researchThemes.id, id))
+      .groupBy(researchThemes.id, users.id)
       .limit(1);
 
     if (!row) return null;
 
-    const associated = await tx
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-      })
-      .from(researchThemeProfessors)
-      .innerJoin(users, eq(users.id, researchThemeProfessors.professorId))
-      .where(eq(researchThemeProfessors.researchThemeId, id));
-
     return {
       ...this.toDomain(row.theme),
       professor: row.professor ?? undefined,
-      associatedProfessors: associated,
+      associatedProfessors: row.associatedProfessors,
     };
   }
 
@@ -119,28 +137,34 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
         or(
           ilike(researchThemes.title, searchPattern),
           ilike(researchThemes.description, searchPattern),
-          sql`exists (
-            select 1 from ${users} 
-            where ${users.id} = ${researchThemes.professorId} 
-            and (
-              ${users.firstName} ilike ${searchPattern} 
-              or ${users.lastName} ilike ${searchPattern} 
-              or ${users.email} ilike ${searchPattern}
-            )
-          )`,
-          sql`exists (
-            select 1 from ${researchThemeProfessors}
-            inner join ${users} on ${users.id} = ${researchThemeProfessors.professorId}
-            where ${researchThemeProfessors.researchThemeId} = ${researchThemes.id}
-            and (
-              ${users.firstName} ilike ${searchPattern} 
-              or ${users.lastName} ilike ${searchPattern} 
-              or ${users.email} ilike ${searchPattern}
-            )
-          )`,
+          exists(
+            this.db
+              .select({ one: sql`1` })
+              .from(users)
+              .where(
+                and(
+                  eq(users.id, researchThemes.professorId),
+                  sql`${users.searchVector} @@ plainto_tsquery('simple', ${filters.search})`,
+                ),
+              ),
+          ),
+          exists(
+            this.db
+              .select({ one: sql`1` })
+              .from(researchThemeProfessors)
+              .innerJoin(users, eq(users.id, researchThemeProfessors.professorId))
+              .where(
+                and(
+                  eq(researchThemeProfessors.researchThemeId, researchThemes.id),
+                  sql`${users.searchVector} @@ plainto_tsquery('simple', ${filters.search})`,
+                ),
+              ),
+          ),
         )!,
       );
     }
+
+    const assocUsers = alias(users, 'assoc_users');
 
     const rows = await this.db
       .select({
@@ -151,55 +175,46 @@ export class ResearchThemeDrizzleRepository extends ResearchThemeRepository {
           lastName: users.lastName,
           email: users.email,
         },
+        associatedProfessors: sql<AssociatedProfessorRow[]>`
+          coalesce(
+            json_agg(
+              json_build_object(
+                'id', ${assocUsers.id},
+                'firstName', ${assocUsers.firstName},
+                'lastName', ${assocUsers.lastName},
+                'email', ${assocUsers.email}
+              )
+            ) filter (where ${assocUsers.id} is not null),
+            '[]'::json
+          )
+        `,
+        totalCount: sql<number>`count(*) over()::int`,
       })
       .from(researchThemes)
       .leftJoin(users, eq(users.id, researchThemes.professorId))
+      .leftJoin(
+        researchThemeProfessors,
+        eq(researchThemeProfessors.researchThemeId, researchThemes.id),
+      )
+      .leftJoin(assocUsers, eq(assocUsers.id, researchThemeProfessors.professorId))
       .where(conditions.length ? and(...conditions) : undefined)
+      .groupBy(researchThemes.id, users.id)
       .orderBy(researchThemes.createdAt, researchThemes.id)
       .limit(limit)
       .offset(offset);
 
-    const [totalRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(researchThemes)
-      .where(conditions.length ? and(...conditions) : undefined);
-
-    let data: ResearchTheme[] = [];
-    if (rows.length > 0) {
-      const themeIds = rows.map(r => r.theme.id);
-      const associations = await this.db
-        .select({
-          researchThemeId: researchThemeProfessors.researchThemeId,
-          professor: {
-            id: users.id,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            email: users.email,
-          },
-        })
-        .from(researchThemeProfessors)
-        .innerJoin(users, eq(users.id, researchThemeProfessors.professorId))
-        .where(inArray(researchThemeProfessors.researchThemeId, themeIds));
-
-      const associatedMap = new Map<string, (typeof associations)[0]['professor'][]>();
-      for (const assoc of associations) {
-        const list = associatedMap.get(assoc.researchThemeId) ?? [];
-        list.push(assoc.professor);
-        associatedMap.set(assoc.researchThemeId, list);
-      }
-
-      data = rows.map(r => ({
-        ...this.toDomain(r.theme),
-        professor: r.professor ?? undefined,
-        associatedProfessors: associatedMap.get(r.theme.id) ?? [],
-      }));
-    }
+    const total = rows[0]?.totalCount ?? 0;
+    const data = rows.map(r => ({
+      ...this.toDomain(r.theme),
+      professor: r.professor ?? undefined,
+      associatedProfessors: r.associatedProfessors,
+    }));
 
     return buildPaginatedResult({
       data,
       page,
       limit,
-      total: totalRow?.count ?? 0,
+      total,
     });
   }
 

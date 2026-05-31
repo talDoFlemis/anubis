@@ -44,7 +44,7 @@ describe('SecretaryController', () => {
   });
 
   it('calls invite on service', async () => {
-    secretaryService.invite.mockResolvedValue({} as never);
+    secretaryService.invite.mockResolvedValue({});
 
     await controller.invite({
       name: 'Maria Silva',
@@ -58,7 +58,7 @@ describe('SecretaryController', () => {
   });
 
   it('calls disableAccount on service', async () => {
-    secretaryService.disableAccount.mockResolvedValue({} as never);
+    secretaryService.disableAccount.mockResolvedValue({});
 
     await controller.disableAccount('user-1', coordinator);
 
@@ -69,7 +69,7 @@ describe('SecretaryController', () => {
   });
 
   it('calls enableAccount on service', async () => {
-    secretaryService.enableAccount.mockResolvedValue({} as never);
+    secretaryService.enableAccount.mockResolvedValue({});
 
     await controller.enableAccount('user-1', coordinator);
 

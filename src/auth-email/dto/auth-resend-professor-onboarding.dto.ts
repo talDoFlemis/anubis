@@ -5,5 +5,5 @@ export class AuthResendProfessorOnboardingDto {
   @ApiProperty({ example: 'professor@example.com' })
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 }

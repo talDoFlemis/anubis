@@ -21,7 +21,7 @@ export class DrizzleDBHealthIndicator {
       isHealthy = true;
     } catch (error) {
       this.logger.error('Database health check failed', {
-        errorMessage: error as unknown,
+        errorMessage: error,
       });
     }
 

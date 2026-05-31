@@ -117,7 +117,7 @@ async function seedProfessor(
   tx: Parameters<Parameters<NodePgDatabase['transaction']>[0]>[0],
   prof: GeneratedProfessorData,
 ): Promise<void> {
-  const [userRow] = await tx
+  const rows = await tx
     .insert(users)
     .values({
       authProvider: 'email',
@@ -134,6 +134,8 @@ async function seedProfessor(
     })
     .onConflictDoNothing({ target: users.email })
     .returning();
+
+  const userRow = Array.isArray(rows) ? rows[0] : null;
 
   if (!userRow) {
     console.warn(

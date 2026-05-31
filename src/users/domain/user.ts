@@ -5,24 +5,24 @@ import { RoleEnum } from '../../roles/roles.enum';
 import { StatusEnum } from '../../statuses/statuses.enum';
 
 export class User {
-  id: string;
-  authProvider: AuthProvidersEnum;
-  providerSubject: string | null;
-  email: string | null;
+  id!: string;
+  authProvider!: AuthProvidersEnum;
+  providerSubject!: string | null;
+  email!: string | null;
   @Exclude({ toPlainOnly: true })
   password?: string | null;
-  cpf: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  role: RoleEnum;
-  status: StatusEnum;
-  onboardingCompleted: boolean;
-  mustChangePassword: boolean;
-  bootstrapPasswordExpiresAt: Date | null;
-  confirmEmailTokenVersion: number;
-  forgotPasswordTokenVersion: number;
-  createdAt: Date;
-  updatedAt: Date;
+  cpf!: string | null;
+  firstName!: string | null;
+  lastName!: string | null;
+  role!: RoleEnum;
+  status!: StatusEnum;
+  onboardingCompleted!: boolean;
+  mustChangePassword!: boolean;
+  bootstrapPasswordExpiresAt!: Date | null;
+  confirmEmailTokenVersion!: number;
+  forgotPasswordTokenVersion!: number;
+  createdAt!: Date;
+  updatedAt!: Date;
 
   static toDomain(userRow: UserSelect): User {
     return plainToInstance(User, {

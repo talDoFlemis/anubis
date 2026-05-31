@@ -19,6 +19,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const message = this.resolveMessage(exception);
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     if (status >= (HttpStatus.INTERNAL_SERVER_ERROR as number)) {
       this.logger.error(
         { err: exception, path: request.url, method: request.method },

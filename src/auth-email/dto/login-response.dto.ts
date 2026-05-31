@@ -2,26 +2,26 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginResponseDto {
   @ApiProperty()
-  userId: string;
+  userId!: string;
 
   @ApiProperty()
-  email: string | null;
+  email!: string | null;
 
   @ApiProperty()
-  firstName: string | null;
+  firstName!: string | null;
 
   @ApiProperty()
-  lastName: string | null;
+  lastName!: string | null;
 
   @ApiProperty()
-  role: string;
+  role!: string;
 
   @ApiProperty()
-  status: string;
+  status!: string;
 
   @ApiProperty()
-  onboardingCompleted: boolean;
+  onboardingCompleted!: boolean;
 
   @ApiProperty()
-  mustChangePassword: boolean;
+  mustChangePassword!: boolean;
 }

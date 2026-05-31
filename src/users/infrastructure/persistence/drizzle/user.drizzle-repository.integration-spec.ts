@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { Pool } from 'pg';
 import { AuthProvidersEnum } from '../../../../auth/auth-providers.enum';
-import type { DrizzleDB } from '../../../../database/drizzle.provider';
 import { users } from '../../../../database/schema/users';
 import {
   createTestDrizzle,
@@ -38,7 +37,7 @@ describe('UserDrizzleRepository (integration)', () => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-    repository = new UserDrizzleRepository(db as unknown as DrizzleDB);
+    repository = new UserDrizzleRepository(db);
   });
 
   afterEach(async () => {

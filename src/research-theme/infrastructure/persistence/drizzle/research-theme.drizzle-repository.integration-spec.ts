@@ -1,4 +1,3 @@
-import type { DrizzleDB } from '@/database/drizzle.provider';
 import { professors } from '@/database/schema/professor';
 import { users } from '@/database/schema/users';
 import {
@@ -22,7 +21,7 @@ describe('ResearchThemeDrizzleRepository (integration)', () => {
     const testDb = createTestDrizzle();
     db = testDb.db;
     pool = testDb.pool;
-    repository = new ResearchThemeDrizzleRepository(db as unknown as DrizzleDB);
+    repository = new ResearchThemeDrizzleRepository(db);
   });
 
   afterEach(async () => {
@@ -185,6 +184,54 @@ describe('ResearchThemeDrizzleRepository (integration)', () => {
     const searchOwner = await repository.findAllByFilters({ search: 'gabriel' });
     expect(searchOwner.data).toHaveLength(1);
     expect(searchOwner.data[0]?.title).toBe('Drizzle ORM Advanced Techniques');
+  });
+
+  it('returns correct total count and associations when filtering and paginating', async () => {
+    const ownerId = await createProfessor(db, undefined, 'Owner', 'Professor');
+    const assocId = await createProfessor(db, undefined, 'Assoc', 'Professor');
+
+    // Create 3 themes
+    await repository.create({
+      professorId: ownerId,
+      title: 'Deep Learning',
+      description: 'AI details',
+      vacancies: 1,
+      level: ResearchThemeLevelEnum.masters,
+      references: [],
+      associatedProfessorIds: [assocId],
+    });
+
+    await repository.create({
+      professorId: ownerId,
+      title: 'Reinforcement Learning',
+      description: 'AI details',
+      vacancies: 2,
+      level: ResearchThemeLevelEnum.masters,
+      references: [],
+      associatedProfessorIds: [],
+    });
+
+    await repository.create({
+      professorId: ownerId,
+      title: 'Web Security',
+      description: 'Security details',
+      vacancies: 3,
+      level: ResearchThemeLevelEnum.doctoral,
+      references: [],
+    });
+
+    // Find masters themes (2 items), paginate page 1 with limit 1
+    const result = await repository.findAllByFilters({
+      level: ResearchThemeLevelEnum.masters,
+      page: 1,
+      limit: 1,
+    });
+
+    expect(result.data).toHaveLength(1);
+    expect(result.pagination.total).toBe(2);
+    expect(result.pagination.totalPages).toBe(2);
+    expect(result.data[0].associatedProfessors).toHaveLength(1);
+    expect(result.data[0].associatedProfessors?.[0].id).toBe(assocId);
   });
 });
 
