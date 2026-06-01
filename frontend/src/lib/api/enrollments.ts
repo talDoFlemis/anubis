@@ -30,6 +30,8 @@ export interface Enrollment {
   sigaaCode: string | null;
   sigaaReceiptFileId: string | null;
   declaration: boolean | null;
+  primaryThemeId: string | null;
+  secondaryThemeId: string | null;
   poscomp: PoscompData | null;
   mastersDegrees: MastersDegreeData[] | null;
   scoreDraft: string | null;
@@ -55,6 +57,11 @@ export interface UpdateMastersDegreesPayload {
   mastersDegrees: MastersDegreeData[];
 }
 
+export interface UpdateEnrollmentThemesPayload {
+  primaryThemeId: string;
+  secondaryThemeId: string;
+}
+
 // ── Normalizers ──────────────────────────────────────────────────────
 
 function normalizeEnrollment(data: unknown): Enrollment {
@@ -70,6 +77,8 @@ function normalizeEnrollment(data: unknown): Enrollment {
     sigaaCode: asNullableString(r.sigaaCode),
     sigaaReceiptFileId: asNullableString(r.sigaaReceiptFileId),
     declaration: r.declaration != null ? Boolean(r.declaration) : null,
+    primaryThemeId: asNullableString(r.primaryThemeId),
+    secondaryThemeId: asNullableString(r.secondaryThemeId),
     poscomp: (r.poscomp as PoscompData | null) ?? null,
     mastersDegrees: (r.mastersDegrees as MastersDegreeData[] | null) ?? null,
     scoreDraft: asNullableString(r.scoreDraft),
@@ -110,6 +119,10 @@ export const enrollmentsApi = {
     return normalizeEnrollment(
       (await apiClient.put(`/enrollments/${id}/masters-degrees`, payload)).data,
     );
+  },
+
+  updateThemes: async (id: string, payload: UpdateEnrollmentThemesPayload): Promise<Enrollment> => {
+    return normalizeEnrollment((await apiClient.put(`/enrollments/${id}/themes`, payload)).data);
   },
 
   getMastersDegrees: async (id: string): Promise<MastersDegreeData[] | null> => {

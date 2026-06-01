@@ -39,6 +39,7 @@ import { EnrollmentResponseDto } from './dto/enrollment-response.dto';
 import { FindEnrollmentsDto } from './dto/find-enrollments.dto';
 import { UpdateMastersDegreesDto } from './dto/masters-degree.dto';
 import { UpdateEnrollmentStatusDto } from './dto/update-enrollment-status.dto';
+import { UpdateEnrollmentThemesDto } from './dto/update-enrollment-themes.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { EnrollmentService } from './enrollment.service';
 
@@ -155,6 +156,22 @@ export class EnrollmentController {
     @Body() dto: UpdateMastersDegreesDto,
   ): Promise<EnrollmentResponseDto> {
     return this.enrollmentService.updateMastersDegrees(user.id, id, dto);
+  }
+
+  @Put(':id/themes')
+  @Roles(RoleEnum.candidate)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update enrollment primary and secondary themes' })
+  @ApiOkResponse({ type: EnrollmentResponseDto })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  @ApiNotFoundResponse({ description: 'Enrollment not found' })
+  updateThemes(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateEnrollmentThemesDto,
+  ): Promise<EnrollmentResponseDto> {
+    return this.enrollmentService.updateThemes(user.id, id, dto);
   }
 
   @Get(':id/masters-degrees')

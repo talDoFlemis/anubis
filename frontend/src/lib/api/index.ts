@@ -26,6 +26,7 @@ export type {
   MastersDegreeData,
   PoscompData,
   UpdateEnrollmentPayload,
+  UpdateEnrollmentThemesPayload,
   UpdateMastersDegreesPayload,
 } from './enrollments';
 export type { InviteProfessorPayload, PaginatedProfessors, ProfessorItem } from './professors';

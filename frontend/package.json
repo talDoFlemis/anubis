@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc -b",
-    "lint:check": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint:check": "eslint --quiet . ",
+    "lint:fix": "eslint --quiet . --fix ",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "preview": "vite preview"

@@ -11,6 +11,8 @@ export class Enrollment {
   sigaaCode!: string | null;
   sigaaReceiptFileId!: string | null;
   declaration!: boolean | null;
+  primaryThemeId!: string | null;
+  secondaryThemeId!: string | null;
   poscomp!: PoscompData | null;
   mastersDegrees!: MastersDegreeData[] | null;
   scoreDraft!: string | null;

@@ -1,6 +1,7 @@
 import type {
   CreateEnrollmentPayload,
   UpdateEnrollmentPayload,
+  UpdateEnrollmentThemesPayload,
   UpdateMastersDegreesPayload,
 } from '@/lib/api';
 import { api } from '@/lib/api';
@@ -98,5 +99,26 @@ export function useCancelEnrollment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
     },
+  });
+}
+
+export function useUpdateEnrollmentThemes() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateEnrollmentThemesPayload }) =>
+      api.enrollments.updateThemes(id, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['enrollments', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
+    },
+  });
+}
+
+export function useResearchThemes(level?: 'masters' | 'doctoral', search?: string) {
+  return useQuery({
+    queryKey: ['research-themes', { level, search }],
+    queryFn: () => api.researchThemes.findAll({ level, search, limit: 100 }),
+    enabled: !!level,
   });
 }
