@@ -13,8 +13,8 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
-    "lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint:check": "eslint --quiet \"{src,apps,libs,test}/**/*.ts\" ",
+    "lint:fix": "eslint --quiet \"{src,apps,libs,test}/**/*.ts\" --fix",
     "typecheck": "tsc -p tsconfig.build.json --noEmit --pretty false",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -25,8 +25,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "ts-node -r tsconfig-paths/register scripts/seed/seed-professors.ts",
-    "db:seed:themes": "ts-node -r tsconfig-paths/register scripts/seed/seed-themes.ts"
+    "db:seed": "ts-node -r tsconfig-paths/register scripts/seed/main.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1057.0",
