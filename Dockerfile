@@ -52,4 +52,4 @@ COPY --chown=node:node drizzle ./drizzle
 EXPOSE 3000
 EXPOSE 3001
 
-CMD ["dist/main"]
+CMD ["dist/src/main"]
