@@ -1,5 +1,3 @@
-export const S3_CLIENT = Symbol('S3_CLIENT');
-
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export const ALLOWED_MIME_TYPES = [

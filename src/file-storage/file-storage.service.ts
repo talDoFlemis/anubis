@@ -1,15 +1,10 @@
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import type { FileSelect } from '../database/schema/files';
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES, S3_CLIENT } from './file-storage.constants';
+import type { StorageDriver } from './drivers/storage-driver.interface';
+import { STORAGE_DRIVER } from './drivers/storage-driver.interface';
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from './file-storage.constants';
 import { FileStorageRepository } from './infrastructure/persistence/file-storage.repository';
 
 @Injectable()
@@ -18,7 +13,7 @@ export class FileStorageService {
 
   constructor(
     private readonly fileStorageRepository: FileStorageRepository,
-    @Inject(S3_CLIENT) private readonly s3: S3Client,
+    @Inject(STORAGE_DRIVER) private readonly driver: StorageDriver,
     private readonly configService: ConfigService,
   ) {
     this.bucket = this.configService.getOrThrow<string>('S3_BUCKET');
@@ -34,46 +29,38 @@ export class FileStorageService {
     const fileId = randomUUID();
     const key = `${purpose}/${fileId}-${file.originalname}`;
 
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      }),
-    );
-
-    return this.fileStorageRepository.create({
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      sizeBytes: file.size,
-      bucket: this.bucket,
+    await this.driver.upload({
       key,
-      uploadedBy,
-      purpose,
+      buffer: file.buffer,
+      mimeType: file.mimetype,
     });
+
+    try {
+      return await this.fileStorageRepository.create({
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        sizeBytes: file.size,
+        bucket: this.bucket,
+        key,
+        uploadedBy,
+        purpose,
+      });
+    } catch (error) {
+      await this.driver.delete(key);
+      throw error;
+    }
   }
 
   async getSignedDownloadUrl(fileId: string, expiresInSeconds: number = 3600): Promise<string> {
     const record = await this.findById(fileId);
 
-    const command = new GetObjectCommand({
-      Bucket: record.bucket,
-      Key: record.key,
-    });
-
-    return getSignedUrl(this.s3, command, { expiresIn: expiresInSeconds });
+    return this.driver.getSignedDownloadUrl(record.key, expiresInSeconds);
   }
 
   async delete(fileId: string): Promise<void> {
     const record = await this.findById(fileId);
 
-    await this.s3.send(
-      new DeleteObjectCommand({
-        Bucket: record.bucket,
-        Key: record.key,
-      }),
-    );
+    await this.driver.delete(record.key);
 
     await this.fileStorageRepository.delete(fileId);
   }

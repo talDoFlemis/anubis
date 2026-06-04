@@ -1,14 +1,14 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { S3_CLIENT } from './file-storage.constants';
+import { STORAGE_DRIVER } from './drivers/storage-driver.interface';
 import { FileStorageService } from './file-storage.service';
 import { FileStorageRepository } from './infrastructure/persistence/file-storage.repository';
 
 describe('FileStorageService', () => {
   let service: FileStorageService;
   let mockRepository: jest.Mocked<FileStorageRepository>;
-  let mockS3: { send: jest.Mock };
+  let mockDriver: { upload: jest.Mock; getSignedDownloadUrl: jest.Mock; delete: jest.Mock };
 
   const mockFile = {
     originalname: 'test.pdf',
@@ -36,15 +36,17 @@ describe('FileStorageService', () => {
       delete: jest.fn().mockResolvedValue(undefined),
     };
 
-    mockS3 = {
-      send: jest.fn().mockResolvedValue({}),
+    mockDriver = {
+      upload: jest.fn().mockResolvedValue(undefined),
+      getSignedDownloadUrl: jest.fn().mockResolvedValue('http://signed-url'),
+      delete: jest.fn().mockResolvedValue(undefined),
     };
 
     const module = await Test.createTestingModule({
       providers: [
         FileStorageService,
         { provide: FileStorageRepository, useValue: mockRepository },
-        { provide: S3_CLIENT, useValue: mockS3 },
+        { provide: STORAGE_DRIVER, useValue: mockDriver },
         {
           provide: ConfigService,
           useValue: {
@@ -59,12 +61,23 @@ describe('FileStorageService', () => {
   });
 
   describe('upload', () => {
-    it('uploads a file to S3 and saves metadata', async () => {
+    it('uploads a file and saves metadata', async () => {
       const result = await service.upload(mockFile, 'user-uuid', 'cv-items');
 
-      expect(mockS3.send).toHaveBeenCalledTimes(1);
+      expect(mockDriver.upload).toHaveBeenCalledTimes(1);
       expect(mockRepository.create).toHaveBeenCalled();
       expect(result).toEqual(mockFileRecord);
+    });
+
+    it('deletes uploaded file from storage and throws error if repository creation fails', async () => {
+      const repoError = new Error('Database error');
+      mockRepository.create.mockRejectedValueOnce(repoError);
+
+      await expect(service.upload(mockFile, 'user-uuid', 'cv-items')).rejects.toThrow(repoError);
+
+      expect(mockDriver.upload).toHaveBeenCalledTimes(1);
+      expect(mockDriver.delete).toHaveBeenCalledTimes(1);
+      expect(mockDriver.delete).toHaveBeenCalledWith(expect.stringContaining('cv-items/'));
     });
 
     it('rejects files exceeding max size', async () => {
@@ -131,11 +144,24 @@ describe('FileStorageService', () => {
   });
 
   describe('delete', () => {
-    it('deletes file from S3 and database', async () => {
+    it('deletes file from storage and database', async () => {
       await service.delete('file-uuid');
 
-      expect(mockS3.send).toHaveBeenCalledTimes(1);
+      expect(mockDriver.delete).toHaveBeenCalledTimes(1);
+      expect(mockDriver.delete).toHaveBeenCalledWith('cv-items/file-uuid-test.pdf');
       expect(mockRepository.delete).toHaveBeenCalledWith('file-uuid');
+    });
+  });
+
+  describe('getSignedDownloadUrl', () => {
+    it('returns signed download URL from storage driver', async () => {
+      const result = await service.getSignedDownloadUrl('file-uuid', 3600);
+
+      expect(mockDriver.getSignedDownloadUrl).toHaveBeenCalledWith(
+        'cv-items/file-uuid-test.pdf',
+        3600,
+      );
+      expect(result).toBe('http://signed-url');
     });
   });
 });
