@@ -11,6 +11,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { enrollmentLevelEnum, enrollmentPeriods } from './enrollment-periods';
+import { researchThemes } from './research-themes';
 import { users } from './users';
 
 export const enrollmentStatusEnum = pgEnum('enrollment_status', [
@@ -53,6 +54,12 @@ export const enrollments = pgTable(
     sigaaCode: varchar('sigaa_code', { length: 50 }),
     sigaaReceiptFileId: varchar('sigaa_receipt_file_id', { length: 255 }),
     declaration: boolean('declaration').default(false),
+    primaryThemeId: uuid('primary_theme_id').references(() => researchThemes.id, {
+      onDelete: 'restrict',
+    }),
+    secondaryThemeId: uuid('secondary_theme_id').references(() => researchThemes.id, {
+      onDelete: 'restrict',
+    }),
     poscomp: jsonb('poscomp').$type<PoscompData | null>(),
     mastersDegrees: jsonb('masters_degrees').$type<MastersDegreeData[] | null>(),
     scoreDraft: numeric('score_draft', { precision: 7, scale: 2 }),

@@ -6,9 +6,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - '5432:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -U $$POSTGRES_USER"]
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U $$POSTGRES_USER']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     image: ghcr.io/taldoflemis/anubis:latest
     env_file:
       - .env
@@ -80,9 +80,9 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "node",
-          "-e",
+          'CMD',
+          'node',
+          '-e',
           "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 15s
@@ -93,13 +93,13 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - '1025:1025'
+      - '8025:8025'
     environment:
       - MP_SMTP_AUTH_ACCEPT_ANY=true
       - MP_SMTP_AUTH_ALLOW_INSECURE=true
     healthcheck:
-      test: ["CMD-SHELL", "wget http://localhost:8025 -O /dev/null"]
+      test: ['CMD-SHELL', 'wget http://localhost:8025 -O /dev/null']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -110,7 +110,7 @@ services:
       context: ./frontend/
     image: ghcr.io/taldoflemis/anubis/frontend:latest
     ports:
-      - "5173:8080"
+      - '5173:8080'
 
     env_file:
       - ./frontend/.env
@@ -134,21 +134,30 @@ services:
 
   minio:
     image: minio/minio:latest
-    command: server /data --console-address ":9001"
+    command: server /data
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ['CMD', 'mc', 'ready', 'local']
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  minio_console:
+    image: ghcr.io/georgmangold/console
+    ports:
+      - '9001:9090'
+    environment:
+      CONSOLE_MINIO_SERVER: 'http://minio:9000'
+    depends_on:
+      createbuckets:
+        condition: service_completed_successfully
 
   createbuckets:
     image: minio/mc:latest

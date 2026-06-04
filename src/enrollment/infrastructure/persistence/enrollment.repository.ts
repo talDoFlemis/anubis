@@ -14,6 +14,8 @@ export interface UpdateEnrollmentData {
   sigaaCode?: string;
   declaration?: boolean;
   poscomp?: Record<string, unknown>;
+  primaryThemeId?: string | null;
+  secondaryThemeId?: string | null;
   updatedAt: Date;
 }
 

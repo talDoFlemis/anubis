@@ -16,13 +16,14 @@ import { StepCvScoring } from '@/features/enrollment/components/steps/step-cv-sc
 import { StepLevelSelection } from '@/features/enrollment/components/steps/step-level-selection';
 import { StepPoscomp } from '@/features/enrollment/components/steps/step-poscomp';
 import { StepSigaa } from '@/features/enrollment/components/steps/step-sigaa';
+import { StepThemeSelection } from '@/features/enrollment/components/steps/step-theme-selection';
 import { WizardStepper } from '@/features/enrollment/components/wizard-stepper';
 import { useActivePeriod, useMyEnrollments } from '@/features/enrollment/hooks/use-enrollment';
 import type { Enrollment } from '@/lib/api';
 
 // ── Search params ────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 function validateSearch(search: Record<string, unknown>): { step?: number } {
   const step = Number(search.step);
@@ -59,9 +60,14 @@ function detectCompletedSteps(enrollment: Enrollment | null): number[] {
   // Step 3 — CV scoring (checked via score or items — always accessible)
   // We can't determine CV items from the enrollment itself, so mark as accessible but not complete
 
-  // Step 4 — SIGAA
-  if (enrollment.sigaaCode) {
+  // Step 4 — Themes
+  if (enrollment.primaryThemeId && enrollment.secondaryThemeId) {
     completed.push(4);
+  }
+
+  // Step 5 — SIGAA
+  if (enrollment.sigaaCode) {
+    completed.push(5);
   }
 
   return completed;
@@ -182,6 +188,8 @@ function EnrollmentWizardPage() {
       case 3:
         return <StepCvScoring {...stepProps} />;
       case 4:
+        return <StepThemeSelection {...stepProps} />;
+      case 5:
         return <StepSigaa {...stepProps} />;
       default:
         return null;

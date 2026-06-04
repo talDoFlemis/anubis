@@ -7,6 +7,8 @@ import {
 import { Test } from '@nestjs/testing';
 import { getLoggerToken } from 'nestjs-pino';
 import { FileStorageService } from '../file-storage/file-storage.service';
+import { MailService } from '../mail/mail.service';
+import { ResearchThemeService } from '../research-theme/research-theme.service';
 import { RoleEnum } from '../roles/roles.enum';
 import { UsersService } from '../users/users.service';
 import { EnrollmentLevel } from './dto/enrollment-level.enum';
@@ -21,6 +23,8 @@ describe('EnrollmentService', () => {
   let mockUsersService: Record<string, jest.Mock>;
   let mockEnrollmentPeriodService: Record<string, jest.Mock>;
   let mockFileStorageService: Record<string, jest.Mock>;
+  let mockResearchThemeService: Record<string, jest.Mock>;
+  let mockMailService: Record<string, jest.Mock>;
 
   const mockUser = {
     id: 'user-uuid',
@@ -53,6 +57,8 @@ describe('EnrollmentService', () => {
     sigaaCode: null,
     sigaaReceiptFileId: null,
     declaration: false,
+    primaryThemeId: null,
+    secondaryThemeId: null,
     poscomp: null,
     mastersDegrees: null,
     scoreDraft: null,
@@ -89,6 +95,18 @@ describe('EnrollmentService', () => {
       getSignedDownloadUrl: jest.fn().mockResolvedValue('https://signed-url.example.com'),
     };
 
+    mockResearchThemeService = {
+      findById: jest.fn().mockResolvedValue({
+        id: 'theme-uuid',
+        level: 'masters',
+        title: 'Tema de Teste',
+      }),
+    };
+
+    mockMailService = {
+      send: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module = await Test.createTestingModule({
       providers: [
         EnrollmentService,
@@ -101,6 +119,14 @@ describe('EnrollmentService', () => {
         {
           provide: FileStorageService,
           useValue: mockFileStorageService,
+        },
+        {
+          provide: ResearchThemeService,
+          useValue: mockResearchThemeService,
+        },
+        {
+          provide: MailService,
+          useValue: mockMailService,
         },
         {
           provide: getLoggerToken(EnrollmentService.name),
@@ -263,6 +289,11 @@ describe('EnrollmentService', () => {
         ...mockEnrollment,
         phone: '11999999999',
         justification: 'Minha justificativa',
+        declaration: true,
+        sigaaCode: 'sigaa-code',
+        sigaaReceiptFileId: 'file-uuid',
+        primaryThemeId: 'theme-uuid-1',
+        secondaryThemeId: 'theme-uuid-2',
       };
       mockRepository.findById.mockResolvedValueOnce(readyEnrollment);
 
@@ -272,6 +303,9 @@ describe('EnrollmentService', () => {
         submittedAt: new Date(),
       };
       mockRepository.update.mockResolvedValueOnce(submittedEnrollment);
+      mockResearchThemeService.findById
+        .mockResolvedValueOnce({ id: 'theme-uuid-1', level: 'masters', title: 'Theme 1' })
+        .mockResolvedValueOnce({ id: 'theme-uuid-2', level: 'masters', title: 'Theme 2' });
 
       const result = await service.submit('user-uuid', 'enrollment-uuid');
 
@@ -279,11 +313,49 @@ describe('EnrollmentService', () => {
       expect(result.submittedAt).toBeDefined();
     });
 
+    it('triggers confirmation email on successful submission', async () => {
+      const readyEnrollment = {
+        ...mockEnrollment,
+        phone: '11999999999',
+        justification: 'Minha justificativa',
+        declaration: true,
+        sigaaCode: 'sigaa-code',
+        sigaaReceiptFileId: 'file-uuid',
+        primaryThemeId: 'theme-uuid-1',
+        secondaryThemeId: 'theme-uuid-2',
+      };
+      mockRepository.findById.mockResolvedValueOnce(readyEnrollment);
+
+      const submittedEnrollment = {
+        ...readyEnrollment,
+        status: 'submitted',
+        submittedAt: new Date(),
+      };
+      mockRepository.update.mockResolvedValueOnce(submittedEnrollment);
+      mockResearchThemeService.findById
+        .mockResolvedValueOnce({ id: 'theme-uuid-1', level: 'masters', title: 'Theme 1' })
+        .mockResolvedValueOnce({ id: 'theme-uuid-2', level: 'masters', title: 'Theme 2' });
+
+      await service.submit('user-uuid', 'enrollment-uuid');
+
+      expect(mockMailService.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: mockUser.email,
+          title: 'Inscrição Submetida com Sucesso - MDCC',
+        }),
+      );
+    });
+
     it('rejects submission with missing phone', async () => {
       const incompleteEnrollment = {
         ...mockEnrollment,
         phone: null,
         justification: 'Some justification',
+        declaration: true,
+        sigaaCode: 'sigaa-code',
+        sigaaReceiptFileId: 'file-uuid',
+        primaryThemeId: 'theme-uuid-1',
+        secondaryThemeId: 'theme-uuid-2',
       };
       mockRepository.findById.mockResolvedValueOnce(incompleteEnrollment);
 
@@ -297,6 +369,11 @@ describe('EnrollmentService', () => {
         ...mockEnrollment,
         phone: '11999999999',
         justification: null,
+        declaration: true,
+        sigaaCode: 'sigaa-code',
+        sigaaReceiptFileId: 'file-uuid',
+        primaryThemeId: 'theme-uuid-1',
+        secondaryThemeId: 'theme-uuid-2',
       };
       mockRepository.findById.mockResolvedValueOnce(incompleteEnrollment);
 
@@ -319,11 +396,80 @@ describe('EnrollmentService', () => {
         candidateId: 'other-user-uuid',
         phone: '11999999999',
         justification: 'test',
+        declaration: true,
+        sigaaCode: 'sigaa-code',
+        sigaaReceiptFileId: 'file-uuid',
+        primaryThemeId: 'theme-uuid-1',
+        secondaryThemeId: 'theme-uuid-2',
       });
 
       await expect(service.submit('user-uuid', 'enrollment-uuid')).rejects.toThrow(
         ForbiddenException,
       );
+    });
+  });
+
+  describe('updateThemes', () => {
+    it('updates primary and secondary themes', async () => {
+      const draftEnrollment = {
+        ...mockEnrollment,
+        status: 'draft',
+        level: 'masters',
+      };
+      mockRepository.findById.mockResolvedValueOnce(draftEnrollment);
+      mockResearchThemeService.findById
+        .mockResolvedValueOnce({ id: 'theme-uuid-1', level: 'masters', title: 'Theme 1' })
+        .mockResolvedValueOnce({ id: 'theme-uuid-2', level: 'masters', title: 'Theme 2' });
+
+      const updatedEnrollment = {
+        ...draftEnrollment,
+        primaryThemeId: 'theme-uuid-1',
+        secondaryThemeId: 'theme-uuid-2',
+      };
+      mockRepository.update.mockResolvedValueOnce(updatedEnrollment);
+
+      const result = await service.updateThemes('user-uuid', 'enrollment-uuid', {
+        primaryThemeId: 'theme-uuid-1',
+        secondaryThemeId: 'theme-uuid-2',
+      });
+
+      expect(result.primaryThemeId).toBe('theme-uuid-1');
+      expect(result.secondaryThemeId).toBe('theme-uuid-2');
+    });
+
+    it('rejects duplicate primary and secondary themes', async () => {
+      const draftEnrollment = {
+        ...mockEnrollment,
+        status: 'draft',
+        level: 'masters',
+      };
+      mockRepository.findById.mockResolvedValueOnce(draftEnrollment);
+
+      await expect(
+        service.updateThemes('user-uuid', 'enrollment-uuid', {
+          primaryThemeId: 'theme-uuid-1',
+          secondaryThemeId: 'theme-uuid-1',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects incompatible theme levels', async () => {
+      const draftEnrollment = {
+        ...mockEnrollment,
+        status: 'draft',
+        level: 'masters',
+      };
+      mockRepository.findById.mockResolvedValueOnce(draftEnrollment);
+      mockResearchThemeService.findById
+        .mockResolvedValueOnce({ id: 'theme-uuid-1', level: 'doctoral', title: 'Theme 1' })
+        .mockResolvedValueOnce({ id: 'theme-uuid-2', level: 'masters', title: 'Theme 2' });
+
+      await expect(
+        service.updateThemes('user-uuid', 'enrollment-uuid', {
+          primaryThemeId: 'theme-uuid-1',
+          secondaryThemeId: 'theme-uuid-2',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

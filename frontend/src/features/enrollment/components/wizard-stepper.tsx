@@ -2,9 +2,9 @@ import { Check, FileCheck } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-const STEP_LABELS = ['Nível', 'Acadêmico', 'POSCOMP', 'Currículo', 'SIGAA'] as const;
+const STEP_LABELS = ['Nível', 'Acadêmico', 'POSCOMP', 'Currículo', 'Temas', 'SIGAA'] as const;
 
-const STEP_ICONS = [null, null, null, null, FileCheck] as const;
+const STEP_ICONS = [null, null, null, null, null, FileCheck] as const;
 
 interface WizardStepperProps {
   currentStep: number;

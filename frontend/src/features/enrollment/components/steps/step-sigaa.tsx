@@ -34,6 +34,8 @@ interface StepSigaaProps {
   onBack?: () => void;
 }
 
+const SIGAA_URL = 'https://si3.ufc.br/sigaa/public/processo_seletivo/lista.jsf';
+
 // ── Component ────────────────────────────────────────────────────────
 
 export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
@@ -44,7 +46,9 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
 
   const [sigaaCode, setSigaaCode] = useState(enrollment?.sigaaCode ?? '');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [declaration, setDeclaration] = useState(enrollment?.declaration ?? false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const uploadReceipt = useMutation({
@@ -70,6 +74,10 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
       newErrors.receipt = 'Comprovante de inscrição é obrigatório.';
     }
 
+    if (!declaration) {
+      newErrors.declaration = 'Você deve aceitar a declaração de veracidade.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -88,10 +96,12 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
     if (!enrollment) return;
 
     try {
-      // Save sigaaCode
+      setSubmissionErrors([]);
+
+      // Save sigaaCode and declaration
       await updateEnrollment.mutateAsync({
         id: enrollment.id,
-        payload: { sigaaCode: sigaaCode.trim() },
+        payload: { sigaaCode: sigaaCode.trim(), declaration },
       });
 
       // Upload receipt file if selected
@@ -110,7 +120,14 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
           navigate({ to: '/enrollment' });
         },
         onError: err => {
-          toast.error(err.message || 'Erro ao submeter inscrição.');
+          toast.error('Não foi possível submeter a inscrição. Verifique as pendências.');
+          if (err && typeof err === 'object' && 'message' in err) {
+            const rawMsg = (err as { message: string }).message;
+            if (typeof rawMsg === 'string') {
+              const list = rawMsg.split('. ').filter(Boolean);
+              setSubmissionErrors(list);
+            }
+          }
           setShowSubmitDialog(false);
         },
       });
@@ -122,6 +139,8 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
   }
 
   const hasExistingReceipt = !!enrollment?.sigaaReceiptFileId;
+  const isFormComplete =
+    sigaaCode.trim() !== '' && (hasExistingReceipt || receiptFile !== null) && declaration;
 
   return (
     <div className="space-y-10">
@@ -133,6 +152,21 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
           Gestão de Atividades Acadêmicas).
         </p>
       </div>
+
+      {/* ── Submission Errors ───────────────────────────────────── */}
+      {submissionErrors.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-2xl bg-destructive/10 p-5 text-sm text-destructive border border-destructive/20 animate-in fade-in duration-300">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-5 w-5" />
+            <span>Existem pendências para a submissão de sua inscrição:</span>
+          </div>
+          <ul className="list-disc pl-5 space-y-1">
+            {submissionErrors.map((errText, idx) => (
+              <li key={idx}>{errText}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* ── Instructions ───────────────────────────────────────── */}
       <div className="bg-surface-dim/40 space-y-4 rounded-2xl p-6">
@@ -147,7 +181,7 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
           <li>
             Acesse o{' '}
             <a
-              href="https://sigaa.ufrn.br"
+              href={SIGAA_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary inline-flex items-center gap-1 font-medium underline-offset-4 hover:underline"
@@ -201,6 +235,32 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
         {errors.receipt && <p className="text-destructive text-sm">{errors.receipt}</p>}
       </div>
 
+      {/* ── Declaration Checkbox ───────────────────────────────── */}
+      <div className="flex items-start gap-3 rounded-2xl bg-surface-dim/30 p-5 border border-slate-200/50">
+        <input
+          id="declaration-checkbox"
+          type="checkbox"
+          checked={declaration}
+          onChange={e => {
+            setDeclaration(e.target.checked);
+            setErrors(prev => {
+              const { declaration: _, ...rest } = prev;
+              return rest;
+            });
+          }}
+          className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+        />
+        <label
+          htmlFor="declaration-checkbox"
+          className="text-sm leading-relaxed text-muted-foreground select-none cursor-pointer"
+        >
+          Declaro para os devidos fins que as informações prestadas nesta inscrição e os documentos
+          enviados são verídicos e autênticos, estando ciente de que qualquer falsidade sujeitará o
+          candidato às sanções cabíveis.
+        </label>
+      </div>
+      {errors.declaration && <p className="text-destructive text-sm mt-1">{errors.declaration}</p>}
+
       {/* ── Navigation ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between pt-2">
         {onBack ? (
@@ -215,8 +275,8 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
         <Button
           type="button"
           onClick={handleSaveAndSubmit}
-          disabled={isPending}
-          className="anubis-gradient-action min-w-44 text-white"
+          disabled={isPending || !isFormComplete}
+          className="anubis-gradient-action min-w-44 text-white font-medium"
         >
           {isPending ? (
             <>

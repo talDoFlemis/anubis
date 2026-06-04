@@ -12,6 +12,8 @@ export class EnrollmentResponseDto {
   @ApiPropertyOptional() sigaaCode!: string | null;
   @ApiPropertyOptional() sigaaReceiptFileId!: string | null;
   @ApiPropertyOptional() declaration!: boolean | null;
+  @ApiPropertyOptional() primaryThemeId!: string | null;
+  @ApiPropertyOptional() secondaryThemeId!: string | null;
   @ApiPropertyOptional() poscomp!: PoscompData | null;
   @ApiPropertyOptional() mastersDegrees!: MastersDegreeData[] | null;
   @ApiPropertyOptional() scoreDraft!: string | null;
