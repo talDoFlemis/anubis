@@ -1,3 +1,4 @@
+import { DevUserSwitcher } from '@/components/dev/user-switcher';
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
@@ -20,6 +21,7 @@ function RootComponent() {
     <>
       <Outlet />
       <TanStackRouterDevtools position="top-right" />
+      <DevUserSwitcher position="bottom-center" />
     </>
   );
 }
