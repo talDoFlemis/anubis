@@ -28,6 +28,13 @@ import { Route as AppManageResearchThemesRouteImport } from './routes/_app/manag
 import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/professors'
 import { Route as AppManageEnrollmentPeriodsRouteImport } from './routes/_app/manage/enrollment-periods'
 import { Route as AppEnrollmentNewRouteImport } from './routes/_app/enrollment/new'
+import { Route as AppEnrollmentNewIndexRouteImport } from './routes/_app/enrollment/new/index'
+import { Route as AppEnrollmentNewThemesRouteImport } from './routes/_app/enrollment/new/themes'
+import { Route as AppEnrollmentNewSigaaRouteImport } from './routes/_app/enrollment/new/sigaa'
+import { Route as AppEnrollmentNewPoscompRouteImport } from './routes/_app/enrollment/new/poscomp'
+import { Route as AppEnrollmentNewLevelRouteImport } from './routes/_app/enrollment/new/level'
+import { Route as AppEnrollmentNewCvRouteImport } from './routes/_app/enrollment/new/cv'
+import { Route as AppEnrollmentNewAcademicRouteImport } from './routes/_app/enrollment/new/academic'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -124,6 +131,42 @@ const AppEnrollmentNewRoute = AppEnrollmentNewRouteImport.update({
   path: '/enrollment/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEnrollmentNewIndexRoute = AppEnrollmentNewIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppEnrollmentNewRoute,
+} as any)
+const AppEnrollmentNewThemesRoute = AppEnrollmentNewThemesRouteImport.update({
+  id: '/themes',
+  path: '/themes',
+  getParentRoute: () => AppEnrollmentNewRoute,
+} as any)
+const AppEnrollmentNewSigaaRoute = AppEnrollmentNewSigaaRouteImport.update({
+  id: '/sigaa',
+  path: '/sigaa',
+  getParentRoute: () => AppEnrollmentNewRoute,
+} as any)
+const AppEnrollmentNewPoscompRoute = AppEnrollmentNewPoscompRouteImport.update({
+  id: '/poscomp',
+  path: '/poscomp',
+  getParentRoute: () => AppEnrollmentNewRoute,
+} as any)
+const AppEnrollmentNewLevelRoute = AppEnrollmentNewLevelRouteImport.update({
+  id: '/level',
+  path: '/level',
+  getParentRoute: () => AppEnrollmentNewRoute,
+} as any)
+const AppEnrollmentNewCvRoute = AppEnrollmentNewCvRouteImport.update({
+  id: '/cv',
+  path: '/cv',
+  getParentRoute: () => AppEnrollmentNewRoute,
+} as any)
+const AppEnrollmentNewAcademicRoute =
+  AppEnrollmentNewAcademicRouteImport.update({
+    id: '/academic',
+    path: '/academic',
+    getParentRoute: () => AppEnrollmentNewRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -136,7 +179,7 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
-  '/enrollment/new': typeof AppEnrollmentNewRoute
+  '/enrollment/new': typeof AppEnrollmentNewRouteWithChildren
   '/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
@@ -144,6 +187,13 @@ export interface FileRoutesByFullPath {
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/enrollment/': typeof AppEnrollmentIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
+  '/enrollment/new/academic': typeof AppEnrollmentNewAcademicRoute
+  '/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
+  '/enrollment/new/level': typeof AppEnrollmentNewLevelRoute
+  '/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
+  '/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
+  '/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
+  '/enrollment/new/': typeof AppEnrollmentNewIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
@@ -156,7 +206,6 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/': typeof AppIndexRoute
-  '/enrollment/new': typeof AppEnrollmentNewRoute
   '/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
@@ -164,6 +213,13 @@ export interface FileRoutesByTo {
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/enrollment': typeof AppEnrollmentIndexRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
+  '/enrollment/new/academic': typeof AppEnrollmentNewAcademicRoute
+  '/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
+  '/enrollment/new/level': typeof AppEnrollmentNewLevelRoute
+  '/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
+  '/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
+  '/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
+  '/enrollment/new': typeof AppEnrollmentNewIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -178,7 +234,7 @@ export interface FileRoutesById {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/_app/': typeof AppIndexRoute
-  '/_app/enrollment/new': typeof AppEnrollmentNewRoute
+  '/_app/enrollment/new': typeof AppEnrollmentNewRouteWithChildren
   '/_app/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/_app/manage/professors': typeof AppManageProfessorsRoute
   '/_app/manage/research-themes': typeof AppManageResearchThemesRoute
@@ -186,6 +242,13 @@ export interface FileRoutesById {
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/_app/enrollment/': typeof AppEnrollmentIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
+  '/_app/enrollment/new/academic': typeof AppEnrollmentNewAcademicRoute
+  '/_app/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
+  '/_app/enrollment/new/level': typeof AppEnrollmentNewLevelRoute
+  '/_app/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
+  '/_app/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
+  '/_app/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
+  '/_app/enrollment/new/': typeof AppEnrollmentNewIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -208,6 +271,13 @@ export interface FileRouteTypes {
     | '/auth/onboarding/secretary'
     | '/enrollment/'
     | '/auth/onboarding/'
+    | '/enrollment/new/academic'
+    | '/enrollment/new/cv'
+    | '/enrollment/new/level'
+    | '/enrollment/new/poscomp'
+    | '/enrollment/new/sigaa'
+    | '/enrollment/new/themes'
+    | '/enrollment/new/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -220,7 +290,6 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/'
-    | '/enrollment/new'
     | '/manage/enrollment-periods'
     | '/manage/professors'
     | '/manage/research-themes'
@@ -228,6 +297,13 @@ export interface FileRouteTypes {
     | '/auth/onboarding/secretary'
     | '/enrollment'
     | '/auth/onboarding'
+    | '/enrollment/new/academic'
+    | '/enrollment/new/cv'
+    | '/enrollment/new/level'
+    | '/enrollment/new/poscomp'
+    | '/enrollment/new/sigaa'
+    | '/enrollment/new/themes'
+    | '/enrollment/new'
   id:
     | '__root__'
     | '/_app'
@@ -249,6 +325,13 @@ export interface FileRouteTypes {
     | '/auth/onboarding/secretary'
     | '/_app/enrollment/'
     | '/auth/onboarding/'
+    | '/_app/enrollment/new/academic'
+    | '/_app/enrollment/new/cv'
+    | '/_app/enrollment/new/level'
+    | '/_app/enrollment/new/poscomp'
+    | '/_app/enrollment/new/sigaa'
+    | '/_app/enrollment/new/themes'
+    | '/_app/enrollment/new/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -391,13 +474,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEnrollmentNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/enrollment/new/': {
+      id: '/_app/enrollment/new/'
+      path: '/'
+      fullPath: '/enrollment/new/'
+      preLoaderRoute: typeof AppEnrollmentNewIndexRouteImport
+      parentRoute: typeof AppEnrollmentNewRoute
+    }
+    '/_app/enrollment/new/themes': {
+      id: '/_app/enrollment/new/themes'
+      path: '/themes'
+      fullPath: '/enrollment/new/themes'
+      preLoaderRoute: typeof AppEnrollmentNewThemesRouteImport
+      parentRoute: typeof AppEnrollmentNewRoute
+    }
+    '/_app/enrollment/new/sigaa': {
+      id: '/_app/enrollment/new/sigaa'
+      path: '/sigaa'
+      fullPath: '/enrollment/new/sigaa'
+      preLoaderRoute: typeof AppEnrollmentNewSigaaRouteImport
+      parentRoute: typeof AppEnrollmentNewRoute
+    }
+    '/_app/enrollment/new/poscomp': {
+      id: '/_app/enrollment/new/poscomp'
+      path: '/poscomp'
+      fullPath: '/enrollment/new/poscomp'
+      preLoaderRoute: typeof AppEnrollmentNewPoscompRouteImport
+      parentRoute: typeof AppEnrollmentNewRoute
+    }
+    '/_app/enrollment/new/level': {
+      id: '/_app/enrollment/new/level'
+      path: '/level'
+      fullPath: '/enrollment/new/level'
+      preLoaderRoute: typeof AppEnrollmentNewLevelRouteImport
+      parentRoute: typeof AppEnrollmentNewRoute
+    }
+    '/_app/enrollment/new/cv': {
+      id: '/_app/enrollment/new/cv'
+      path: '/cv'
+      fullPath: '/enrollment/new/cv'
+      preLoaderRoute: typeof AppEnrollmentNewCvRouteImport
+      parentRoute: typeof AppEnrollmentNewRoute
+    }
+    '/_app/enrollment/new/academic': {
+      id: '/_app/enrollment/new/academic'
+      path: '/academic'
+      fullPath: '/enrollment/new/academic'
+      preLoaderRoute: typeof AppEnrollmentNewAcademicRouteImport
+      parentRoute: typeof AppEnrollmentNewRoute
+    }
   }
 }
+
+interface AppEnrollmentNewRouteChildren {
+  AppEnrollmentNewAcademicRoute: typeof AppEnrollmentNewAcademicRoute
+  AppEnrollmentNewCvRoute: typeof AppEnrollmentNewCvRoute
+  AppEnrollmentNewLevelRoute: typeof AppEnrollmentNewLevelRoute
+  AppEnrollmentNewPoscompRoute: typeof AppEnrollmentNewPoscompRoute
+  AppEnrollmentNewSigaaRoute: typeof AppEnrollmentNewSigaaRoute
+  AppEnrollmentNewThemesRoute: typeof AppEnrollmentNewThemesRoute
+  AppEnrollmentNewIndexRoute: typeof AppEnrollmentNewIndexRoute
+}
+
+const AppEnrollmentNewRouteChildren: AppEnrollmentNewRouteChildren = {
+  AppEnrollmentNewAcademicRoute: AppEnrollmentNewAcademicRoute,
+  AppEnrollmentNewCvRoute: AppEnrollmentNewCvRoute,
+  AppEnrollmentNewLevelRoute: AppEnrollmentNewLevelRoute,
+  AppEnrollmentNewPoscompRoute: AppEnrollmentNewPoscompRoute,
+  AppEnrollmentNewSigaaRoute: AppEnrollmentNewSigaaRoute,
+  AppEnrollmentNewThemesRoute: AppEnrollmentNewThemesRoute,
+  AppEnrollmentNewIndexRoute: AppEnrollmentNewIndexRoute,
+}
+
+const AppEnrollmentNewRouteWithChildren =
+  AppEnrollmentNewRoute._addFileChildren(AppEnrollmentNewRouteChildren)
 
 interface AppRouteChildren {
   AppResearchThemesRoute: typeof AppResearchThemesRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppEnrollmentNewRoute: typeof AppEnrollmentNewRoute
+  AppEnrollmentNewRoute: typeof AppEnrollmentNewRouteWithChildren
   AppManageEnrollmentPeriodsRoute: typeof AppManageEnrollmentPeriodsRoute
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
   AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
@@ -407,7 +562,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppResearchThemesRoute: AppResearchThemesRoute,
   AppIndexRoute: AppIndexRoute,
-  AppEnrollmentNewRoute: AppEnrollmentNewRoute,
+  AppEnrollmentNewRoute: AppEnrollmentNewRouteWithChildren,
   AppManageEnrollmentPeriodsRoute: AppManageEnrollmentPeriodsRoute,
   AppManageProfessorsRoute: AppManageProfessorsRoute,
   AppManageResearchThemesRoute: AppManageResearchThemesRoute,

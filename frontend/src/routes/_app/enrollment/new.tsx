@@ -1,5 +1,3 @@
-import { createContext, useContext, useMemo, useState } from 'react';
-import { createFileRoute, Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { WizardStepper } from '@/features/enrollment/components/wizard-stepper';
 import { useActivePeriod, useMyEnrollments } from '@/features/enrollment/hooks/use-enrollment';
 import type { Enrollment, EnrollmentPeriod } from '@/lib/api';
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
+import { createContext, useContext, useMemo, useState } from 'react';
 
 // ── Context definition ────────────────────────────────────────────────
 
@@ -104,7 +104,7 @@ function EnrollmentWizardLayout() {
   }, [autoCompletedSteps, manualCompletedSteps]);
 
   const currentStep = useMemo(() => {
-    const index = STEP_ROUTES.indexOf(location.pathname as typeof STEP_ROUTES[number]);
+    const index = STEP_ROUTES.indexOf(location.pathname as (typeof STEP_ROUTES)[number]);
     return index === -1 ? 0 : index;
   }, [location.pathname]);
 

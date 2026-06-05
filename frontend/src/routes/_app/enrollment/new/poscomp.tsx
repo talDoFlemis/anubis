@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
 import { StepPoscomp } from '@/features/enrollment/components/steps/step-poscomp';
+import { createFileRoute } from '@tanstack/react-router';
 import { useEnrollmentWizard } from '../new';
 
 export const Route = createFileRoute('/_app/enrollment/new/poscomp')({
@@ -9,11 +9,6 @@ export const Route = createFileRoute('/_app/enrollment/new/poscomp')({
 function StepPoscompPage() {
   const { enrollment, period, handleNext, handleBack } = useEnrollmentWizard();
   return (
-    <StepPoscomp
-      enrollment={enrollment}
-      period={period}
-      onNext={handleNext}
-      onBack={handleBack}
-    />
+    <StepPoscomp enrollment={enrollment} period={period} onNext={handleNext} onBack={handleBack} />
   );
 }

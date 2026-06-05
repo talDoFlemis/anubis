@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { useEnrollmentWizard } from '../new';
 
 export const Route = createFileRoute('/_app/enrollment/new/')({

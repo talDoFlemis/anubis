@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
 import { StepLevelSelection } from '@/features/enrollment/components/steps/step-level-selection';
+import { createFileRoute } from '@tanstack/react-router';
 import { useEnrollmentWizard } from '../new';
 
 export const Route = createFileRoute('/_app/enrollment/new/level')({
