@@ -392,6 +392,32 @@ export class EnrollmentService {
       throw new BadRequestException('Apenas inscrições em rascunho podem ser canceladas.');
     }
 
+    // Gather file IDs to delete
+    const fileIdsToDelete: string[] = [];
+
+    if (enrollment.sigaaReceiptFileId) {
+      fileIdsToDelete.push(enrollment.sigaaReceiptFileId);
+    }
+
+    if (enrollment.poscomp?.receiptFileId) {
+      fileIdsToDelete.push(enrollment.poscomp.receiptFileId);
+    }
+
+    const cvItemFileIds = await this.enrollmentRepository.findCvItemFileIds(id);
+    fileIdsToDelete.push(...cvItemFileIds);
+
+    // Delete files from storage
+    for (const fileId of fileIdsToDelete) {
+      try {
+        await this.fileStorageService.delete(fileId);
+      } catch (error) {
+        this.logger.error(
+          `Erro ao deletar arquivo ${fileId} do storage durante cancelamento:`,
+          error,
+        );
+      }
+    }
+
     await this.enrollmentRepository.remove(id);
 
     this.logger.log(`Inscrição cancelada e removida: ${id}`);

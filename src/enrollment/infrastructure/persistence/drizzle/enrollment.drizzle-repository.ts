@@ -5,6 +5,7 @@ import type { PaginatedResult } from '../../../../common/dto/paginated-response.
 import { buildPaginatedResult } from '../../../../common/dto/paginated-response.dto';
 import { DRIZZLE_TX } from '../../../../database/drizzle.constants';
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
+import { cvItems } from '../../../../database/schema/cv-items';
 import { enrollments } from '../../../../database/schema/enrollments';
 import { Enrollment } from '../../../domain/enrollment';
 import type { CreateEnrollmentData, FindEnrollmentsFilters } from '../enrollment.repository';
@@ -122,5 +123,14 @@ export class EnrollmentDrizzleRepository extends EnrollmentRepository {
 
   async remove(id: string): Promise<void> {
     await this.db.delete(enrollments).where(eq(enrollments.id, id));
+  }
+
+  async findCvItemFileIds(enrollmentId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ proofFileId: cvItems.proofFileId })
+      .from(cvItems)
+      .where(eq(cvItems.enrollmentId, enrollmentId));
+
+    return rows.map(r => r.proofFileId).filter((id): id is string => id !== null);
   }
 }

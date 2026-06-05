@@ -79,6 +79,7 @@ describe('EnrollmentService', () => {
       create: jest.fn().mockResolvedValue(mockEnrollment),
       update: jest.fn().mockResolvedValue(mockEnrollment),
       remove: jest.fn().mockResolvedValue(undefined),
+      findCvItemFileIds: jest.fn().mockResolvedValue([]),
     };
 
     mockUsersService = {
@@ -605,6 +606,27 @@ describe('EnrollmentService', () => {
       await service.cancel('user-uuid', 'enrollment-uuid');
 
       expect(mockRepository.remove).toHaveBeenCalled();
+    });
+
+    it('deletes related files from storage when cancelling', async () => {
+      const enrollmentWithFiles = {
+        ...mockEnrollment,
+        sigaaReceiptFileId: 'sigaa-file-uuid',
+        poscomp: {
+          hasPoscomp: true,
+          receiptFileId: 'poscomp-file-uuid',
+        },
+      };
+      mockRepository.findById.mockResolvedValueOnce(enrollmentWithFiles);
+      mockRepository.findCvItemFileIds.mockResolvedValueOnce(['cv-file-uuid-1', 'cv-file-uuid-2']);
+
+      await service.cancel('user-uuid', 'enrollment-uuid');
+
+      expect(mockFileStorageService.delete).toHaveBeenCalledWith('sigaa-file-uuid');
+      expect(mockFileStorageService.delete).toHaveBeenCalledWith('poscomp-file-uuid');
+      expect(mockFileStorageService.delete).toHaveBeenCalledWith('cv-file-uuid-1');
+      expect(mockFileStorageService.delete).toHaveBeenCalledWith('cv-file-uuid-2');
+      expect(mockRepository.remove).toHaveBeenCalledWith('enrollment-uuid');
     });
 
     it('rejects cancellation of non-draft enrollment', async () => {

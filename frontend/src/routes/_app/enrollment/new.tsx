@@ -1,7 +1,3 @@
-import { useMemo, useState } from 'react';
-
-import { createFileRoute, Link } from '@tanstack/react-router';
-
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,61 +7,65 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StepAcademicInfo } from '@/features/enrollment/components/steps/step-academic-info';
-import { StepCvScoring } from '@/features/enrollment/components/steps/step-cv-scoring';
-import { StepLevelSelection } from '@/features/enrollment/components/steps/step-level-selection';
-import { StepPoscomp } from '@/features/enrollment/components/steps/step-poscomp';
-import { StepSigaa } from '@/features/enrollment/components/steps/step-sigaa';
-import { StepThemeSelection } from '@/features/enrollment/components/steps/step-theme-selection';
 import { WizardStepper } from '@/features/enrollment/components/wizard-stepper';
 import { useActivePeriod, useMyEnrollments } from '@/features/enrollment/hooks/use-enrollment';
-import type { Enrollment } from '@/lib/api';
+import type { Enrollment, EnrollmentPeriod } from '@/lib/api';
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
+import { createContext, useContext, useMemo, useState } from 'react';
 
-// ── Search params ────────────────────────────────────────────────────
+// ── Context definition ────────────────────────────────────────────────
 
-const TOTAL_STEPS = 6;
+interface EnrollmentWizardContextType {
+  enrollment: Enrollment | null;
+  period: EnrollmentPeriod;
+  completedSteps: number[];
+  handleNext: () => void;
+  handleBack: () => void;
+}
 
-function validateSearch(search: Record<string, unknown>): { step?: number } {
-  const step = Number(search.step);
-  return {
-    step: Number.isFinite(step) && step >= 0 && step < TOTAL_STEPS ? step : undefined,
-  };
+const EnrollmentWizardContext = createContext<EnrollmentWizardContextType | null>(null);
+
+export function useEnrollmentWizard() {
+  const context = useContext(EnrollmentWizardContext);
+  if (!context) {
+    throw new Error('useEnrollmentWizard must be used within an EnrollmentWizardProvider');
+  }
+  return context;
 }
 
 export const Route = createFileRoute('/_app/enrollment/new')({
-  validateSearch,
-  component: EnrollmentWizardPage,
+  component: EnrollmentWizardLayout,
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-/** Determine which steps are already filled from an existing enrollment. */
+const STEP_ROUTES = [
+  '/enrollment/new/level',
+  '/enrollment/new/academic',
+  '/enrollment/new/poscomp',
+  '/enrollment/new/cv',
+  '/enrollment/new/themes',
+  '/enrollment/new/sigaa',
+] as const;
+
 function detectCompletedSteps(enrollment: Enrollment | null): number[] {
   if (!enrollment) return [];
   const completed: number[] = [];
 
-  // Step 0 — Level selection (always done if enrollment exists)
   completed.push(0);
 
-  // Step 1 — Academic info (phone + justification)
   if (enrollment.phone && enrollment.justification) {
     completed.push(1);
   }
 
-  // Step 2 — POSCOMP (poscomp data present)
   if (enrollment.poscomp !== null) {
     completed.push(2);
   }
 
-  // Step 3 — CV scoring (checked via score or items — always accessible)
-  // We can't determine CV items from the enrollment itself, so mark as accessible but not complete
-
-  // Step 4 — Themes
   if (enrollment.primaryThemeId && enrollment.secondaryThemeId) {
     completed.push(4);
   }
 
-  // Step 5 — SIGAA
   if (enrollment.sigaaCode) {
     completed.push(5);
   }
@@ -73,30 +73,20 @@ function detectCompletedSteps(enrollment: Enrollment | null): number[] {
   return completed;
 }
 
-/** Find the first step not yet completed. */
-function findFirstIncompleteStep(completed: number[]): number {
-  for (let i = 0; i < TOTAL_STEPS; i++) {
-    if (!completed.includes(i)) return i;
-  }
-  return TOTAL_STEPS - 1;
-}
+// ── Layout component ─────────────────────────────────────────────────
 
-// ── Page component ───────────────────────────────────────────────────
-
-function EnrollmentWizardPage() {
-  const { step: searchStep } = Route.useSearch();
-  const navigate = Route.useNavigate();
+function EnrollmentWizardLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const { data: periods, isLoading: periodsLoading } = useActivePeriod();
   const { data: enrollments, isLoading: enrollmentsLoading } = useMyEnrollments();
 
-  // Pick the single active period
   const activePeriod = useMemo(() => {
     if (!periods?.length) return null;
     return periods.find(p => p.status === 'open') ?? null;
   }, [periods]);
 
-  // Find draft enrollment for this period
   const enrollment = useMemo(() => {
     if (!enrollments?.length || !activePeriod) return null;
     return (
@@ -105,29 +95,26 @@ function EnrollmentWizardPage() {
     );
   }, [enrollments, activePeriod]);
 
-  // Auto-detect completed steps from existing enrollment
   const autoCompletedSteps = useMemo(() => detectCompletedSteps(enrollment), [enrollment]);
-
   const [manualCompletedSteps, setManualCompletedSteps] = useState<number[]>([]);
 
-  // Merge auto-detected + manually completed steps
   const completedSteps = useMemo(() => {
     const set = new Set([...autoCompletedSteps, ...manualCompletedSteps]);
     return Array.from(set).sort();
   }, [autoCompletedSteps, manualCompletedSteps]);
 
-  // Determine initial step: use URL param, or first incomplete step
-  const currentStep = searchStep ?? (enrollment ? findFirstIncompleteStep(autoCompletedSteps) : 0);
-
-  // ── Step navigation ─────────────────────────────────────────────
+  const currentStep = useMemo(() => {
+    const index = STEP_ROUTES.indexOf(location.pathname as (typeof STEP_ROUTES)[number]);
+    return index === -1 ? 0 : index;
+  }, [location.pathname]);
 
   function goToStep(step: number) {
-    navigate({ search: { step }, replace: true });
+    navigate({ to: STEP_ROUTES[step], replace: true });
   }
 
   function handleNext() {
     setManualCompletedSteps(prev => (prev.includes(currentStep) ? prev : [...prev, currentStep]));
-    if (currentStep < TOTAL_STEPS - 1) {
+    if (currentStep < STEP_ROUTES.length - 1) {
       goToStep(currentStep + 1);
     }
   }
@@ -139,13 +126,10 @@ function EnrollmentWizardPage() {
   }
 
   function handleStepClick(step: number) {
-    // Allow clicking on completed steps or the current step
     if (completedSteps.includes(step) || step === currentStep) {
       goToStep(step);
     }
   }
-
-  // ── Loading ─────────────────────────────────────────────────────
 
   if (periodsLoading || enrollmentsLoading) {
     return (
@@ -168,37 +152,16 @@ function EnrollmentWizardPage() {
     );
   }
 
-  // ── Step rendering ──────────────────────────────────────────────
-
-  const stepProps = {
+  const contextValue = {
     enrollment,
     period: activePeriod,
-    onNext: handleNext,
-    onBack: currentStep > 0 ? handleBack : undefined,
+    completedSteps,
+    handleNext,
+    handleBack,
   };
-
-  function renderStep() {
-    switch (currentStep) {
-      case 0:
-        return <StepLevelSelection {...stepProps} />;
-      case 1:
-        return <StepAcademicInfo {...stepProps} />;
-      case 2:
-        return <StepPoscomp {...stepProps} />;
-      case 3:
-        return <StepCvScoring {...stepProps} />;
-      case 4:
-        return <StepThemeSelection {...stepProps} />;
-      case 5:
-        return <StepSigaa {...stepProps} />;
-      default:
-        return null;
-    }
-  }
 
   return (
     <div className="mx-auto flex w-full max-w-300 flex-1 flex-col space-y-8 p-8">
-      {/* Breadcrumbs */}
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -219,18 +182,19 @@ function EnrollmentWizardPage() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Page title */}
       <h1 className="font-serif text-3xl font-semibold tracking-tight">Inscrição</h1>
 
-      {/* Wizard stepper */}
       <WizardStepper
         currentStep={currentStep}
         completedSteps={completedSteps}
         onStepClick={handleStepClick}
       />
 
-      {/* Step content */}
-      <div className="pb-8">{renderStep()}</div>
+      <div className="pb-8">
+        <EnrollmentWizardContext.Provider value={contextValue}>
+          <Outlet />
+        </EnrollmentWizardContext.Provider>
+      </div>
     </div>
   );
 }

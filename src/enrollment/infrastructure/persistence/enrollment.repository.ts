@@ -45,4 +45,6 @@ export abstract class EnrollmentRepository {
   abstract update(id: string, data: Record<string, unknown>): Promise<Enrollment | null>;
 
   abstract remove(id: string): Promise<void>;
+
+  abstract findCvItemFileIds(enrollmentId: string): Promise<string[]>;
 }

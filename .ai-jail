@@ -3,8 +3,3 @@
 # Edit freely. Regenerate with: ai-jail --clean --init
 
 command = ["bash"]
-rw_maps = []
-ro_maps = []
-hide_dotdirs = []
-mask = []
-allow_tcp_ports = []
