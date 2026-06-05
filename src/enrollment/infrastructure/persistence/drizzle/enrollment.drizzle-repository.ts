@@ -5,8 +5,8 @@ import type { PaginatedResult } from '../../../../common/dto/paginated-response.
 import { buildPaginatedResult } from '../../../../common/dto/paginated-response.dto';
 import { DRIZZLE_TX } from '../../../../database/drizzle.constants';
 import type { DrizzleDB } from '../../../../database/drizzle.provider';
-import { enrollments } from '../../../../database/schema/enrollments';
 import { cvItems } from '../../../../database/schema/cv-items';
+import { enrollments } from '../../../../database/schema/enrollments';
 import { Enrollment } from '../../../domain/enrollment';
 import type { CreateEnrollmentData, FindEnrollmentsFilters } from '../enrollment.repository';
 import { EnrollmentRepository } from '../enrollment.repository';

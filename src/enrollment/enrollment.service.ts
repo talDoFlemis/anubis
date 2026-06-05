@@ -411,7 +411,10 @@ export class EnrollmentService {
       try {
         await this.fileStorageService.delete(fileId);
       } catch (error) {
-        this.logger.error(`Erro ao deletar arquivo ${fileId} do storage durante cancelamento:`, error);
+        this.logger.error(
+          `Erro ao deletar arquivo ${fileId} do storage durante cancelamento:`,
+          error,
+        );
       }
     }
 
