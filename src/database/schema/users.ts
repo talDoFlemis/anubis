@@ -53,11 +53,11 @@ export const users = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 
     searchVector: tsvector('search_vector').generatedAlwaysAs(
-      () =>
-        sql`to_tsvector(
+      () => sql`
+      to_tsvector(
         'simple',
-        coalesce(firstName, '') || ' ' ||
-        coalesce(lastName, '') || ' ' ||
+        coalesce(first_name, '') || ' ' ||
+        coalesce(last_name, '') || ' ' ||
         coalesce(email, '')
       )`,
     ),

@@ -14,7 +14,6 @@ services:
       retries: 5
       start_period: 10s
     volumes:
-      - ./scripts/init-extensions.sql:/docker-entrypoint-initdb.d/db.sql
       - postgres_data:/var/lib/postgresql/data
 
   api:
@@ -36,8 +35,8 @@ services:
       APP_SESSION_SECRET: superdupersecrethereasdfasdfasdfasdfasdfasdfasdfasdfasdfasfdasfasdf
       APP_CORS_ORIGIN: http://localhost:5173
 
-      GOOGLE_CLIENT_ID:
-      GOOGLE_CLIENT_SECRET:
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
 
       API_PREFIX: /api
       # APP_SECURE_COOKIE: false
@@ -118,7 +117,7 @@ services:
       - ./frontend/.env
     environment:
       VITE_API_URL: http://localhost:3000/api
-      VITE_GOOGLE_CLIENT_ID:
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
 
   migrate:
     build:
@@ -148,7 +147,7 @@ services:
     volumes:
       - rustfs_data:/data/rustfs0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/health']
       interval: 10s
       timeout: 5s
       retries: 5
