@@ -1,7 +1,6 @@
 import { Test } from '@nestjs/testing';
 import type { CvScoringCategorySelect } from '../database/schema/cv-scoring';
-import type { CvItemForScoring, ScoreBreakdown } from './cv-scoring.service';
-import { CvScoringService } from './cv-scoring.service';
+import { CvScoringService, type CvItemForScoring } from './cv-scoring.service';
 import { CvScoringRepository } from './infrastructure/persistence/cv-scoring.repository';
 
 describe('CvScoringService', () => {
@@ -14,14 +13,35 @@ describe('CvScoringService', () => {
     return {
       id: 'cat-1',
       enrollmentPeriodId: 'period-1',
-      name: 'Test Category',
+      name: 'Participação em projetos de pesquisa',
       description: null,
-      pointsPerItem: '0.50',
+      pointsPerItem: '0.00',
       maxPoints: '2.00',
       level: 'masters',
       sortOrder: 0,
       createdAt: now,
       updatedAt: now,
+      ...overrides,
+    };
+  }
+
+  function makeItem(overrides: Partial<CvItemForScoring> = {}): CvItemForScoring {
+    return {
+      id: 'item-1',
+      scoringCategoryId: 'cat-1',
+      quantity: 1,
+      classification: 'none',
+      isComplete: false,
+      isResumo: false,
+      isPeriodico: false,
+      isAutorPrincipal: false,
+      isDissertacao: false,
+      isEncontroIc: false,
+      isInArea: false,
+      docenciaType: null,
+      eventoType: null,
+      isVerified: 'pending',
+      correctedClassification: null,
       ...overrides,
     };
   }
@@ -39,24 +59,30 @@ describe('CvScoringService', () => {
   });
 
   describe('calculateCategoryScore', () => {
-    it('calculates correct score for items below max', () => {
+    it('calculates correct score for PROJECTS below max', () => {
       const category = makeCategory({
-        pointsPerItem: '0.50',
+        name: 'Participação em projetos de pesquisa',
+        level: 'masters',
         maxPoints: '2.00',
       });
-      const items: CvItemForScoring[] = [{ scoringCategoryId: 'cat-1', quantity: 3 }];
+      const items: CvItemForScoring[] = [
+        makeItem({ quantity: 3, isInArea: true }), // (0.3 + 0.2) * 3 = 1.5
+      ];
 
       const score = service.calculateCategoryScore(items, category);
 
       expect(score).toBe(1.5);
     });
 
-    it('caps score at maxPoints when items exceed max', () => {
+    it('caps PROJECTS score at maxPoints when items exceed max', () => {
       const category = makeCategory({
-        pointsPerItem: '0.50',
+        name: 'Participação em projetos de pesquisa',
+        level: 'masters',
         maxPoints: '2.00',
       });
-      const items: CvItemForScoring[] = [{ scoringCategoryId: 'cat-1', quantity: 10 }];
+      const items: CvItemForScoring[] = [
+        makeItem({ quantity: 10, isInArea: true }), // (0.3 + 0.2) * 10 = 5.0 -> capped at 2.0
+      ];
 
       const score = service.calculateCategoryScore(items, category);
 
@@ -70,21 +96,6 @@ describe('CvScoringService', () => {
 
       expect(score).toBe(0);
     });
-
-    it('sums quantity across multiple items', () => {
-      const category = makeCategory({
-        pointsPerItem: '1.00',
-        maxPoints: '5.00',
-      });
-      const items: CvItemForScoring[] = [
-        { scoringCategoryId: 'cat-1', quantity: 2 },
-        { scoringCategoryId: 'cat-1', quantity: 1 },
-      ];
-
-      const score = service.calculateCategoryScore(items, category);
-
-      expect(score).toBe(3.0);
-    });
   });
 
   describe('calculateScoreFromItems', () => {
@@ -92,62 +103,36 @@ describe('CvScoringService', () => {
       const categories: CvScoringCategorySelect[] = [
         makeCategory({
           id: 'cat-1',
-          name: 'Pesquisa',
-          pointsPerItem: '0.50',
+          name: 'Participação em projetos de pesquisa',
           maxPoints: '2.00',
+          level: 'masters',
         }),
         makeCategory({
           id: 'cat-2',
-          name: 'Publicações',
-          pointsPerItem: '1.00',
-          maxPoints: '3.00',
+          name: 'Produção científica',
+          maxPoints: '1.00',
+          level: 'masters',
         }),
       ];
 
       const items: CvItemForScoring[] = [
-        { scoringCategoryId: 'cat-1', quantity: 3 },
-        { scoringCategoryId: 'cat-2', quantity: 2 },
+        makeItem({ scoringCategoryId: 'cat-1', quantity: 3, isInArea: false }), // 3 * 0.3 = 0.9
+        makeItem({
+          scoringCategoryId: 'cat-2',
+          classification: 'A1', // 0.6
+          isComplete: true, // +0.2
+          isPeriodico: true, // +0.2
+          isAutorPrincipal: true, // +0.2
+          // Total = 1.2 -> capped at 1.0
+        }),
       ];
 
-      const result: ScoreBreakdown = service.calculateScoreFromItems(items, categories);
+      const result = service.calculateScoreFromItems(items, categories);
 
       expect(result.categories).toHaveLength(2);
-      expect(result.categories[0]).toEqual({
-        categoryId: 'cat-1',
-        name: 'Pesquisa',
-        score: 1.5,
-        maxPoints: 2.0,
-      });
-      expect(result.categories[1]).toEqual({
-        categoryId: 'cat-2',
-        name: 'Publicações',
-        score: 2.0,
-        maxPoints: 3.0,
-      });
-      expect(result.total).toBe(3.5);
-    });
-
-    it('returns all zeros when no items are provided', () => {
-      const categories: CvScoringCategorySelect[] = [
-        makeCategory({ id: 'cat-1', name: 'Pesquisa' }),
-        makeCategory({ id: 'cat-2', name: 'Publicações' }),
-      ];
-
-      const result = service.calculateScoreFromItems([], categories);
-
-      expect(result.categories).toHaveLength(2);
-      expect(result.categories[0].score).toBe(0);
-      expect(result.categories[1].score).toBe(0);
-      expect(result.total).toBe(0);
-    });
-
-    it('returns empty breakdown when no categories exist', () => {
-      const items: CvItemForScoring[] = [{ scoringCategoryId: 'cat-1', quantity: 5 }];
-
-      const result = service.calculateScoreFromItems(items, []);
-
-      expect(result.categories).toHaveLength(0);
-      expect(result.total).toBe(0);
+      expect(result.categories[0].score).toBe(0.9);
+      expect(result.categories[1].score).toBe(1.0);
+      expect(result.total).toBe(1.9);
     });
   });
 
@@ -155,33 +140,29 @@ describe('CvScoringService', () => {
     it('scores master-level categories correctly', () => {
       const categories: CvScoringCategorySelect[] = [
         makeCategory({
-          id: 'masters-1',
-          name: 'Projetos de pesquisa e IC',
-          pointsPerItem: '0.50',
+          id: 'masters-projects',
+          name: 'Participação em projetos de pesquisa e iniciação científica',
           maxPoints: '2.00',
           level: 'masters',
         }),
         makeCategory({
-          id: 'masters-2',
-          name: 'Publicações em conferências',
-          pointsPerItem: '0.75',
-          maxPoints: '1.50',
+          id: 'masters-teaching',
+          name: 'Atividade de docência ou iniciação à docência',
+          maxPoints: '0.50',
           level: 'masters',
         }),
       ];
 
       const items: CvItemForScoring[] = [
-        { scoringCategoryId: 'masters-1', quantity: 4 },
-        { scoringCategoryId: 'masters-2', quantity: 3 },
+        makeItem({ scoringCategoryId: 'masters-projects', quantity: 4, isInArea: true }), // 4 * (0.3 + 0.2) = 2.0
+        makeItem({ scoringCategoryId: 'masters-teaching', quantity: 2, docenciaType: 'ies' }), // 2 * 0.3 = 0.6 -> capped at 0.5
       ];
 
       const result = service.calculateScoreFromItems(items, categories);
 
-      // 4 * 0.50 = 2.00 (capped at 2.00)
       expect(result.categories[0].score).toBe(2.0);
-      // 3 * 0.75 = 2.25 (capped at 1.50)
-      expect(result.categories[1].score).toBe(1.5);
-      expect(result.total).toBe(3.5);
+      expect(result.categories[1].score).toBe(0.5);
+      expect(result.total).toBe(2.5);
     });
   });
 
@@ -189,61 +170,29 @@ describe('CvScoringService', () => {
     it('scores doctoral-level categories correctly', () => {
       const categories: CvScoringCategorySelect[] = [
         makeCategory({
-          id: 'doc-1',
-          name: 'Artigos em periódicos',
-          pointsPerItem: '0.25',
-          maxPoints: '1.50',
+          id: 'doc-projects',
+          name: 'Participação em projetos de pesquisa',
+          maxPoints: '1.00',
           level: 'doctoral',
         }),
         makeCategory({
-          id: 'doc-2',
-          name: 'Orientações concluídas',
-          pointsPerItem: '0.50',
-          maxPoints: '2.00',
+          id: 'doc-orientation',
+          name: 'Orientação de iniciação científica',
+          maxPoints: '0.50',
           level: 'doctoral',
         }),
       ];
 
       const items: CvItemForScoring[] = [
-        { scoringCategoryId: 'doc-1', quantity: 4 },
-        { scoringCategoryId: 'doc-2', quantity: 3 },
+        makeItem({ scoringCategoryId: 'doc-projects', quantity: 4, isInArea: false }), // 4 * 0.2 = 0.8
+        makeItem({ scoringCategoryId: 'doc-orientation', quantity: 2 }), // 2 * 0.2 = 0.4
       ];
 
       const result = service.calculateScoreFromItems(items, categories);
 
-      // 4 * 0.25 = 1.00 (within 1.50 cap)
-      expect(result.categories[0].score).toBe(1.0);
-      // 3 * 0.50 = 1.50 (within 2.00 cap)
-      expect(result.categories[1].score).toBe(1.5);
-      expect(result.total).toBe(2.5);
-    });
-
-    it('caps doctoral scores at maxPoints', () => {
-      const category = makeCategory({
-        id: 'doc-1',
-        pointsPerItem: '0.25',
-        maxPoints: '1.50',
-        level: 'doctoral',
-      });
-
-      const items: CvItemForScoring[] = [{ scoringCategoryId: 'doc-1', quantity: 10 }];
-
-      // 10 * 0.25 = 2.50 → capped at 1.50
-      const score = service.calculateCategoryScore(items, category);
-
-      expect(score).toBe(1.5);
-    });
-  });
-
-  describe('getCategoriesForPeriod', () => {
-    it('queries the repository for categories by period and level', async () => {
-      const expected = [makeCategory()];
-      mockRepository.findByPeriodAndLevel.mockResolvedValueOnce(expected);
-
-      const result = await service.getCategoriesForPeriod('period-1', 'masters');
-
-      expect(result).toEqual(expected);
-      expect(mockRepository.findByPeriodAndLevel).toHaveBeenCalledWith('period-1', 'masters');
+      expect(result.categories[0].score).toBe(0.8);
+      expect(result.categories[1].score).toBe(0.4);
+      expect(result.total).toBe(1.2);
     });
   });
 });

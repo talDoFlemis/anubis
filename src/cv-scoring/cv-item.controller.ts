@@ -29,11 +29,13 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { FileStorageService } from '../file-storage/file-storage.service';
+import { StaffOnly } from '../roles/roles.decorator';
 import { User } from '../users/domain/user';
 import { CvItemService } from './cv-item.service';
 import { CreateCvItemDto } from './dto/create-cv-item.dto';
 import { CvItemResponseDto } from './dto/cv-item-response.dto';
 import { UpdateCvItemDto } from './dto/update-cv-item.dto';
+import { VerifyCvItemDto } from './dto/verify-cv-item.dto';
 
 @ApiTags('CV Items')
 @ApiCookieAuth()
@@ -95,6 +97,19 @@ export class CvItemController {
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<CvItemResponseDto> {
     return this.cvItemService.update(user.id, enrollmentId, itemId, dto, file);
+  }
+
+  @Patch(':itemId/verify')
+  @StaffOnly()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify a CV item (Staff only)' })
+  @ApiOkResponse({ type: CvItemResponseDto })
+  verify(
+    @Param('enrollmentId', new ParseUUIDPipe()) enrollmentId: string,
+    @Param('itemId', new ParseUUIDPipe()) itemId: string,
+    @Body() dto: VerifyCvItemDto,
+  ): Promise<CvItemResponseDto> {
+    return this.cvItemService.verify(enrollmentId, itemId, dto);
   }
 
   @Delete(':itemId')

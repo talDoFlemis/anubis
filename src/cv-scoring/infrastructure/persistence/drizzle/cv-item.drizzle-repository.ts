@@ -27,6 +27,16 @@ export class CvItemDrizzleRepository extends CvItemRepository {
         description: data.description,
         quantity: data.quantity,
         proofFileId: data.proofFileId,
+        classification: data.classification,
+        isComplete: data.isComplete,
+        isResumo: data.isResumo,
+        isPeriodico: data.isPeriodico,
+        isAutorPrincipal: data.isAutorPrincipal,
+        isDissertacao: data.isDissertacao,
+        isEncontroIc: data.isEncontroIc,
+        isInArea: data.isInArea,
+        docenciaType: data.docenciaType,
+        eventoType: data.eventoType,
       })
       .returning();
 
@@ -61,6 +71,21 @@ export class CvItemDrizzleRepository extends CvItemRepository {
     if (data.quantity !== undefined) updateData.quantity = data.quantity;
     if (data.scoringCategoryId !== undefined) updateData.scoringCategoryId = data.scoringCategoryId;
     if (data.proofFileId !== undefined) updateData.proofFileId = data.proofFileId;
+    if (data.classification !== undefined) updateData.classification = data.classification;
+    if (data.isComplete !== undefined) updateData.isComplete = data.isComplete;
+    if (data.isResumo !== undefined) updateData.isResumo = data.isResumo;
+    if (data.isPeriodico !== undefined) updateData.isPeriodico = data.isPeriodico;
+    if (data.isAutorPrincipal !== undefined) updateData.isAutorPrincipal = data.isAutorPrincipal;
+    if (data.isDissertacao !== undefined) updateData.isDissertacao = data.isDissertacao;
+    if (data.isEncontroIc !== undefined) updateData.isEncontroIc = data.isEncontroIc;
+    if (data.isInArea !== undefined) updateData.isInArea = data.isInArea;
+    if (data.docenciaType !== undefined) updateData.docenciaType = data.docenciaType;
+    if (data.eventoType !== undefined) updateData.eventoType = data.eventoType;
+    if (data.isVerified !== undefined) updateData.isVerified = data.isVerified;
+    if (data.correctedClassification !== undefined)
+      updateData.correctedClassification = data.correctedClassification;
+    if (data.verificationComment !== undefined)
+      updateData.verificationComment = data.verificationComment;
 
     const [row] = await this.db
       .update(cvItems)

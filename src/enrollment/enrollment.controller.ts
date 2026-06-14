@@ -212,7 +212,13 @@ export class EnrollmentController {
   }
 
   @Get(':id/sigaa-receipt')
-  @Roles(RoleEnum.candidate)
+  @Roles(
+    RoleEnum.candidate,
+    RoleEnum.professor,
+    RoleEnum.mdccSecretary,
+    RoleEnum.postGraduateCoordinator,
+    RoleEnum.postGraduateViceCoordinator,
+  )
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get SIGAA receipt file URL' })
   @ApiOkResponse()
@@ -222,7 +228,7 @@ export class EnrollmentController {
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<{ url: string; fileName: string }> {
-    return this.enrollmentService.getSigaaReceiptUrl(user.id, id);
+    return this.enrollmentService.getSigaaReceiptUrl(user, id);
   }
 
   @Post(':id/poscomp-receipt')
@@ -243,7 +249,13 @@ export class EnrollmentController {
   }
 
   @Get(':id/poscomp-receipt')
-  @Roles(RoleEnum.candidate)
+  @Roles(
+    RoleEnum.candidate,
+    RoleEnum.professor,
+    RoleEnum.mdccSecretary,
+    RoleEnum.postGraduateCoordinator,
+    RoleEnum.postGraduateViceCoordinator,
+  )
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get POSCOMP receipt file URL' })
   @ApiOkResponse()
@@ -253,6 +265,6 @@ export class EnrollmentController {
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<{ url: string; fileName: string }> {
-    return this.enrollmentService.getPoscompReceiptUrl(user.id, id);
+    return this.enrollmentService.getPoscompReceiptUrl(user, id);
   }
 }
