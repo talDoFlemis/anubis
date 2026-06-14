@@ -39,7 +39,7 @@ export const Route = createFileRoute('/_app/enrollment/new')({
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const STEP_ROUTES = [
+export const STEP_ROUTES = [
   '/enrollment/new/level',
   '/enrollment/new/themes',
   '/enrollment/new/academic',
