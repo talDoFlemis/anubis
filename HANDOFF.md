@@ -12,7 +12,8 @@ Anubis is designed to automate and streamline the candidate selection workflow f
 
 - **Backend Repository:** NestJS 11 + TypeScript + PostgreSQL + Drizzle ORM
 - **Frontend Repository:** React 19 + Vite 6 + TypeScript + Tailwind CSS v4 + TanStack Stack (Router, Query, Form)
-- **Current Lifecycle State:** Auth and core identity management are fully implemented. Session controls, role-based access levels, and coordinator/secretary/professor inviting mechanisms are complete. Candidate application details (IRA, POSCOMP) and user onboarding are in place. The core selection evaluation process, document submission, and review systems are mapped out but not yet implemented.
+- **Current Lifecycle State:** Auth and core identity management are fully implemented. Session controls, role-based access levels, and coordinator/secretary/professor inviting mechanisms are complete. Candidate application details (IRA, POSCOMP) and user onboarding are in place. 
+- **CV Scoring & Verification (NEW):** The Lattes CV scoring engine and professor verification workflow have been fully implemented. Candidates can fill out a structured CV wizard (with options like Qualis journals, semesters for teaching/projects, and principal authorship), while professors have a dedicated portal to check documents, validate details, and flag incorrect items (which dynamically updates the calculated scores).
 
 ---
 
@@ -27,6 +28,7 @@ The backend follows a **Modular Clean Architecture** pattern structured around d
 - **Authentication & Sessions:** Uses stateful server-side sessions (`express-session` with `connect-pg-simple` saving sessions to the DB) managed via **Passport**. It utilizes custom guards to enforce session lifecycle constraints (e.g. mandatory password resets, incomplete profile onboarding).
 - **Persistence Layer:** Uses **Drizzle ORM** with a Repository pattern (`src/users/infrastructure/persistence/drizzle/`). 
 - **Transaction Management:** Handled dynamically via **CLS (Continuation-Local Storage)** context to propagate transaction states across service calls without cluttering service signatures.
+- **CV Scoring Engine:** Configured using a centralized [cv-scoring-config.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/constants/cv-scoring-config.ts) file. Calculates scores dynamically based on the candidate's level (Mestrado/Doutorado), applying CAPES ratings (A1-A8), quantity multipliers (e.g. semesters), and area research bonuses. Handles float rounding internally.
 - **Validation:** Enforced at controller boundaries using `class-validator` and `class-transformer` DTOs.
 - **API Documentation:** Automatically generated using **Swagger** with the **Scalar UI** interactive reference available at `/reference` (under API version `/v1`).
 - **Transactional Emails:** Handled using **Nodemailer** supporting standard SMTP (for Mailpit local testing) and production transports.
@@ -35,7 +37,7 @@ The backend follows a **Modular Clean Architecture** pattern structured around d
 
 The frontend is built with modern React paradigms, adhering to the **Alexandria Design System**.
 
-- **Routing:** Enforced by **TanStack Router** (file-based routing). No manual editing of the route tree is performed; routing rules are generated statically.
+- **Routing:** Enforced by **TanStack Router** (file-based routing). No manual editing of the route tree is performed; routing rules are generated statically (e.g. `/manage/enrollments/$id` for CV review).
 - **Server State Management:** Handled by **TanStack Query (v5)** to fetch, cache, and synchronize backend resources.
 - **Form State and Validation:** Powered by **TanStack Form** with **Zod** schema validations.
 - **UI Architecture:** Built with **Radix UI** primitives styled with **Tailwind CSS v4** following the Shadcn component structure.
@@ -51,6 +53,7 @@ The PostgreSQL schema is defined using Drizzle ORM in `src/database/schema/`.
 erDiagram
     users ||--o| candidates : "has candidate profile"
     users ||--o| professors : "has professor profile"
+    enrollments ||--o| cv_items : "contains"
     users {
         uuid id PK
         auth_provider authProvider "email | google"
@@ -83,17 +86,52 @@ erDiagram
         varchar department
         varchar institution
     }
-    session {
-        varchar sid PK
-        json sess
-        timestamp expire
+    enrollments {
+        uuid id PK
+        uuid candidateId FK
+        uuid enrollmentPeriodId FK
+        varchar level "masters | doctoral"
+        varchar status "draft | submitted | closed | cancelled"
+        varchar phone
+        text justification
+        varchar sigaaCode
+        uuid sigaaReceiptFileId
+        boolean declaration
+        uuid primaryThemeId
+        uuid secondaryThemeId
+        json poscomp
+        json mastersDegrees
+        numeric scoreDraft
+        timestamp submittedAt
+        timestamp createdAt
+        timestamp updatedAt
+    }
+    cv_items {
+        uuid id PK
+        uuid enrollmentId FK
+        uuid scoringCategoryId FK
+        text description
+        numeric quantity
+        uuid proofFileId
+        varchar proofFileName
+        numeric score
+        varchar classification "A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | none"
+        boolean isComplete
+        boolean isResumo
+        boolean isPeriodico
+        boolean isAutorPrincipal
+        boolean isDissertacao
+        boolean isEncontroIc
+        boolean isInArea
+        varchar docenciaType "ies | monitoria"
+        varchar eventoType "local | nacional | internacional"
+        varchar isVerified "pending | verified | incorrect"
+        varchar correctedClassification
+        text verificationComment
+        timestamp createdAt
+        timestamp updatedAt
     }
 ```
-
-### 3.1 Enums Defined
-- **`Role`:** `candidate`, `professor`, `mdcc-secretary`, `post-graduate-coordinator`, `post-graduate-vice-coordinator`.
-- **`Status`:** `active`, `inactive` (pending validation/activation), `disabled` (revoked access).
-- **`AuthProvider`:** `email`, `google`.
 
 ---
 
@@ -133,10 +171,10 @@ The system implements role-based route protection using `@Roles(...)` decorators
 
 | User Role | Permitted Actions | Managed Roles |
 | :--- | :--- | :--- |
-| **Postgraduate Coordinator** | Full system supervision. Can invite and disable/enable secretaries. | `mdcc-secretary` |
-| **MDCC Secretary** | General administrative duties. Can invite and disable/enable/update professors. | `professor` |
-| **Professor** | Affiliated with UFC or external institutions. Can access selection processes and grade candidates. | None |
-| **Candidate** | Can self-register. Must complete onboarding and submit application packages. | None |
+| **Postgraduate Coordinator** | Full system supervision. Can invite and disable/enable secretaries. Can review candidate CVs. | `mdcc-secretary` |
+| **MDCC Secretary** | General administrative duties. Can invite and disable/enable/update professors. Can review candidate CVs. | `professor` |
+| **Professor** | Affiliated with UFC or external institutions. Can access selection processes, view candidate details, verify and grade candidates' CV items. | None |
+| **Candidate** | Can self-register. Must complete onboarding and submit application packages (wizard sequence). | None |
 
 ---
 
@@ -179,12 +217,13 @@ Anubis frontend adheres strictly to the **Alexandria Design Guidelines** to proj
 - `auth/`: Core session strategies, serialization, and endpoint guards.
 - `auth-email/`: Controllers and logic for email/password authentication.
 - `auth-google/`: Controllers and logic for Google OAuth validation.
-- `auth-github/`: Github OAuth scaffold (currently stubbed out).
 - `users/`: User model domain layer and Drizzle repository persistence implementations.
 - `candidate/`: Candidate domain features, controllers, and services.
 - `professor/`: Professor domain features, controllers, and services.
 - `secretary/`: Secretary management services and controllers.
 - `database/`: Drizzle configuration, connection providers, schema definitions, and migration files.
+- `cv-scoring/`: (NEW) Static configurations, scoring calculation services, DTOs, and controllers for CV items verification.
+- `enrollment/`: Enrollment forms, periods scheduler, and controller endpoints.
 - `mail/`: Central mailer service utilizing templates.
 - `common/`: Global filters, logging middlewares, interceptors, and DTOs.
 - `health/`: Terminus health indicators for DB and HTTP availability.
@@ -195,10 +234,13 @@ Anubis frontend adheres strictly to the **Alexandria Design Guidelines** to proj
   - `auth/onboarding/`: Profile creation views (`index.tsx` for candidates, `professor.tsx`, `secretary.tsx`).
   - `_app/`: Main layout wrapping authenticated dashboard actions.
   - `_app/manage/professors.tsx`: Secretary dashboard for managing professors.
-- `features/`: Modular folders containing feature-specific components, custom hooks, and Zod schemas.
-- `components/ui/`: Atomic design primitives (buttons, inputs, alerts, modals).
+  - `_app/manage/enrollments.$id.tsx`: (NEW) Candidate review portal for CV validation.
+- `features/`: Modular folders containing feature-specific components, custom hooks, and Zod schemas:
+  - `enrollment/components/candidate-enrollment-review.tsx`: (NEW) Candidate CV validation screen.
+  - `enrollment/components/steps/step-cv-scoring.tsx`: Wizard CV categories input forms.
+- `components/ui/`: Atomic design primitives (buttons, inputs, select, fields, dialogs).
 - `hooks/`: Domain-agnostic utility hooks.
-- `lib/`: Base API client wrapper (`src/lib/api.ts`) managing credentialed HTTP calls.
+- `lib/`: Base API client wrappers (`src/lib/api/`) managing credentialed HTTP calls.
 
 ---
 
@@ -209,9 +251,14 @@ Ensure Docker is running, then install dependencies:
 ```bash
 pnpm install
 ```
-Start the local infrastructure (PostgreSQL + Mailpit SMTP server):
+Start the local infrastructure (PostgreSQL + Mailpit SMTP server + RustFS S3 storage):
 ```bash
-docker compose up -d
+docker compose up -d postgres mailpit rustfs createbuckets
+```
+Apply migrations and seed default values:
+```bash
+pnpm run db:migrate
+pnpm run db:seed
 ```
 Run the backend server in watch mode:
 ```bash
@@ -220,30 +267,23 @@ pnpm run start:dev
 Run the frontend development server:
 ```bash
 cd frontend
-pnpm install
 pnpm run dev
 ```
 
-### 9.2 Seeding the Database
-To populate the database with mock professors for local development:
+### 9.2 Validating the Codebase
+Always validate backend and frontend changes before committing:
 ```bash
-pnpm db:seed
-```
-
-### 9.3 Validating the Codebase
-Always validate NestJS changes before committing:
-```bash
-# 1. Backend-only typecheck (ignores frontend folder)
+# 1. Backend typecheck
 npx tsc -p tsconfig.build.json --noEmit --pretty false
 
-# 2. Run ESLint checks
-pnpm run lint:check
+# 2. Frontend typecheck
+cd frontend && pnpm run typecheck
 
-# 3. Run Prettier check
-pnpm run format:check
+# 3. Code formatting check (Prettier & ESLint)
+pnpm run lint:check
 ```
 
-### 9.4 Test Suite Commands
+### 9.3 Test Suite Commands
 Anubis has multiple test suites covering different testing depths:
 ```bash
 # Unit Tests (Jest)
@@ -255,26 +295,21 @@ pnpm run test:integration
 # E2E Tests (Supertest)
 pnpm run test:e2e
 
-# Run a specific unit test file
-npx jest src/auth/auth.service.spec.ts --runInBand
+# Run CV scoring test suite
+npx jest src/cv-scoring --runInBand
 ```
 
 ---
 
 ## 10. Roadmap & Known Gaps
 
-The primary core of identity, role, and onboarding setup is complete. The next phases of project development include:
+The identity layer, registration wizard, CV scoring engine, and review portals are fully operational. The remaining milestones are:
 
-1. **Document Management System (Candidate Applications):**
-   - Implement storage bucket configurations (S3/MinIO/Local Storage) for candidate documents (identity records, academic transcripts, recommendations).
-   - Implement document parsing, metadata extraction, and PDF compression.
-2. **Selection Process Configuration:**
-   - Define schemas for Selection Cycles, Evaluation Categories (e.g. curriculum analysis, letters of recommendation, POSCOMP scores), and intake quotas.
-   - UI interfaces for Secretaries to set up and manage active application periods.
-3. **Candidate Evaluation Engine:**
-   - Create assigning workflows matching candidates to reviewing Professors.
-   - Double-blind evaluation portals for professors to submit scores.
-   - Automatically compile scores into an program selection ranking list.
-4. **Third-Party Integration expansion:**
-   - Finalize the `auth-github` module if required by candidates.
-   - Hook up academic platform APIs (e.g. CNPq Lattes platform integrations for automated curriculum verification).
+1. **Document Management Expansion:**
+   - Integrate file parsing and validation for other candidate documents (personal records, recommendation letters).
+   - Implement PDF rendering/compression on upload.
+2. **Intake Configuration UI:**
+   - Create interfaces for Secretaries to customize selection rules (quotas, deadline shifts, grade configurations) dynamically without changing codebase configurations.
+3. **Professor Selection Matching:**
+   - Develop workflow systems matching candidates to specific reviewing professors based on primary/secondary research theme choices.
+   - Implement double-blind grading modules for professors to evaluate letters and transcripts, compiling rankings automatically.
