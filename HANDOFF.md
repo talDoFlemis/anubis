@@ -1,53 +1,233 @@
-# Anubis Selection System — Project Handoff Documentation
+# Anubis — Handoff para Continuação do Trabalho
 
-Welcome to the handoff documentation for **Anubis**, the application and selection management system for the **MDCC** (Mestrado e Doutorado em Ciência da Computação) postgraduate program at the **Federal University of Ceará (UFC)**. 
-
-This document serves as a comprehensive overview of the current state of the application, detailing its architecture, database schemas, implemented features, design guidelines, and the roadmap for future development.
-
----
-
-## 1. Executive Summary
-
-Anubis is designed to automate and streamline the candidate selection workflow for master's and doctoral programs in Computer Science. The system supports multiple user roles, handling everything from user registration, secure email and Google OAuth authentication, role-based access, and session lifecycles, to onboarding workflows and administrative professor/secretary management.
-
-- **Backend Repository:** NestJS 11 + TypeScript + PostgreSQL + Drizzle ORM
-- **Frontend Repository:** React 19 + Vite 6 + TypeScript + Tailwind CSS v4 + TanStack Stack (Router, Query, Form)
-- **Current Lifecycle State:** Auth and core identity management are fully implemented. Session controls, role-based access levels, and coordinator/secretary/professor inviting mechanisms are complete. Candidate application details (IRA, POSCOMP) and user onboarding are in place. 
-- **CV Scoring & Verification (NEW):** The Lattes CV scoring engine and professor verification workflow have been fully implemented. Candidates can fill out a structured CV wizard (with options like Qualis journals, semesters for teaching/projects, and principal authorship), while professors have a dedicated portal to check documents, validate details, and flag incorrect items (which dynamically updates the calculated scores).
+> **Data:** 2026-06-14  
+> **Branch:** `refactor/cv-engine`  
+> **Sessão de conversa:** `d9110876-21f7-4bb9-8e78-f12ad97d73f6`  
+> **Status:** CV scoring engine implementado e verificado. Pronto para revisão de código e merge.
 
 ---
 
-## 2. System Architecture
+## 1. Contexto do Problema
 
-The project is split into a backend NestJS application and a separate frontend React application. They communicate via a REST API.
+O sistema **Anubis** gerencia o processo seletivo do programa de pós-graduação **MDCC** (Mestrado e Doutorado em Ciência da Computação) da UFC. Esta sessão de trabalho refatorou o sistema de **avaliação curricular (Lattes)** para suportar:
 
-### 2.1 Backend Architecture (NestJS)
+1. **Classificação CAPES (Qualis):** Cada publicação/conferência do candidato recebe uma classificação A1–A8, definida pelo candidato na submissão.
+2. **Verificação pelo professor:** Após a submissão, o professor valida cada item do CV. Se estiver incorreto, pode marcar como `incorrect`, deixar um comentário e opcionalmente corrigir a classificação. O item passa a pontuar zero se nenhuma correção for fornecida.
+3. **Seções estáticas por nível:** As seções do CV são fixas (4 para Mestrado, 5 para Doutorado) conforme os editais de 2024/2025. Não é um sistema dinâmico — as seções estão definidas em código — mas foi projetado para ser **fácil de alterar pontuações ou adicionar/remover seções** editando um único arquivo de configuração.
+4. **Reordenação do wizard:** A etapa de escolha de temas de pesquisa foi movida para o início do wizard (posição 2), ficando: Nível → Temas → Acadêmico → POSCOMP → Currículo → SIGAA.
 
-The backend follows a **Modular Clean Architecture** pattern structured around domain-specific feature modules rather than generic horizontal layers.
+### Documentos de referência utilizados
 
-- **Authentication & Sessions:** Uses stateful server-side sessions (`express-session` with `connect-pg-simple` saving sessions to the DB) managed via **Passport**. It utilizes custom guards to enforce session lifecycle constraints (e.g. mandatory password resets, incomplete profile onboarding).
-- **Persistence Layer:** Uses **Drizzle ORM** with a Repository pattern (`src/users/infrastructure/persistence/drizzle/`). 
-- **Transaction Management:** Handled dynamically via **CLS (Continuation-Local Storage)** context to propagate transaction states across service calls without cluttering service signatures.
-- **CV Scoring Engine:** Configured using a centralized [cv-scoring-config.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/constants/cv-scoring-config.ts) file. Calculates scores dynamically based on the candidate's level (Mestrado/Doutorado), applying CAPES ratings (A1-A8), quantity multipliers (e.g. semesters), and area research bonuses. Handles float rounding internally.
-- **Validation:** Enforced at controller boundaries using `class-validator` and `class-transformer` DTOs.
-- **API Documentation:** Automatically generated using **Swagger** with the **Scalar UI** interactive reference available at `/reference` (under API version `/v1`).
-- **Transactional Emails:** Handled using **Nodemailer** supporting standard SMTP (for Mailpit local testing) and production transports.
-
-### 2.2 Frontend Architecture (React)
-
-The frontend is built with modern React paradigms, adhering to the **Alexandria Design System**.
-
-- **Routing:** Enforced by **TanStack Router** (file-based routing). No manual editing of the route tree is performed; routing rules are generated statically (e.g. `/manage/enrollments/$id` for CV review).
-- **Server State Management:** Handled by **TanStack Query (v5)** to fetch, cache, and synchronize backend resources.
-- **Form State and Validation:** Powered by **TanStack Form** with **Zod** schema validations.
-- **UI Architecture:** Built with **Radix UI** primitives styled with **Tailwind CSS v4** following the Shadcn component structure.
-- **Feature-Based Placement:** Code specific to a business concern is housed under `src/features/<feature_name>/` containing components, hooks, schemas, and API adapters. General tools reside under `src/shared/` or `src/components/`.
+- [Edital 02.2025 - Doutorado](file:///Users/erikbayerlein/Documents/anubis/Edital%2002.2025_MDCC%20-%20Turma%202026.1%20(DOUTORADO).pdf)
+- [Edital 01.2025 - Mestrado](file:///Users/erikbayerlein/Documents/anubis/Edital%2001.2025_MDCC%20-%20Turma%202026.1%20(MESTRADO).pdf)
+- [message.txt](file:///Users/erikbayerlein/Documents/anubis/message.txt) — Tabela comparativa de evolução das pontuações 2015–2025
 
 ---
 
-## 3. Database Schema & Data Models
+## 2. O que foi implementado (Commits na branch `refactor/cv-engine`)
 
-The PostgreSQL schema is defined using Drizzle ORM in `src/database/schema/`. 
+### Commit `be702c5`: `feat(cv-scoring): refactor CV scoring engine and implement professor verification workflow`
+
+Este é o commit principal com todas as mudanças. Abaixo, o detalhamento por camada:
+
+---
+
+### 2.1 Configuração de Pontuação (Backend)
+
+#### [NEW] [cv-scoring-config.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/constants/cv-scoring-config.ts)
+Arquivo centralizado de configuração com:
+
+- **`QUALIS_POINTS`** — Mapeamento de classificações CAPES para pontos base:
+  | Classificação | Pontos |
+  |:---|:---|
+  | A1, A2, A3, A4 | 0.6 |
+  | A5, A6 (antigo B1/B2) | 0.4 |
+  | A7, A8 (antigo B3/B4) | 0.2 |
+  | Não qualificado | 0.1 |
+
+- **Bônus cumulativos** (somados à nota base de cada artigo):
+  | Bônus | Valor |
+  |:---|:---|
+  | Artigo completo | +0.2 |
+  | Resumo/pôster | +0.1 |
+  | Publicação em periódico | +0.2 |
+  | Autor principal | +0.2 |
+  | Fruto de dissertação (só doutorado) | +0.1 |
+  | Encontro de IC (só mestrado) | +0.1 (flat, sem bônus) |
+
+- **`MASTERS_SECTIONS`** (4 seções) e **`DOCTORAL_SECTIONS`** (5 seções):
+
+  | # | Seção | Tipo | Máx Mestrado | Máx Doutorado |
+  |:---|:---|:---|:---|:---|
+  | 1 | Projetos de pesquisa / IC | semestral | 2.0 | 1.0 |
+  | 2 | Produção científica | pontual | 1.0 | 1.5 |
+  | 3 | Docência / monitoria | semestral | 0.5 | 0.5 |
+  | 4 | Orientação de IC | semestral | — | 0.5 |
+  | 5 | Eventos científicos | pontual | 0.5 | 0.5 |
+
+  > A seção "Orientação de IC" só existe no Doutorado.
+
+- **`EVENT_POINTS`**: Local (0.1), Nacional (0.2), Internacional (0.3).
+
+> **Decisão de design confirmada pelo usuário:** As seções não precisam ser dinâmicas (configuráveis via UI), mas o código deve permitir alterar pontuações facilmente. Por isso tudo está centralizado neste arquivo TypeScript.
+
+---
+
+### 2.2 Schema do Banco de Dados
+
+#### [MODIFY] [cv-items.ts](file:///Users/erikbayerlein/Documents/anubis/src/database/schema/cv-items.ts)
+Colunas adicionadas à tabela `cv_items`:
+
+```
+classification       VARCHAR  — A1|A2|A3|A4|A5|A6|A7|A8|none
+isComplete           BOOLEAN  — Artigo completo
+isResumo             BOOLEAN  — Resumo/pôster
+isPeriodico          BOOLEAN  — Publicação em periódico
+isAutorPrincipal     BOOLEAN  — Autor principal
+isDissertacao        BOOLEAN  — Fruto de dissertação (doutorado)
+isEncontroIc         BOOLEAN  — Encontro de IC (mestrado)
+isInArea             BOOLEAN  — Projeto na área de pesquisa
+docenciaType         VARCHAR  — 'ies' | 'monitoria'
+eventoType           VARCHAR  — 'local' | 'nacional' | 'internacional'
+isVerified           VARCHAR  — 'pending' | 'verified' | 'incorrect'
+correctedClassification VARCHAR  — Classificação corrigida pelo professor
+verificationComment  TEXT     — Comentário do professor
+```
+
+#### [NEW] [0012_fat_nekra.sql](file:///Users/erikbayerlein/Documents/anubis/drizzle/0012_fat_nekra.sql)
+Migração SQL correspondente. Já aplicada no banco local.
+
+---
+
+### 2.3 Backend — Serviços e Controllers
+
+#### [MODIFY] [cv-scoring.service.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/cv-scoring.service.ts)
+Motor de cálculo de pontuação refatorado:
+- `calculateCategoryScore()`: Calcula score por categoria usando switch/case no `key` da categoria
+  - **PROJECTS**: `quantidade × (base + bônusÁrea)`
+  - **PRODUCTION**: `pontosCAPES + bônusCumulativos` (encontro IC = flat 0.1)
+  - **TEACHING**: Mestrado distingue IES (0.3) vs monitoria (0.2); Doutorado = 0.2
+  - **ORIENTATION**: Doutorado only, `quantidade × 0.2`
+  - **EVENTS**: Pontos por escopo (local/nacional/internacional)
+- Itens marcados como `incorrect` sem `correctedClassification` pontuam zero
+- `toFixed(2)` para evitar erros de ponto flutuante
+- `Math.min(total, maxPoints)` para respeitar o teto de cada categoria
+
+#### [MODIFY] [cv-item.service.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/cv-item.service.ts)
+- Adicionado método `verify(enrollmentId, itemId, dto)` para verificação pelo professor
+
+#### [NEW] [verify-cv-item.dto.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/dto/verify-cv-item.dto.ts)
+```typescript
+class VerifyCvItemDto {
+  isVerified: 'verified' | 'incorrect';
+  correctedClassification?: string;  // Opcional
+  verificationComment?: string;      // Opcional
+}
+```
+
+#### [MODIFY] [cv-item.controller.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/cv-item.controller.ts)
+- Nova rota: `PATCH /v1/enrollments/:enrollmentId/cv-items/:itemId/verify`
+- Protegida com `@StaffOnly()` — apenas professor, coordenador e secretário
+
+#### [MODIFY] [create-cv-item.dto.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/dto/create-cv-item.dto.ts)
+- Adicionados campos opcionais: `classification`, `isComplete`, `isResumo`, `isPeriodico`, `isAutorPrincipal`, `isDissertacao`, `isEncontroIc`, `isInArea`, `docenciaType`, `eventoType`
+
+#### [MODIFY] [cv-item.drizzle-repository.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/infrastructure/persistence/drizzle/cv-item.drizzle-repository.ts)
+- Adicionado método `updateVerification()` para gravar a decisão do professor
+
+#### [MODIFY] [enrollment.controller.ts](file:///Users/erikbayerlein/Documents/anubis/src/enrollment/enrollment.controller.ts) e [enrollment.service.ts](file:///Users/erikbayerlein/Documents/anubis/src/enrollment/enrollment.service.ts)
+- Endpoints de download de recibos (SIGAA e POSCOMP) agora permitem acesso de staff via `@StaffOnly()`, para que professores possam baixar comprovantes dos candidatos
+
+#### [MODIFY] [seed/main.ts](file:///Users/erikbayerlein/Documents/anubis/scripts/seed/main.ts)
+- Sincroniza categorias de scoring a partir de `cv-scoring-config.ts` ao rodar o seed
+- Cria categorias para ambos os níveis (masters/doctoral) automaticamente
+
+---
+
+### 2.4 Frontend — Wizard e Formulários
+
+#### [MODIFY] [new.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/routes/_app/enrollment/new.tsx)
+- Reordenação das rotas do stepper: `level → themes → academic → poscomp → cv → sigaa`
+
+#### [MODIFY] [wizard-stepper.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/features/enrollment/components/wizard-stepper.tsx)
+- Labels e ícones reordenados para corresponder à nova ordem
+
+#### [MODIFY] [step-cv-scoring.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/features/enrollment/components/steps/step-cv-scoring.tsx)
+- Formulário dinâmico que renderiza campos diferentes por categoria:
+  - **PROJECTS**: Quantidade de semestres + checkbox "na área de pesquisa"
+  - **PRODUCTION**: Select de classificação Qualis + checkboxes (completo, resumo, periódico, autor principal, dissertação, encontro IC)
+  - **TEACHING**: Mestrado mostra select (IES/Monitoria) + semestres; Doutorado só semestres
+  - **ORIENTATION**: Apenas semestres (doutorado)
+  - **EVENTS**: Select de escopo (local/nacional/internacional) + quantidade
+
+#### [NEW] [cv-items.ts](file:///Users/erikbayerlein/Documents/anubis/frontend/src/lib/api/cv-items.ts)
+- API client wrapper para operações CRUD e verificação de itens de CV
+
+#### [NEW] [use-cv-scoring.ts](file:///Users/erikbayerlein/Documents/anubis/frontend/src/features/enrollment/hooks/use-cv-scoring.ts)
+- Hook para buscar categorias de scoring por período e nível
+
+---
+
+### 2.5 Frontend — Portal de Revisão do Professor
+
+#### [MODIFY] [ProfessorHome.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/features/professors/home/ProfessorHome.tsx)
+- Dashboard agora mostra número real de candidatos inscritos por tema de pesquisa
+- Botão "Ver candidatos" lista os candidatos inscritos quando clicado
+- Link para página de revisão de cada candidato
+
+#### [NEW] [enrollments.$id.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/routes/_app/manage/enrollments.$id.tsx)
+- Rota `/manage/enrollments/:id` para revisão detalhada de um candidato
+
+#### [NEW] [candidate-enrollment-review.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/features/enrollment/components/candidate-enrollment-review.tsx)
+- Tela completa de revisão (~964 linhas) mostrando:
+  - Dados do candidato (IRA, universidade, SIGAA, POSCOMP, mestrado anterior)
+  - Itens de CV agrupados por categoria
+  - Para cada item: botões "Validar" e "Incorreto"
+  - Dropdown para classificação corrigida + campo de comentário quando marcado incorreto
+  - Recálculo dinâmico do score quando itens são verificados
+
+#### [MODIFY] [candidates.ts](file:///Users/erikbayerlein/Documents/anubis/frontend/src/lib/api/candidates.ts) e [enrollments.ts](file:///Users/erikbayerlein/Documents/anubis/frontend/src/lib/api/enrollments.ts)
+- Novos métodos para buscar perfis de candidatos em contexto administrativo
+
+---
+
+## 3. Verificação Realizada
+
+### Testes Automatizados
+```
+PASS  src/cv-scoring/cv-scoring-category.service.spec.ts
+PASS  src/cv-scoring/cv-item.service.spec.ts
+PASS  src/cv-scoring/cv-scoring.service.spec.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       35 passed, 35 total
+```
+
+### Análise Estática
+- ✅ `npx tsc -p tsconfig.build.json --noEmit` — Backend sem erros
+- ✅ `cd frontend && pnpm run typecheck` — Frontend sem erros
+- ✅ `pnpm run lint:check` — ESLint/Prettier ok
+
+### Banco de Dados
+- ✅ Migração `0012_fat_nekra.sql` aplicada com sucesso
+- ✅ Seed sincroniza categorias de scoring automaticamente
+
+---
+
+## 4. Decisões de Design Tomadas
+
+| Decisão | Motivo |
+|:---|:---|
+| **Configuração estática em TypeScript** em vez de tabela dinâmica no banco | Usuário confirmou que as seções não mudam com frequência, mas quer facilidade de alterar pontuações no código |
+| **Classificação CAPES A1–A8** em vez do antigo B1–B5 | Segue o novo quadriênio CAPES 2024/2025 |
+| **`getCategoryKey()` por string matching** no nome da categoria | Permite ao seed criar categorias livremente sem IDs hardcoded |
+| **`@StaffOnly()`** para verificação e download de recibos | Professores, coordenadores e secretários precisam acessar documentos de candidatos |
+| **Bônus de "Encontro de IC"** é flat 0.1 sem bônus cumulativos | Conforme definido no edital |
+| **Reordenação do wizard** (Temas para posição 2) | Requisito explícito do usuário |
+
+---
+
+## 5. Modelo ER (Atualizado)
 
 ```mermaid
 erDiagram
@@ -56,33 +236,27 @@ erDiagram
     enrollments ||--o| cv_items : "contains"
     users {
         uuid id PK
-        auth_provider authProvider "email | google"
-        varchar providerSubject
+        auth_provider authProvider
         varchar email UK
         varchar cpf UK
         varchar password
         varchar firstName
         varchar lastName
-        role role "professor | candidate | mdcc-secretary | post-graduate-coordinator | post-graduate-vice-coordinator"
-        status status "active | inactive | disabled"
+        role role
+        status status
         boolean onboardingCompleted
         boolean mustChangePassword
-        timestamp bootstrapPasswordExpiresAt
-        integer confirmEmailTokenVersion
-        integer forgotPasswordTokenVersion
         timestamp createdAt
         timestamp updatedAt
     }
     candidates {
-        uuid userId PK, FK
+        uuid userId PK_FK
         varchar universityOfOrigin
         numeric ira
         integer poscomp
-        timestamp createdAt
-        timestamp updatedAt
     }
     professors {
-        uuid userId PK, FK
+        uuid userId PK_FK
         varchar department
         varchar institution
     }
@@ -90,8 +264,8 @@ erDiagram
         uuid id PK
         uuid candidateId FK
         uuid enrollmentPeriodId FK
-        varchar level "masters | doctoral"
-        varchar status "draft | submitted | closed | cancelled"
+        varchar level
+        varchar status
         varchar phone
         text justification
         varchar sigaaCode
@@ -103,8 +277,6 @@ erDiagram
         json mastersDegrees
         numeric scoreDraft
         timestamp submittedAt
-        timestamp createdAt
-        timestamp updatedAt
     }
     cv_items {
         uuid id PK
@@ -115,7 +287,7 @@ erDiagram
         uuid proofFileId
         varchar proofFileName
         numeric score
-        varchar classification "A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | none"
+        varchar classification
         boolean isComplete
         boolean isResumo
         boolean isPeriodico
@@ -123,193 +295,115 @@ erDiagram
         boolean isDissertacao
         boolean isEncontroIc
         boolean isInArea
-        varchar docenciaType "ies | monitoria"
-        varchar eventoType "local | nacional | internacional"
-        varchar isVerified "pending | verified | incorrect"
+        varchar docenciaType
+        varchar eventoType
+        varchar isVerified
         varchar correctedClassification
         text verificationComment
-        timestamp createdAt
-        timestamp updatedAt
     }
 ```
 
 ---
 
-## 4. Key Workflows & Auth Security
+## 6. Como Rodar o Projeto
 
-### 4.1 Authentication Providers & Sign-In Flows
-
-1. **Email/Password Provider:**
-   - Normalizes email inputs (`.toLowerCase().trim()`).
-   - Uses **bcrypt** with **12 salt rounds** for password hashing.
-   - Enforces account activation via confirmation link sent to candidate's email.
-2. **Google OAuth 2.0 Provider:**
-   - Validates incoming Google ID tokens via the `google-auth-library`.
-   - **Provider Conflict Logic:** If a Google login attempt uses an email address already registered under the `email` provider, the system denies authentication and throws a `409 Conflict` (Portuguese: "Use your original provider") to prevent account hijacking or duplicate profiles.
-   - New Google users are automatically registered as active candidates with `onboardingCompleted = false` (forcing them into the onboarding sequence).
-
-### 4.2 Out-of-Band Flows (JWT-Based)
-JWT tokens are strictly used for out-of-band validation flows, including:
-- **Email Confirmation** (Account activation)
-- **Password Reset** (Forgot password)
-- **Email Change Confirmation** (Modifying email requires confirming the new email first)
-
-To prevent replay attacks or stale links, the system maintains `confirmEmailTokenVersion` and `forgotPasswordTokenVersion` integers on the `users` table. Whenever a password is reset or a verification is completed, the corresponding token version is incremented, immediately invalidating all previously generated links.
-
-### 4.3 Session Lifecycle Restrictions (Guards)
-To secure restricted states, the backend implements a two-tier guard model:
-1. **`SessionAuthGuard`:** Confirms the presence of an active session cookie (`connect.sid`).
-2. **`SessionLifecycleGuard`:** Restricts actions based on temporary state flags:
-   - **`mustChangePassword = true`:** Redirects/restricts user access exclusively to password updating endpoints until a new password is set.
-   - **`onboardingCompleted = false`:** Restricts access until onboarding profile details are completed.
-
----
-
-## 5. User Roles and Permitted Actions
-
-The system implements role-based route protection using `@Roles(...)` decorators evaluated by `RolesGuard`.
-
-| User Role | Permitted Actions | Managed Roles |
-| :--- | :--- | :--- |
-| **Postgraduate Coordinator** | Full system supervision. Can invite and disable/enable secretaries. Can review candidate CVs. | `mdcc-secretary` |
-| **MDCC Secretary** | General administrative duties. Can invite and disable/enable/update professors. Can review candidate CVs. | `professor` |
-| **Professor** | Affiliated with UFC or external institutions. Can access selection processes, view candidate details, verify and grade candidates' CV items. | None |
-| **Candidate** | Can self-register. Must complete onboarding and submit application packages (wizard sequence). | None |
-
----
-
-## 6. Onboarding Lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> Inactive : Email Registration
-    Inactive --> ActivePendingOnboarding : Confirm Email Hash
-    
-    [*] --> ActivePendingOnboarding : Google Auth Sign Up
-    
-    ActivePendingOnboarding --> FullyActive : Complete Onboarding Form
-    
-    [*] --> ProfessorInvited : Secretary Invites Professor
-    ProfessorInvited --> FullyActive : Complete Onboarding (Set Password & Profile Details)
-    
-    FullyActive --> Disabled : Account Deactivated by Admin
-```
-
-- **Candidate Onboarding:** Candidates registers $\rightarrow$ confirms email $\rightarrow$ logs in $\rightarrow$ provides missing data (university, IRA, POSCOMP) $\rightarrow$ onboarding completed.
-- **Professor Onboarding:** A Secretary invites a professor via email $\rightarrow$ professor receives a custom JWT-based onboarding link $\rightarrow$ professor accesses `/auth/onboarding/professor` $\rightarrow$ professor sets password, department, and institution $\rightarrow$ account activated.
-- **Secretary Onboarding:** A Coordinator invites a secretary $\rightarrow$ secretary completes onboarding through the email invitation link.
-
----
-
-## 7. The Alexandria Design System
-
-Anubis frontend adheres strictly to the **Alexandria Design Guidelines** to project a premium, scholarly feel ("The Digital Curator").
-
-- **Colors & Hierarchy:** Generates borders and boundaries through background surface color shifts (e.g., `bg-muted` to `bg-surface-dim`) rather than using standard 1px lines. Accent highlights use Archival Gold (`#6d5e00`) and primary actions use a curated blue (`#094cb2`).
-- **Typography:** Serif headlines (**Noto Serif**) for authoritative editorial titles; Sans-serif (**Inter**) for body text readability; Monospace/Sans (**Public Sans**) for metadata labels.
-- **Visual Feel:** Rounded corners (`rounded-sm` minimum), subtle gradients, glassmorphism elements, and generative background micro-animations to enhance interactive feedback.
-
----
-
-## 8. Directory Maps
-
-### 8.1 Backend Directory Map (`anubis/src/`)
-- `auth/`: Core session strategies, serialization, and endpoint guards.
-- `auth-email/`: Controllers and logic for email/password authentication.
-- `auth-google/`: Controllers and logic for Google OAuth validation.
-- `users/`: User model domain layer and Drizzle repository persistence implementations.
-- `candidate/`: Candidate domain features, controllers, and services.
-- `professor/`: Professor domain features, controllers, and services.
-- `secretary/`: Secretary management services and controllers.
-- `database/`: Drizzle configuration, connection providers, schema definitions, and migration files.
-- `cv-scoring/`: (NEW) Static configurations, scoring calculation services, DTOs, and controllers for CV items verification.
-- `enrollment/`: Enrollment forms, periods scheduler, and controller endpoints.
-- `mail/`: Central mailer service utilizing templates.
-- `common/`: Global filters, logging middlewares, interceptors, and DTOs.
-- `health/`: Terminus health indicators for DB and HTTP availability.
-
-### 8.2 Frontend Directory Map (`anubis/frontend/src/`)
-- `routes/`: File-based routes mapped by TanStack Router:
-  - `auth/`: Sign-in, sign-up, change-password, email confirmations, and reset password.
-  - `auth/onboarding/`: Profile creation views (`index.tsx` for candidates, `professor.tsx`, `secretary.tsx`).
-  - `_app/`: Main layout wrapping authenticated dashboard actions.
-  - `_app/manage/professors.tsx`: Secretary dashboard for managing professors.
-  - `_app/manage/enrollments.$id.tsx`: (NEW) Candidate review portal for CV validation.
-- `features/`: Modular folders containing feature-specific components, custom hooks, and Zod schemas:
-  - `enrollment/components/candidate-enrollment-review.tsx`: (NEW) Candidate CV validation screen.
-  - `enrollment/components/steps/step-cv-scoring.tsx`: Wizard CV categories input forms.
-- `components/ui/`: Atomic design primitives (buttons, inputs, select, fields, dialogs).
-- `hooks/`: Domain-agnostic utility hooks.
-- `lib/`: Base API client wrappers (`src/lib/api/`) managing credentialed HTTP calls.
-
----
-
-## 9. Running & Testing Reference
-
-### 9.1 Local Development Environment
-Ensure Docker is running, then install dependencies:
 ```bash
-pnpm install
-```
-Start the local infrastructure (PostgreSQL + Mailpit SMTP server + RustFS S3 storage):
-```bash
+# 1. Infraestrutura (PostgreSQL + Mailpit + RustFS)
 docker compose up -d postgres mailpit rustfs createbuckets
-```
-Apply migrations and seed default values:
-```bash
+
+# 2. Instalar dependências
+pnpm install
+
+# 3. Rodar migrações e seed
 pnpm run db:migrate
 pnpm run db:seed
-```
-Run the backend server in watch mode:
-```bash
+
+# 4. Backend (porta 3000)
 pnpm run start:dev
-```
-Run the frontend development server:
-```bash
-cd frontend
-pnpm run dev
+
+# 5. Frontend (porta 5173)
+cd frontend && pnpm run dev
 ```
 
-### 9.2 Validating the Codebase
-Always validate backend and frontend changes before committing:
+### Validação rápida
 ```bash
-# 1. Backend typecheck
+# Backend typecheck
 npx tsc -p tsconfig.build.json --noEmit --pretty false
 
-# 2. Frontend typecheck
+# Frontend typecheck
 cd frontend && pnpm run typecheck
 
-# 3. Code formatting check (Prettier & ESLint)
+# Lint
 pnpm run lint:check
-```
 
-### 9.3 Test Suite Commands
-Anubis has multiple test suites covering different testing depths:
-```bash
-# Unit Tests (Jest)
-pnpm test
-
-# Integration Tests (Uses Testcontainers to run PostgreSQL in docker)
-pnpm run test:integration
-
-# E2E Tests (Supertest)
-pnpm run test:e2e
-
-# Run CV scoring test suite
+# Testes de CV scoring
 npx jest src/cv-scoring --runInBand
 ```
 
 ---
 
-## 10. Roadmap & Known Gaps
+## 7. Roadmap — Trabalho Restante
 
-The identity layer, registration wizard, CV scoring engine, and review portals are fully operational. The remaining milestones are:
+### 7.1 Revisão e Merge (Prioridade Alta)
+- [ ] Revisão de código da branch `refactor/cv-engine`
+- [ ] Merge na `main` após aprovação
 
-1. **Document Management Expansion:**
-   - Integrate file parsing and validation for other candidate documents (personal records, recommendation letters).
-   - Implement PDF rendering/compression on upload.
-2. **Intake Configuration UI:**
-   - Create interfaces for Secretaries to customize selection rules (quotas, deadline shifts, grade configurations) dynamically without changing codebase configurations.
-3. **Professor Selection Matching:**
-   - Develop workflow systems matching candidates to specific reviewing professors based on primary/secondary research theme choices.
-   - Implement double-blind grading modules for professors to evaluate letters and transcripts, compiling rankings automatically.
+### 7.2 Teste Manual do Fluxo Completo (Prioridade Alta)
+- [ ] Testar o wizard completo como candidato: criar inscrição → preencher todos os steps → submeter CV items com classificações e arquivos de comprovação
+- [ ] Testar o fluxo de verificação como professor: acessar portal → validar/invalidar itens → confirmar recálculo de pontuação
+- [ ] Verificar que itens marcados como `incorrect` sem `correctedClassification` zeram a pontuação
+- [ ] Verificar que o score respeita o `maxPoints` de cada categoria
+
+### 7.3 Gestão de Documentos (Prioridade Média)
+- [ ] Integrar parsing e validação de outros documentos do candidato (documentos pessoais, cartas de recomendação)
+- [ ] Implementar compressão/renderização de PDF no upload
+- [ ] Validação de formato e tamanho de arquivo no frontend
+
+### 7.4 UI de Configuração de Processo Seletivo (Prioridade Média)
+- [ ] Criar interfaces para Secretários customizarem regras do processo seletivo (cotas, prazos, configurações de avaliação) sem alterar código
+- [ ] Painel de administração para gerenciar períodos de inscrição
+
+### 7.5 Atribuição de Professores e Ranking (Prioridade Baixa)
+- [ ] Sistema de matching de candidatos para professores revisores com base nos temas de pesquisa escolhidos (1ª e 2ª opção)
+- [ ] Módulo de avaliação duplo-cego para professores avaliarem cartas e históricos
+- [ ] Compilação automática de rankings finais
+
+### 7.6 Melhorias Técnicas (Backlog)
+- [ ] Adicionar testes de integração para o `CvItemDrizzleRepository` (usando Testcontainers)
+- [ ] Adicionar testes e2e para o fluxo completo de verificação
+- [ ] Considerar migrar `getCategoryKey()` de string matching para uma coluna `key` na tabela `cv_scoring_categories` para maior robustez
+- [ ] Adicionar notificações (email) quando o professor marca um item como incorreto, para que o candidato saiba que precisa corrigir
+
+---
+
+## 8. Arquivos-Chave para Referência Rápida
+
+| Área | Arquivo |
+|:---|:---|
+| **Configuração de pontuação** | [cv-scoring-config.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/constants/cv-scoring-config.ts) |
+| **Motor de cálculo** | [cv-scoring.service.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/cv-scoring.service.ts) |
+| **Verificação (service)** | [cv-item.service.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/cv-item.service.ts) |
+| **Verificação (controller)** | [cv-item.controller.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/cv-item.controller.ts) |
+| **DTO de verificação** | [verify-cv-item.dto.ts](file:///Users/erikbayerlein/Documents/anubis/src/cv-scoring/dto/verify-cv-item.dto.ts) |
+| **Schema do banco** | [cv-items.ts](file:///Users/erikbayerlein/Documents/anubis/src/database/schema/cv-items.ts) |
+| **Migração SQL** | [0012_fat_nekra.sql](file:///Users/erikbayerlein/Documents/anubis/drizzle/0012_fat_nekra.sql) |
+| **Seed** | [seed/main.ts](file:///Users/erikbayerlein/Documents/anubis/scripts/seed/main.ts) |
+| **Wizard CV (frontend)** | [step-cv-scoring.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/features/enrollment/components/steps/step-cv-scoring.tsx) |
+| **Revisão do professor** | [candidate-enrollment-review.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/features/enrollment/components/candidate-enrollment-review.tsx) |
+| **Dashboard do professor** | [ProfessorHome.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/features/professors/home/ProfessorHome.tsx) |
+| **Rota de revisão** | [enrollments.$id.tsx](file:///Users/erikbayerlein/Documents/anubis/frontend/src/routes/_app/manage/enrollments.$id.tsx) |
+| **API client CV items** | [cv-items.ts](file:///Users/erikbayerlein/Documents/anubis/frontend/src/lib/api/cv-items.ts) |
+| **Editais (referência)** | [message.txt](file:///Users/erikbayerlein/Documents/anubis/message.txt) |
+
+---
+
+## 9. Regras e Convenções do Projeto
+
+- **Mensagens de erro** devem estar em **português**
+- **Imports**: Agrupar (1) Nest/externos, (2) `import type`, (3) módulos locais
+- **Autenticação**: Sessões stateful com Passport, não JWT (JWT só para fluxos out-of-band)
+- **Validação**: DTOs com `class-validator` em todos os inputs
+- **Design System**: Alexandria — tipografia Noto Serif (títulos), Inter (corpo), cores archival gold (#6d5e00) e primary blue (#094cb2)
+- **Testes**: Nomes em inglês, presente do indicativo, focados em comportamento
+- **Evitar `any`**: Usar `Record<string, unknown>` para objetos flexíveis
+- **Frontend**: TanStack Router (file-based), TanStack Query, TanStack Form + Zod
