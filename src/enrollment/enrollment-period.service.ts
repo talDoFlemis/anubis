@@ -6,10 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import {
-  DOCTORAL_SECTIONS,
-  MASTERS_SECTIONS,
-} from '../cv-scoring/constants/cv-scoring-config';
+import { DOCTORAL_SECTIONS, MASTERS_SECTIONS } from '../cv-scoring/constants/cv-scoring-config';
 import { CvScoringCategoryService } from '../cv-scoring/cv-scoring-category.service';
 import type { PeriodStatus } from './constants/enrollment-status';
 import { PERIOD_STATUS } from './constants/enrollment-status';

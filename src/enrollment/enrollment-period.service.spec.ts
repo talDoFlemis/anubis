@@ -1,12 +1,14 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getLoggerToken } from 'nestjs-pino';
+import { CvScoringCategoryService } from '../cv-scoring/cv-scoring-category.service';
 import { EnrollmentPeriodService } from './enrollment-period.service';
 import { EnrollmentPeriodRepository } from './infrastructure/persistence/enrollment-period.repository';
 
 describe('EnrollmentPeriodService', () => {
   let service: EnrollmentPeriodService;
   let mockRepository: Record<string, jest.Mock>;
+  let mockCvScoringCategoryService: Record<string, jest.Mock>;
 
   const mockPeriod = {
     id: 'period-uuid',
@@ -32,10 +34,15 @@ describe('EnrollmentPeriodService', () => {
       syncStatuses: jest.fn().mockResolvedValue({ opened: [], closed: [], skipped: [] }),
     };
 
+    mockCvScoringCategoryService = {
+      create: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module = await Test.createTestingModule({
       providers: [
         EnrollmentPeriodService,
         { provide: EnrollmentPeriodRepository, useValue: mockRepository },
+        { provide: CvScoringCategoryService, useValue: mockCvScoringCategoryService },
         {
           provide: getLoggerToken(EnrollmentPeriodService.name),
           useValue: {

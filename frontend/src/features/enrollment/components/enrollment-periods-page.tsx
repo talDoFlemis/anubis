@@ -67,7 +67,9 @@ function CategoryList({ periodId, level }: { periodId: string; level: 'masters' 
           {categories.map((cat: ScoringCategory) => (
             <div key={cat.id} className="px-4 py-2.5">
               <p className="text-sm font-medium text-slate-800">{cat.name}</p>
-              {cat.description && <p className="mt-0.5 text-xs text-slate-400">{cat.description}</p>}
+              {cat.description && (
+                <p className="mt-0.5 text-xs text-slate-400">{cat.description}</p>
+              )}
               <p className="mt-0.5 text-xs text-slate-400">
                 máx {parseFloat(cat.maxPoints).toFixed(2)} pts
               </p>
@@ -236,8 +238,8 @@ export function EnrollmentPeriodsPage(): ReactElement {
           Períodos de Inscrição
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          Crie e gerencie períodos de inscrição. As categorias de pontuação do CV são definidas
-          pelo sistema e aplicadas automaticamente a cada período.
+          Crie e gerencie períodos de inscrição. As categorias de pontuação do CV são definidas pelo
+          sistema e aplicadas automaticamente a cada período.
         </p>
       </div>
 
@@ -347,7 +349,9 @@ export function EnrollmentPeriodsPage(): ReactElement {
                 key={period.id}
                 period={period}
                 defaultExpanded={newlyCreatedId === period.id}
-                onExpanded={newlyCreatedId === period.id ? () => setNewlyCreatedId(null) : undefined}
+                onExpanded={
+                  newlyCreatedId === period.id ? () => setNewlyCreatedId(null) : undefined
+                }
               />
             ))}
           </div>
