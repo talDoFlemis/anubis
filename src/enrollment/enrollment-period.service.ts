@@ -6,10 +6,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import {
+  DOCTORAL_SECTIONS,
+  MASTERS_SECTIONS,
+} from '../cv-scoring/constants/cv-scoring-config';
+import { CvScoringCategoryService } from '../cv-scoring/cv-scoring-category.service';
 import type { PeriodStatus } from './constants/enrollment-status';
 import { PERIOD_STATUS } from './constants/enrollment-status';
 import type { EnrollmentPeriod } from './domain/enrollment-period';
 import type { CreateEnrollmentPeriodDto } from './dto/create-enrollment-period.dto';
+import { EnrollmentLevel } from './dto/enrollment-level.enum';
 import type { UpdateEnrollmentPeriodDto } from './dto/update-enrollment-period.dto';
 import { EnrollmentPeriodRepository } from './infrastructure/persistence/enrollment-period.repository';
 
@@ -17,7 +23,10 @@ import { EnrollmentPeriodRepository } from './infrastructure/persistence/enrollm
 export class EnrollmentPeriodService {
   private readonly logger = new Logger(EnrollmentPeriodService.name);
 
-  constructor(private readonly enrollmentPeriodRepository: EnrollmentPeriodRepository) {}
+  constructor(
+    private readonly enrollmentPeriodRepository: EnrollmentPeriodRepository,
+    private readonly cvScoringCategoryService: CvScoringCategoryService,
+  ) {}
 
   async create(dto: CreateEnrollmentPeriodDto): Promise<EnrollmentPeriod> {
     const startDate = new Date(dto.startDate);
@@ -53,8 +62,35 @@ export class EnrollmentPeriodService {
       status,
     });
 
+    await this.seedDefaultCategories(period.id);
+
     this.logger.log('Período de inscrição criado');
     return period;
+  }
+
+  /**
+   * Materializes the static CV scoring sections (defined in cv-scoring-config.ts)
+   * for a newly created period. Sections are not staff-authored — config is the
+   * single source of truth, so every period gets the same canonical categories.
+   */
+  private async seedDefaultCategories(periodId: string): Promise<void> {
+    const groups = [
+      { sections: Object.values(MASTERS_SECTIONS), level: EnrollmentLevel.Masters },
+      { sections: Object.values(DOCTORAL_SECTIONS), level: EnrollmentLevel.Doctoral },
+    ];
+
+    for (const { sections, level } of groups) {
+      for (const section of sections) {
+        await this.cvScoringCategoryService.create(periodId, {
+          name: section.name,
+          description: section.description,
+          pointsPerItem: 0,
+          maxPoints: section.maxPoints,
+          level,
+          sortOrder: section.sortOrder,
+        });
+      }
+    }
   }
 
   async findAll(): Promise<EnrollmentPeriod[]> {
