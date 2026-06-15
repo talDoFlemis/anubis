@@ -96,3 +96,28 @@ export function useCvItemFileUrl(enrollmentId: string, itemId: string) {
     staleTime: 30 * 60 * 1000,
   });
 }
+
+export function useVerifyCvItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      enrollmentId,
+      itemId,
+      payload,
+    }: {
+      enrollmentId: string;
+      itemId: string;
+      payload: {
+        isVerified: 'verified' | 'incorrect';
+        correctedClassification?: string;
+        verificationComment?: string;
+      };
+    }) => api.cvItems.verify(enrollmentId, itemId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['cv-items', variables.enrollmentId] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments', variables.enrollmentId] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
+    },
+  });
+}

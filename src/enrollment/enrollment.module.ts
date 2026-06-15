@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { CandidateModule } from '../candidate/candidate.module';
+import { CvScoringModule } from '../cv-scoring/cv-scoring.module';
 import { FileStorageModule } from '../file-storage/file-storage.module';
 import { MailModule } from '../mail/mail.module';
 import { ResearchThemeModule } from '../research-theme/research-theme.module';
@@ -23,6 +24,7 @@ import { EnrollmentDrizzlePersistenceModule } from './infrastructure/persistence
     EnrollmentDrizzlePersistenceModule,
     ResearchThemeModule,
     MailModule,
+    CvScoringModule,
   ],
   controllers: [EnrollmentPeriodController, EnrollmentController],
   providers: [

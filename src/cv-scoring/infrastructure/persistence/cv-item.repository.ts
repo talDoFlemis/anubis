@@ -8,13 +8,36 @@ export interface CreateCvItemData {
   description: string;
   quantity: number;
   proofFileId: string | null;
+  classification?: string | null;
+  isComplete?: boolean;
+  isResumo?: boolean;
+  isPeriodico?: boolean;
+  isAutorPrincipal?: boolean;
+  isDissertacao?: boolean;
+  isEncontroIc?: boolean;
+  isInArea?: boolean;
+  docenciaType?: string | null;
+  eventoType?: string | null;
 }
 
 export interface UpdateCvItemData {
   description?: string;
   quantity?: number;
   scoringCategoryId?: string;
-  proofFileId?: string;
+  proofFileId?: string | null;
+  classification?: string | null;
+  isComplete?: boolean;
+  isResumo?: boolean;
+  isPeriodico?: boolean;
+  isAutorPrincipal?: boolean;
+  isDissertacao?: boolean;
+  isEncontroIc?: boolean;
+  isInArea?: boolean;
+  docenciaType?: string | null;
+  eventoType?: string | null;
+  isVerified?: string;
+  correctedClassification?: string | null;
+  verificationComment?: string | null;
   updatedAt: Date;
 }
 

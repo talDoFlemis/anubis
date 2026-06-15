@@ -8,6 +8,7 @@ import { enrollmentPeriods } from '../../src/database/schema/enrollment-periods'
 import { professors } from '../../src/database/schema/professor';
 import { researchThemeProfessors, researchThemes } from '../../src/database/schema/research-themes';
 import { users } from '../../src/database/schema/users';
+import { MASTERS_SECTIONS, DOCTORAL_SECTIONS } from '../../src/cv-scoring/constants/cv-scoring-config';
 
 // ==========================================
 // Types & Interfaces
@@ -114,109 +115,7 @@ const DEFAULT_USERS: DefaultUserData[] = [
   },
 ];
 
-const MASTERS_CATEGORIES = [
-  {
-    name: 'Artigos publicados em periódicos',
-    description: 'Artigos completos em periódicos indexados (Qualis A1-B2)',
-    pointsPerItem: 1.0,
-    maxPoints: 3.0,
-    sortOrder: 1,
-  },
-  {
-    name: 'Artigos publicados em conferências',
-    description: 'Artigos completos em anais de conferências nacionais e internacionais',
-    pointsPerItem: 0.75,
-    maxPoints: 2.25,
-    sortOrder: 2,
-  },
-  {
-    name: 'Iniciação científica / TCC',
-    description: 'Participação em projetos de IC ou trabalho de conclusão de curso com orientador',
-    pointsPerItem: 0.5,
-    maxPoints: 1.5,
-    sortOrder: 3,
-  },
-  {
-    name: 'Experiência profissional na área',
-    description: 'Atuação profissional comprovada na área de Ciência da Computação',
-    pointsPerItem: 0.5,
-    maxPoints: 1.0,
-    sortOrder: 4,
-  },
-  {
-    name: 'Cursos e certificações',
-    description: 'Cursos de extensão, especializações e certificações técnicas relevantes',
-    pointsPerItem: 0.25,
-    maxPoints: 1.0,
-    sortOrder: 5,
-  },
-  {
-    name: 'Participação em eventos',
-    description: 'Apresentação de pôsteres, palestras ou workshops em eventos acadêmicos',
-    pointsPerItem: 0.25,
-    maxPoints: 0.75,
-    sortOrder: 6,
-  },
-  {
-    name: 'Premiações acadêmicas',
-    description: 'Prêmios, menções honrosas e reconhecimentos acadêmicos',
-    pointsPerItem: 0.5,
-    maxPoints: 1.0,
-    sortOrder: 7,
-  },
-];
-
-const DOCTORAL_CATEGORIES = [
-  {
-    name: 'Artigos publicados em periódicos',
-    description: 'Artigos completos em periódicos indexados (Qualis A1-B2)',
-    pointsPerItem: 1.5,
-    maxPoints: 6.0,
-    sortOrder: 1,
-  },
-  {
-    name: 'Artigos publicados em conferências',
-    description: 'Artigos completos em anais de conferências nacionais e internacionais',
-    pointsPerItem: 1.0,
-    maxPoints: 4.0,
-    sortOrder: 2,
-  },
-  {
-    name: 'Dissertação de mestrado',
-    description: 'Nota e relevância da dissertação de mestrado defendida',
-    pointsPerItem: 2.0,
-    maxPoints: 2.0,
-    sortOrder: 3,
-  },
-  {
-    name: 'Participação em projetos de pesquisa',
-    description: 'Projetos de pesquisa com financiamento ou vinculação institutional',
-    pointsPerItem: 1.0,
-    maxPoints: 3.0,
-    sortOrder: 4,
-  },
-  {
-    name: 'Experiência docente',
-    description: 'Atuação como professor ou monitor em nível superior',
-    pointsPerItem: 0.5,
-    maxPoints: 1.5,
-    sortOrder: 5,
-  },
-  {
-    name: 'Patentes e softwares registrados',
-    description: 'Registros de propriedade intelectual na área',
-    pointsPerItem: 1.0,
-    maxPoints: 2.0,
-    sortOrder: 6,
-  },
-  {
-    name: 'Premiações acadêmicas',
-    description: 'Prêmios, menções honrosas e reconhecimentos acadêmicos ou profissionais',
-    pointsPerItem: 0.5,
-    maxPoints: 1.5,
-    sortOrder: 7,
-  },
-];
+// Categories are now loaded from centralized config
 
 // ==========================================
 // Helper Functions
@@ -497,8 +396,8 @@ async function seedCvCategories(db: NodePgDatabase): Promise<void> {
     }
 
     const allCategories = [
-      { categories: MASTERS_CATEGORIES, level: 'masters' as const },
-      { categories: DOCTORAL_CATEGORIES, level: 'doctoral' as const },
+      { categories: Object.values(MASTERS_SECTIONS), level: 'masters' as const },
+      { categories: Object.values(DOCTORAL_SECTIONS), level: 'doctoral' as const },
     ];
 
     let totalSeeded = 0;
@@ -508,7 +407,7 @@ async function seedCvCategories(db: NodePgDatabase): Promise<void> {
           enrollmentPeriodId: period.id,
           name: cat.name,
           description: cat.description,
-          pointsPerItem: cat.pointsPerItem.toString(),
+          pointsPerItem: '0.00',
           maxPoints: cat.maxPoints.toString(),
           level,
           sortOrder: cat.sortOrder,

@@ -12,6 +12,7 @@ import { FileStorageService } from '../file-storage/file-storage.service';
 import { MailService } from '../mail/mail.service';
 import { ResearchThemeService } from '../research-theme/research-theme.service';
 import { RoleEnum } from '../roles/roles.enum';
+import { User } from '../users/domain/user';
 import { UsersService } from '../users/users.service';
 import { ENROLLMENT_STATUS, PERIOD_STATUS } from './constants/enrollment-status';
 import type { Enrollment } from './domain/enrollment';
@@ -458,10 +459,18 @@ export class EnrollmentService {
     return updated;
   }
 
-  async getSigaaReceiptUrl(userId: string, id: string): Promise<{ url: string; fileName: string }> {
+  async getSigaaReceiptUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
+    const isOwner = enrollment.candidateId === user.id;
+    const isStaff = [
+      RoleEnum.professor,
+      RoleEnum.mdccSecretary,
+      RoleEnum.postGraduateCoordinator,
+      RoleEnum.postGraduateViceCoordinator,
+    ].includes(user.role);
+
+    if (!isOwner && !isStaff) {
       throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
     }
 
@@ -516,13 +525,18 @@ export class EnrollmentService {
     return updated;
   }
 
-  async getPoscompReceiptUrl(
-    userId: string,
-    id: string,
-  ): Promise<{ url: string; fileName: string }> {
+  async getPoscompReceiptUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
+    const isOwner = enrollment.candidateId === user.id;
+    const isStaff = [
+      RoleEnum.professor,
+      RoleEnum.mdccSecretary,
+      RoleEnum.postGraduateCoordinator,
+      RoleEnum.postGraduateViceCoordinator,
+    ].includes(user.role);
+
+    if (!isOwner && !isStaff) {
       throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
     }
 

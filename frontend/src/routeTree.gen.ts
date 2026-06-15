@@ -29,6 +29,7 @@ import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/pr
 import { Route as AppManageEnrollmentPeriodsRouteImport } from './routes/_app/manage/enrollment-periods'
 import { Route as AppEnrollmentNewRouteImport } from './routes/_app/enrollment/new'
 import { Route as AppEnrollmentNewIndexRouteImport } from './routes/_app/enrollment/new/index'
+import { Route as AppManageEnrollmentsIdRouteImport } from './routes/_app/manage/enrollments.$id'
 import { Route as AppEnrollmentNewThemesRouteImport } from './routes/_app/enrollment/new/themes'
 import { Route as AppEnrollmentNewSigaaRouteImport } from './routes/_app/enrollment/new/sigaa'
 import { Route as AppEnrollmentNewPoscompRouteImport } from './routes/_app/enrollment/new/poscomp'
@@ -136,6 +137,11 @@ const AppEnrollmentNewIndexRoute = AppEnrollmentNewIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppEnrollmentNewRoute,
 } as any)
+const AppManageEnrollmentsIdRoute = AppManageEnrollmentsIdRouteImport.update({
+  id: '/manage/enrollments/$id',
+  path: '/manage/enrollments/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEnrollmentNewThemesRoute = AppEnrollmentNewThemesRouteImport.update({
   id: '/themes',
   path: '/themes',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
   '/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
   '/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
+  '/manage/enrollments/$id': typeof AppManageEnrollmentsIdRoute
   '/enrollment/new/': typeof AppEnrollmentNewIndexRoute
 }
 export interface FileRoutesByTo {
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
   '/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
   '/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
+  '/manage/enrollments/$id': typeof AppManageEnrollmentsIdRoute
   '/enrollment/new': typeof AppEnrollmentNewIndexRoute
 }
 export interface FileRoutesById {
@@ -248,6 +256,7 @@ export interface FileRoutesById {
   '/_app/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
   '/_app/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
   '/_app/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
+  '/_app/manage/enrollments/$id': typeof AppManageEnrollmentsIdRoute
   '/_app/enrollment/new/': typeof AppEnrollmentNewIndexRoute
 }
 export interface FileRouteTypes {
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/enrollment/new/poscomp'
     | '/enrollment/new/sigaa'
     | '/enrollment/new/themes'
+    | '/manage/enrollments/$id'
     | '/enrollment/new/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/enrollment/new/poscomp'
     | '/enrollment/new/sigaa'
     | '/enrollment/new/themes'
+    | '/manage/enrollments/$id'
     | '/enrollment/new'
   id:
     | '__root__'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/_app/enrollment/new/poscomp'
     | '/_app/enrollment/new/sigaa'
     | '/_app/enrollment/new/themes'
+    | '/_app/manage/enrollments/$id'
     | '/_app/enrollment/new/'
   fileRoutesById: FileRoutesById
 }
@@ -481,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEnrollmentNewIndexRouteImport
       parentRoute: typeof AppEnrollmentNewRoute
     }
+    '/_app/manage/enrollments/$id': {
+      id: '/_app/manage/enrollments/$id'
+      path: '/manage/enrollments/$id'
+      fullPath: '/manage/enrollments/$id'
+      preLoaderRoute: typeof AppManageEnrollmentsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/enrollment/new/themes': {
       id: '/_app/enrollment/new/themes'
       path: '/themes'
@@ -557,6 +576,7 @@ interface AppRouteChildren {
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
   AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
   AppEnrollmentIndexRoute: typeof AppEnrollmentIndexRoute
+  AppManageEnrollmentsIdRoute: typeof AppManageEnrollmentsIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -567,6 +587,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppManageProfessorsRoute: AppManageProfessorsRoute,
   AppManageResearchThemesRoute: AppManageResearchThemesRoute,
   AppEnrollmentIndexRoute: AppEnrollmentIndexRoute,
+  AppManageEnrollmentsIdRoute: AppManageEnrollmentsIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

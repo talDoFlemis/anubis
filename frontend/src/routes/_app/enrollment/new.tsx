@@ -39,12 +39,12 @@ export const Route = createFileRoute('/_app/enrollment/new')({
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const STEP_ROUTES = [
+export const STEP_ROUTES = [
   '/enrollment/new/level',
+  '/enrollment/new/themes',
   '/enrollment/new/academic',
   '/enrollment/new/poscomp',
   '/enrollment/new/cv',
-  '/enrollment/new/themes',
   '/enrollment/new/sigaa',
 ] as const;
 
@@ -54,16 +54,16 @@ function detectCompletedSteps(enrollment: Enrollment | null): number[] {
 
   completed.push(0);
 
-  if (enrollment.phone && enrollment.justification) {
+  if (enrollment.primaryThemeId && enrollment.secondaryThemeId) {
     completed.push(1);
   }
 
-  if (enrollment.poscomp !== null) {
+  if (enrollment.phone && enrollment.justification) {
     completed.push(2);
   }
 
-  if (enrollment.primaryThemeId && enrollment.secondaryThemeId) {
-    completed.push(4);
+  if (enrollment.poscomp !== null) {
+    completed.push(3);
   }
 
   if (enrollment.sigaaCode) {

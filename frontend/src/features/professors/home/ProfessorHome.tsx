@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 
@@ -23,6 +25,11 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
   const queryClient = useQueryClient();
   const displayName = getUserDisplayName(user.firstName, user.lastName, 'Professor');
 
+  // Active theme candidate view state
+  const [activeCandidatesTheme, setActiveCandidatesTheme] = React.useState<ResearchTheme | null>(
+    null,
+  );
+
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [selectedTheme, setSelectedTheme] = React.useState<ResearchTheme | null>(null);
@@ -39,6 +46,26 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
     queryFn: () => api.professors.findAll({ limit: 100 }),
   });
   const professors = professorsData?.data ?? [];
+
+  const { data: enrollmentsData } = useQuery({
+    queryKey: ['enrollments-list'],
+    queryFn: () => api.enrollments.findAll({ limit: 200, status: 'submitted' }),
+  });
+  const enrollments = enrollmentsData?.data ?? [];
+
+  const { data: candidatesData } = useQuery({
+    queryKey: ['candidates-list'],
+    queryFn: () => api.candidates.findAll({ limit: 200 }),
+  });
+  const candidates = candidatesData?.data ?? [];
+
+  const candidateMap = React.useMemo(() => {
+    const map = new Map<string, (typeof candidates)[0]>();
+    for (const c of candidates) {
+      map.set(c.userId, c);
+    }
+    return map;
+  }, [candidates]);
 
   // Mutations
   const createMutation = useMutation({
@@ -109,8 +136,8 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
     }
   };
 
-  const handleSeeCandidatesTheme = (_theme: ResearchTheme) => {
-    toast.info('Visualização de candidatos ainda não implementada para o ciclo de seleção atual.');
+  const handleSeeCandidatesTheme = (theme: ResearchTheme) => {
+    setActiveCandidatesTheme(theme);
   };
 
   const handleDialogSubmit = (formData: ResearchThemeFormData) => {
@@ -124,7 +151,31 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
   // Metrics calculation
   const publishedThemes = themes.length;
   const offeredSlots = themes.reduce((acc, t) => acc + t.vacancies, 0);
-  const enrolledCandidates = 0; // Not implemented yet (backend returns false/empty mock)
+
+  // Calculate total enrolled candidates for the professor's themes
+  const enrolledCandidates = React.useMemo(() => {
+    const myThemeIds = new Set(themes.map(t => t.id));
+    return enrollments.filter(
+      e =>
+        (e.primaryThemeId && myThemeIds.has(e.primaryThemeId)) ||
+        (e.secondaryThemeId && myThemeIds.has(e.secondaryThemeId)),
+    ).length;
+  }, [enrollments, themes]);
+
+  const getCandidatesCountForTheme = (themeId: string) => {
+    return enrollments.filter(e => e.primaryThemeId === themeId || e.secondaryThemeId === themeId)
+      .length;
+  };
+
+  // Filter enrollments for the active selected theme
+  const themeEnrollments = React.useMemo(() => {
+    if (!activeCandidatesTheme) return [];
+    return enrollments.filter(
+      e =>
+        e.primaryThemeId === activeCandidatesTheme.id ||
+        e.secondaryThemeId === activeCandidatesTheme.id,
+    );
+  }, [enrollments, activeCandidatesTheme]);
 
   return (
     <HomeShell>
@@ -155,87 +206,189 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden rounded-4xl">
-          <CardHeader className="flex flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div className="space-y-3">
-              <p className="font-label text-primary">Meus temas de pesquisa</p>
-              <CardTitle>Gestão de temas e candidatos</CardTitle>
-            </div>
-            <Button onClick={handleRegisterNewTheme}>Cadastrar novo tema</Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoading ? (
-              <div className="py-8 text-center text-sm text-slate-500">Carregando temas...</div>
-            ) : themes.length > 0 ? (
-              themes.map(theme => {
-                const isOwner = theme.professorId === user.id;
-                return (
-                  <div key={theme.id} className="anubis-surface-muted rounded-3xl p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="space-y-3">
-                        <div className="space-y-2">
-                          <p className="text-foreground font-serif text-xl">{theme.title}</p>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant={theme.level === 'masters' ? 'default' : 'secondary'}>
-                              {theme.level === 'masters' ? 'Mestrado' : 'Doutorado'}
-                            </Badge>
-                            {!isOwner && (
+        {activeCandidatesTheme ? (
+          /* Enrolled candidates for the selected theme */
+          <Card className="overflow-hidden rounded-4xl">
+            <CardHeader className="flex flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveCandidatesTheme(null)}
+                    className="rounded-full text-slate-500 hover:text-slate-900 border border-slate-100 hover:bg-slate-50"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    Temas
+                  </Button>
+                  <p className="font-label text-primary">Candidatos Inscritos</p>
+                </div>
+                <CardTitle>Tema: {activeCandidatesTheme.title}</CardTitle>
+              </div>
+              <Badge variant={activeCandidatesTheme.level === 'masters' ? 'default' : 'secondary'}>
+                {activeCandidatesTheme.level === 'masters' ? 'Mestrado' : 'Doutorado'}
+              </Badge>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {themeEnrollments.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left text-sm text-slate-500">
+                    <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-700">
+                      <tr>
+                        <th className="px-6 py-4">Candidato</th>
+                        <th className="px-6 py-4">Opção de Inscrição</th>
+                        <th className="px-6 py-4">IRA</th>
+                        <th className="px-6 py-4 text-center">Pontuação CV</th>
+                        <th className="px-6 py-4 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 border-t border-slate-100 bg-white">
+                      {themeEnrollments.map(enrollment => {
+                        const cand = candidateMap.get(enrollment.candidateId);
+                        const isPrimary = enrollment.primaryThemeId === activeCandidatesTheme.id;
+                        const candName = cand ? `${cand.firstName} ${cand.lastName}` : 'Candidato';
+                        const candEmail = cand?.email || '—';
+
+                        return (
+                          <tr
+                            key={enrollment.id}
+                            className="hover:bg-slate-50/50 transition-colors"
+                          >
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-slate-900">{candName}</div>
+                              <div className="text-xs text-slate-500">{candEmail}</div>
+                            </td>
+                            <td className="px-6 py-4">
                               <Badge
                                 variant="outline"
-                                className="border-blue-200 text-blue-700 bg-blue-50/50"
+                                className={
+                                  isPrimary
+                                    ? 'border-blue-200 text-blue-700 bg-blue-50/50'
+                                    : 'border-slate-200 text-slate-700 bg-slate-50/50'
+                                }
                               >
-                                Coorientador / Colaborador
+                                {isPrimary ? 'Opção Primária' : 'Opção Secundária'}
                               </Badge>
-                            )}
-                            {theme.associatedProfessors &&
-                              theme.associatedProfessors.length > 0 && (
-                                <span className="text-xs text-slate-400 self-center">
-                                  Colaboradores:{' '}
-                                  {theme.associatedProfessors
-                                    .map(p => `${p.firstName} ${p.lastName}`)
-                                    .join(', ')}
-                                </span>
+                            </td>
+                            <td className="px-6 py-4 font-mono font-medium text-slate-700">
+                              {cand?.ira ? parseFloat(cand.ira).toFixed(2) : '—'}
+                            </td>
+                            <td className="px-6 py-4 text-center font-bold text-primary font-label">
+                              {enrollment.scoreDraft
+                                ? parseFloat(enrollment.scoreDraft).toFixed(1)
+                                : '0.0'}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <Button size="sm" asChild className="rounded-xl">
+                                <Link to="/manage/enrollments/$id" params={{ id: enrollment.id }}>
+                                  Avaliar Currículo
+                                </Link>
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-12 text-center text-sm text-slate-400">
+                  Nenhum candidato submeteu inscrição para este tema ainda.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          /* Research Themes List */
+          <Card className="overflow-hidden rounded-4xl">
+            <CardHeader className="flex flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="space-y-3">
+                <p className="font-label text-primary">Meus temas de pesquisa</p>
+                <CardTitle>Gestão de temas e candidatos</CardTitle>
+              </div>
+              <Button onClick={handleRegisterNewTheme}>Cadastrar novo tema</Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isLoading ? (
+                <div className="py-8 text-center text-sm text-slate-500">Carregando temas...</div>
+              ) : themes.length > 0 ? (
+                themes.map(theme => {
+                  const isOwner = theme.professorId === user.id;
+                  const themeCandCount = getCandidatesCountForTheme(theme.id);
+
+                  return (
+                    <div key={theme.id} className="anubis-surface-muted rounded-3xl p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <p className="text-foreground font-serif text-xl">{theme.title}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant={theme.level === 'masters' ? 'default' : 'secondary'}>
+                                {theme.level === 'masters' ? 'Mestrado' : 'Doutorado'}
+                              </Badge>
+                              {!isOwner && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-blue-200 text-blue-700 bg-blue-50/50"
+                                >
+                                  Coorientador / Colaborador
+                                </Badge>
                               )}
+                              {theme.associatedProfessors &&
+                                theme.associatedProfessors.length > 0 && (
+                                  <span className="text-xs text-slate-400 self-center">
+                                    Colaboradores:{' '}
+                                    {theme.associatedProfessors
+                                      .map(p => `${p.firstName} ${p.lastName}`)
+                                      .join(', ')}
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-600 line-clamp-2 max-w-4xl">
+                            {theme.description}
+                          </p>
+                          <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-sm">
+                            <span>Atualizado em {formatDatePtBr(theme.updatedAt)}</span>
+                            <span>Vagas: {formatNumberPtBr(theme.vacancies)}</span>
+                            <span className="font-semibold text-slate-600">
+                              Candidatos: {formatNumberPtBr(themeCandCount)}
+                            </span>
                           </div>
                         </div>
-                        <p className="text-sm text-slate-600 line-clamp-2 max-w-4xl">
-                          {theme.description}
-                        </p>
-                        <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-sm">
-                          <span>Atualizado em {formatDatePtBr(theme.updatedAt)}</span>
-                          <span>Vagas: {formatNumberPtBr(theme.vacancies)}</span>
-                          <span>Candidatos: {formatNumberPtBr(0)}</span>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Button variant="secondary" onClick={() => handleEditTheme(theme)}>
+                            Editar
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleSeeCandidatesTheme(theme)}
+                          >
+                            Ver candidatos
+                          </Button>
+                          {isOwner && (
+                            <Button
+                              variant="ghost"
+                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                              onClick={() => handleDeleteTheme(theme)}
+                            >
+                              Excluir
+                            </Button>
+                          )}
                         </div>
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-3">
-                        <Button variant="secondary" onClick={() => handleEditTheme(theme)}>
-                          Editar
-                        </Button>
-                        <Button variant="secondary" onClick={() => handleSeeCandidatesTheme(theme)}>
-                          Ver candidatos
-                        </Button>
-                        {isOwner && (
-                          <Button
-                            variant="ghost"
-                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                            onClick={() => handleDeleteTheme(theme)}
-                          >
-                            Excluir
-                          </Button>
-                        )}
-                      </div>
                     </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="py-8 text-center text-sm text-slate-400">
-                Você não possui nenhum tema de pesquisa publicado ou associado.
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  );
+                })
+              ) : (
+                <div className="py-8 text-center text-sm text-slate-400">
+                  Você não possui nenhum tema de pesquisa publicado ou associado.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <ResearchThemeDialog

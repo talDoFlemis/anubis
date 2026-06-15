@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, type PaginatedResponse } from './client';
 import { asNullableString, asRecord, asString } from './normalizers';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -91,6 +91,28 @@ function normalizeEnrollment(data: unknown): Enrollment {
 // ── Endpoints ────────────────────────────────────────────────────────
 
 export const enrollmentsApi = {
+  findAll: async (params?: {
+    page?: number;
+    limit?: number;
+    candidateId?: string;
+    enrollmentPeriodId?: string;
+    status?: string;
+    level?: string;
+  }): Promise<PaginatedResponse<Enrollment>> => {
+    const res = await apiClient.get('/enrollments', { params });
+    const r = asRecord(res.data);
+    const m = asRecord(r.pagination || {});
+    return {
+      data: Array.isArray(r.data) ? r.data.map(normalizeEnrollment) : [],
+      pagination: {
+        page: Number(m.page) || 1,
+        limit: Number(m.limit) || 20,
+        total: Number(m.total) || 0,
+        totalPages: Number(m.totalPages) || 1,
+      },
+    };
+  },
+
   create: async (payload: CreateEnrollmentPayload): Promise<Enrollment> => {
     return normalizeEnrollment((await apiClient.post('/enrollments', payload)).data);
   },

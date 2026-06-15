@@ -43,22 +43,134 @@ interface StepCvScoringProps {
 interface AddItemFormState {
   description: string;
   file: File | null;
+  quantity: number;
+  classification: string;
+  isComplete: boolean;
+  isResumo: boolean;
+  isPeriodico: boolean;
+  isAutorPrincipal: boolean;
+  isDissertacao: boolean;
+  isEncontroIc: boolean;
+  isInArea: boolean;
+  docenciaType: string;
+  eventoType: string;
 }
 
 const INITIAL_FORM_STATE: AddItemFormState = {
   description: '',
   file: null,
+  quantity: 1,
+  classification: 'none',
+  isComplete: false,
+  isResumo: false,
+  isPeriodico: false,
+  isAutorPrincipal: false,
+  isDissertacao: false,
+  isEncontroIc: false,
+  isInArea: false,
+  docenciaType: 'monitoria',
+  eventoType: 'local',
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function computeCategoryScore(items: CvItem[], category: ScoringCategory): number {
+function getCategoryKey(name: string): string {
+  const normalized = name.toLowerCase().trim();
+  if (normalized.includes('projeto') || normalized.includes('participação de projetos'))
+    return 'PROJECTS';
+  if (normalized.includes('produção científica') || normalized.includes('producao cientifica'))
+    return 'PRODUCTION';
+  if (
+    normalized.includes('docência') ||
+    normalized.includes('docencia') ||
+    normalized.includes('docente')
+  )
+    return 'TEACHING';
+  if (normalized.includes('orientação') || normalized.includes('orientacao')) return 'ORIENTATION';
+  if (
+    normalized.includes('apresentação') ||
+    normalized.includes('apresentacao') ||
+    normalized.includes('evento')
+  )
+    return 'EVENTS';
+  return 'UNKNOWN';
+}
+
+function computeCategoryScore(items: CvItem[], category: ScoringCategory, level: string): number {
   const categoryItems = items.filter(i => i.scoringCategoryId === category.id);
-  const rawScore = categoryItems.reduce((sum, item) => {
-    if (item.score !== null) return sum + parseFloat(item.score);
-    return sum + item.quantity * parseFloat(category.pointsPerItem);
-  }, 0);
-  return Math.min(rawScore, parseFloat(category.maxPoints));
+  const key = getCategoryKey(category.name);
+
+  let totalScore = 0;
+  for (const item of categoryItems) {
+    if (item.score !== null) {
+      totalScore += parseFloat(item.score);
+      continue;
+    }
+
+    if (item.isVerified === 'incorrect' && !item.correctedClassification) {
+      continue;
+    }
+
+    const activeClassification =
+      item.isVerified === 'incorrect' && item.correctedClassification
+        ? item.correctedClassification
+        : item.classification || 'none';
+
+    switch (key) {
+      case 'PROJECTS': {
+        const basePoints = level === 'masters' ? 0.3 : 0.2;
+        const areaBonus = level === 'masters' ? 0.2 : 0.1;
+        totalScore += item.quantity * (basePoints + (item.isInArea ? areaBonus : 0));
+        break;
+      }
+      case 'PRODUCTION': {
+        if (level === 'masters' && item.isEncontroIc) {
+          totalScore += 0.1;
+        } else {
+          const classPoints: Record<string, number> = {
+            A1: 0.6,
+            A2: 0.6,
+            A3: 0.6,
+            A4: 0.6,
+            A5: 0.4,
+            A6: 0.4,
+            A7: 0.2,
+            A8: 0.2,
+            none: 0.1,
+          };
+          let itemScore = classPoints[activeClassification] ?? 0.1;
+          if (item.isComplete) itemScore += 0.2;
+          else if (item.isResumo) itemScore += 0.1;
+          if (item.isPeriodico) itemScore += 0.2;
+          if (item.isAutorPrincipal) itemScore += 0.2;
+          if (level === 'doctoral' && item.isDissertacao) itemScore += 0.1;
+          totalScore += itemScore;
+        }
+        break;
+      }
+      case 'TEACHING': {
+        const points = level === 'masters' ? (item.docenciaType === 'ies' ? 0.3 : 0.2) : 0.2;
+        totalScore += item.quantity * points;
+        break;
+      }
+      case 'ORIENTATION': {
+        totalScore += item.quantity * 0.2;
+        break;
+      }
+      case 'EVENTS': {
+        const points =
+          item.eventoType === 'internacional' ? 0.3 : item.eventoType === 'nacional' ? 0.2 : 0.1;
+        totalScore += item.quantity * points;
+        break;
+      }
+      default: {
+        totalScore += item.quantity * parseFloat(category.pointsPerItem);
+        break;
+      }
+    }
+  }
+
+  return parseFloat(Math.min(totalScore, parseFloat(category.maxPoints)).toFixed(2));
 }
 
 // ── Component ────────────────────────────────────────────────────────
@@ -105,8 +217,11 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
 
   const totalScore = useMemo(() => {
     if (!sortedCategories.length || !cvItems) return 0;
-    return sortedCategories.reduce((sum, cat) => sum + computeCategoryScore(cvItems, cat), 0);
-  }, [sortedCategories, cvItems]);
+    return sortedCategories.reduce(
+      (sum, cat) => sum + computeCategoryScore(cvItems, cat, level),
+      0,
+    );
+  }, [sortedCategories, cvItems, level]);
 
   // ── Handlers ────────────────────────────────────────────────────
 
@@ -127,14 +242,41 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
       return;
     }
 
+    const category = categories?.find(c => c.id === openFormCategoryId);
+    const key = category ? getCategoryKey(category.name) : 'UNKNOWN';
+
+    // Build payload dynamically based on category key
+    const payload: any = {
+      scoringCategoryId: openFormCategoryId,
+      description: formState.description.trim(),
+      quantity: formState.quantity,
+    };
+
+    if (key === 'PRODUCTION') {
+      payload.classification = formState.classification;
+      payload.isComplete = formState.isComplete;
+      payload.isResumo = formState.isResumo;
+      payload.isPeriodico = formState.isPeriodico;
+      payload.isAutorPrincipal = formState.isAutorPrincipal;
+      if (level === 'doctoral') {
+        payload.isDissertacao = formState.isDissertacao;
+      } else {
+        payload.isEncontroIc = formState.isEncontroIc;
+      }
+      payload.quantity = 1; // Always 1 for publications
+    } else if (key === 'PROJECTS') {
+      payload.isInArea = formState.isInArea;
+    } else if (key === 'TEACHING' && level === 'masters') {
+      payload.docenciaType = formState.docenciaType;
+    } else if (key === 'EVENTS') {
+      payload.eventoType = formState.eventoType;
+      payload.quantity = 1;
+    }
+
     createItem.mutate(
       {
         enrollmentId,
-        payload: {
-          scoringCategoryId: openFormCategoryId,
-          description: formState.description.trim(),
-          quantity: 1,
-        },
+        payload,
         file: formState.file ?? undefined,
       },
       {
@@ -147,7 +289,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
         },
       },
     );
-  }, [openFormCategoryId, enrollmentId, formState, createItem, handleCloseForm]);
+  }, [openFormCategoryId, enrollmentId, formState, createItem, handleCloseForm, categories, level]);
 
   const handleDownloadFile = useCallback(
     async (itemId: string) => {
@@ -169,7 +311,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
         { enrollmentId, itemId, payload: {}, file },
         {
           onSuccess: () => {
-            toast.success('Arquivo substitudo com sucesso.');
+            toast.success('Arquivo substituído com sucesso.');
             setReplaceFileItemId(null);
           },
           onError: err => {
@@ -242,7 +384,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
       <div className="space-y-6">
         {sortedCategories.map(category => {
           const items = itemsByCategory.get(category.id) ?? [];
-          const categoryScore = computeCategoryScore(cvItems ?? [], category);
+          const categoryScore = computeCategoryScore(cvItems ?? [], category, level);
           const maxPoints = parseFloat(category.maxPoints);
           const progressPct = maxPoints > 0 ? Math.min((categoryScore / maxPoints) * 100, 100) : 0;
           const isFormOpen = openFormCategoryId === category.id;
@@ -259,8 +401,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                       </p>
                     )}
                     <p className="text-muted-foreground text-xs">
-                      {category.pointsPerItem} ponto(s) por item • Máximo {category.maxPoints}{' '}
-                      ponto(s)
+                      Pontuação máxima de {category.maxPoints} ponto(s)
                     </p>
                   </div>
                   <div className="font-label text-right text-sm font-semibold whitespace-nowrap">
@@ -285,17 +426,86 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                       <div key={item.id} className="space-y-2 py-3 first:pt-0 last:pb-0">
                         <div className="flex items-center justify-between gap-4">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{item.description}</p>
-                            <p className="text-muted-foreground text-xs">
-                              {item.proofFileName && item.proofFileName}
-                              {item.proofFileName && item.score !== null && ' · '}
-                              {!item.proofFileName && item.proofFileId && 'Comprovante enviado'}
-                              {!item.proofFileName &&
-                                item.proofFileId &&
-                                item.score !== null &&
-                                ' · '}
-                              {item.score !== null && `${parseFloat(item.score).toFixed(1)} pts`}
+                            <p className="text-sm font-medium text-foreground">
+                              {item.description}
                             </p>
+                            <div className="text-muted-foreground text-xs flex flex-wrap gap-1.5 mt-1">
+                              {(() => {
+                                const key = getCategoryKey(category.name);
+                                if (key === 'PROJECTS') {
+                                  return (
+                                    <span>
+                                      {item.quantity} semestre(s)
+                                      {item.isInArea && ' · Na área de pesquisa'}
+                                    </span>
+                                  );
+                                }
+                                if (key === 'PRODUCTION') {
+                                  const details = [];
+                                  if (item.classification && item.classification !== 'none') {
+                                    details.push(`Qualis ${item.classification}`);
+                                  } else {
+                                    details.push('Sem Qualis');
+                                  }
+                                  if (item.isComplete) details.push('Artigo completo');
+                                  if (item.isResumo) details.push('Resumo/pôster');
+                                  if (item.isPeriodico) details.push('Periódico');
+                                  if (item.isAutorPrincipal) details.push('Autor principal');
+                                  if (item.isDissertacao) details.push('Fruto de dissertação');
+                                  if (item.isEncontroIc) details.push('Encontro de IC');
+                                  return <span>{details.join(' · ')}</span>;
+                                }
+                                if (key === 'TEACHING') {
+                                  return (
+                                    <span>
+                                      {item.quantity} semestre(s)
+                                      {level === 'masters' &&
+                                        ` · ${item.docenciaType === 'ies' ? 'Docente IES' : 'Monitoria'}`}
+                                    </span>
+                                  );
+                                }
+                                if (key === 'EVENTS') {
+                                  const scope =
+                                    item.eventoType === 'internacional'
+                                      ? 'Internacional'
+                                      : item.eventoType === 'nacional'
+                                        ? 'Nacional'
+                                        : 'Local';
+                                  return <span>Apresentação {scope}</span>;
+                                }
+                                if (key === 'ORIENTATION') {
+                                  return <span>{item.quantity} aluno-semestre(s)</span>;
+                                }
+                                return <span>Qtd: {item.quantity}</span>;
+                              })()}
+
+                              {item.proofFileName ? (
+                                <span> · {item.proofFileName}</span>
+                              ) : item.proofFileId ? (
+                                <span> · Comprovante enviado</span>
+                              ) : null}
+
+                              {item.score !== null && (
+                                <span className="font-semibold text-primary">
+                                  {' '}
+                                  · {parseFloat(item.score).toFixed(1)} pts
+                                </span>
+                              )}
+
+                              {item.isVerified !== 'pending' && (
+                                <span
+                                  className={
+                                    item.isVerified === 'verified'
+                                      ? 'text-green-600 font-semibold'
+                                      : 'text-red-600 font-semibold'
+                                  }
+                                >
+                                  · {item.isVerified === 'verified' ? 'Validado' : 'Incorreto'}
+                                  {item.correctedClassification &&
+                                    ` (Corrigido para ${item.correctedClassification})`}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div className="flex shrink-0 items-center gap-1">
                             {item.proofFileId && (
@@ -364,17 +574,271 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
                 {isFormOpen ? (
                   <div className="space-y-4 rounded-2xl bg-surface-dim/40 p-5">
                     <div className="space-y-2">
-                      <Label htmlFor={`desc-${category.id}`}>Descrição</Label>
+                      <Label htmlFor={`desc-${category.id}`}>Descrição / Título do Item</Label>
                       <Input
                         id={`desc-${category.id}`}
-                        placeholder="Descreva o item do currículo"
+                        placeholder="Ex: Artigo publicado no SBBD, Iniciação Científica no MDCC"
                         value={formState.description}
                         onChange={e => setFormState(s => ({ ...s, description: e.target.value }))}
                       />
                     </div>
 
+                    {/* Dynamic Fields */}
+                    {(() => {
+                      const key = getCategoryKey(category.name);
+                      if (key === 'PROJECTS') {
+                        return (
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`qty-${category.id}`}>Quantidade de Semestres</Label>
+                              <Input
+                                id={`qty-${category.id}`}
+                                type="number"
+                                min="1"
+                                value={formState.quantity}
+                                onChange={e =>
+                                  setFormState(s => ({
+                                    ...s,
+                                    quantity: Math.max(1, parseInt(e.target.value) || 1),
+                                  }))
+                                }
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 pt-8">
+                              <input
+                                id={`area-${category.id}`}
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                checked={formState.isInArea}
+                                onChange={e =>
+                                  setFormState(s => ({ ...s, isInArea: e.target.checked }))
+                                }
+                              />
+                              <Label htmlFor={`area-${category.id}`} className="cursor-pointer">
+                                Na área de pesquisa da candidatura
+                              </Label>
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (key === 'PRODUCTION') {
+                        return (
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`class-${category.id}`}>
+                                Classificação CAPES (A1 a A8)
+                              </Label>
+                              <select
+                                id={`class-${category.id}`}
+                                className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+                                value={formState.classification}
+                                onChange={e =>
+                                  setFormState(s => ({ ...s, classification: e.target.value }))
+                                }
+                              >
+                                <option value="A1">A1</option>
+                                <option value="A2">A2</option>
+                                <option value="A3">A3</option>
+                                <option value="A4">A4</option>
+                                <option value="A5">A5</option>
+                                <option value="A6">A6</option>
+                                <option value="A7">A7</option>
+                                <option value="A8">A8</option>
+                                <option value="none">Não qualificado / Outro</option>
+                              </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  id={`comp-${category.id}`}
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                  checked={formState.isComplete}
+                                  onChange={e =>
+                                    setFormState(s => ({
+                                      ...s,
+                                      isComplete: e.target.checked,
+                                      isResumo: e.target.checked ? false : s.isResumo,
+                                    }))
+                                  }
+                                />
+                                <Label htmlFor={`comp-${category.id}`} className="cursor-pointer">
+                                  Artigo completo
+                                </Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  id={`res-${category.id}`}
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                  checked={formState.isResumo}
+                                  onChange={e =>
+                                    setFormState(s => ({
+                                      ...s,
+                                      isResumo: e.target.checked,
+                                      isComplete: e.target.checked ? false : s.isComplete,
+                                    }))
+                                  }
+                                />
+                                <Label htmlFor={`res-${category.id}`} className="cursor-pointer">
+                                  Resumo/pôster
+                                </Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  id={`per-${category.id}`}
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                  checked={formState.isPeriodico}
+                                  onChange={e =>
+                                    setFormState(s => ({ ...s, isPeriodico: e.target.checked }))
+                                  }
+                                />
+                                <Label htmlFor={`per-${category.id}`} className="cursor-pointer">
+                                  Periódico
+                                </Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  id={`aut-${category.id}`}
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                  checked={formState.isAutorPrincipal}
+                                  onChange={e =>
+                                    setFormState(s => ({
+                                      ...s,
+                                      isAutorPrincipal: e.target.checked,
+                                    }))
+                                  }
+                                />
+                                <Label htmlFor={`aut-${category.id}`} className="cursor-pointer">
+                                  Autor principal
+                                </Label>
+                              </div>
+                              {level === 'doctoral' ? (
+                                <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
+                                  <input
+                                    id={`diss-${category.id}`}
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                    checked={formState.isDissertacao}
+                                    onChange={e =>
+                                      setFormState(s => ({ ...s, isDissertacao: e.target.checked }))
+                                    }
+                                  />
+                                  <Label htmlFor={`diss-${category.id}`} className="cursor-pointer">
+                                    Fruto de dissertação
+                                  </Label>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
+                                  <input
+                                    id={`enc-${category.id}`}
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                    checked={formState.isEncontroIc}
+                                    onChange={e =>
+                                      setFormState(s => ({ ...s, isEncontroIc: e.target.checked }))
+                                    }
+                                  />
+                                  <Label htmlFor={`enc-${category.id}`} className="cursor-pointer">
+                                    Encontro de IC
+                                  </Label>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (key === 'TEACHING') {
+                        return (
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`qty-${category.id}`}>Quantidade de Semestres</Label>
+                              <Input
+                                id={`qty-${category.id}`}
+                                type="number"
+                                min="1"
+                                value={formState.quantity}
+                                onChange={e =>
+                                  setFormState(s => ({
+                                    ...s,
+                                    quantity: Math.max(1, parseInt(e.target.value) || 1),
+                                  }))
+                                }
+                              />
+                            </div>
+                            {level === 'masters' && (
+                              <div className="space-y-2">
+                                <Label htmlFor={`type-${category.id}`}>Tipo de Atividade</Label>
+                                <select
+                                  id={`type-${category.id}`}
+                                  className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+                                  value={formState.docenciaType}
+                                  onChange={e =>
+                                    setFormState(s => ({ ...s, docenciaType: e.target.value }))
+                                  }
+                                >
+                                  <option value="monitoria">
+                                    Iniciação à docência (Monitoria)
+                                  </option>
+                                  <option value="ies">Docência em IES</option>
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      if (key === 'EVENTS') {
+                        return (
+                          <div className="space-y-2">
+                            <Label htmlFor={`scope-${category.id}`}>
+                              Amplitude / Escopo do Evento
+                            </Label>
+                            <select
+                              id={`scope-${category.id}`}
+                              className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+                              value={formState.eventoType}
+                              onChange={e =>
+                                setFormState(s => ({ ...s, eventoType: e.target.value }))
+                              }
+                            >
+                              <option value="local">Local</option>
+                              <option value="nacional">Amplitude Nacional</option>
+                              <option value="internacional">Amplitude Internacional</option>
+                            </select>
+                          </div>
+                        );
+                      }
+                      if (key === 'ORIENTATION') {
+                        return (
+                          <div className="space-y-2">
+                            <Label htmlFor={`qty-${category.id}`}>
+                              Quantidade de Aluno-Semestres
+                            </Label>
+                            <Input
+                              id={`qty-${category.id}`}
+                              type="number"
+                              min="1"
+                              value={formState.quantity}
+                              onChange={e =>
+                                setFormState(s => ({
+                                  ...s,
+                                  quantity: Math.max(1, parseInt(e.target.value) || 1),
+                                }))
+                              }
+                            />
+                            <p className="text-muted-foreground text-xs">
+                              Ex: 1 aluno por 2 semestres = 2 aluno-semestres
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
                     <FileUploadField
-                      label="Comprovante"
+                      label="Comprovante (PDF ou Imagem)"
                       value={formState.file}
                       onChange={file => setFormState(s => ({ ...s, file }))}
                     />
@@ -428,7 +892,7 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
       {sortedCategories.length > 0 && (
         <Card className="bg-surface-dim/30">
           <CardContent className="flex items-center justify-between p-7">
-            <span className="font-serif text-lg font-semibold">Pontuação total</span>
+            <span className="font-serif text-lg font-semibold">Pontuação total do currículo</span>
             <span className="font-label text-primary text-2xl font-bold">
               {totalScore.toFixed(1)}
             </span>
