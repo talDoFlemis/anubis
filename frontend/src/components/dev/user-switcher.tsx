@@ -83,9 +83,11 @@ function Inner({ position }: { position: Position }) {
     try {
       await api.auth.logout().catch(() => {});
       await queryClient.cancelQueries();
-      queryClient.clear();
       await api.auth.emailLogin({ email, password: PASSWORD });
-      await queryClient.fetchQuery({ ...authQueryOptions, staleTime: 0 });
+      // Invalidate (not clear) so the mounted useAuth() observer refetches and
+      // the navbar picks up the new role. queryClient.clear() destroys Query
+      // objects and orphans active observers, leaving the navbar stale.
+      await queryClient.invalidateQueries();
       navigate({ to: '/' });
       setOpen(false);
     } catch (err) {
