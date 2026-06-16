@@ -73,7 +73,7 @@ export const validationApi = {
   }): Promise<PaginatedValidationCandidates> => {
     return new Promise(resolve => {
       setTimeout(() => {
-        let mockData = [...mockValidationCandidates];
+        let mockData = [...mockValidationCandidates].map(normalizeCandidateValidation);
 
         if (params?.search) {
           const search = params.search.toLowerCase();
@@ -108,11 +108,11 @@ export const validationApi = {
     });
   },
 
-  getDetails: async (enrollmentId: string) => {
-    return { id: enrollmentId };
+  getDetails: async (_enrollmentId: string) => {
+    return { id: _enrollmentId };
   },
 
-  updateScore: async (enrollmentId: string, itemId: string, score: number | null) => {
+  updateScore: async (_enrollmentId: string, _itemId: string, _score: number | null) => {
     return new Promise(resolve => setTimeout(resolve, 500));
   },
 };
