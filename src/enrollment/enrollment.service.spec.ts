@@ -433,8 +433,29 @@ describe('EnrollmentService', () => {
       sigaaCode: 'sigaa-code',
       sigaaReceiptFileId: 'file-uuid',
       primaryThemeId: 'theme-uuid-1',
-      mastersDegrees: [{ university: 'UFC', graduateProgram: 'CC', ira: 8.5, isPrimary: true }],
+      mastersDegrees: [
+        {
+          university: 'UFC',
+          graduateProgram: 'CC',
+          ira: 8.5,
+          isPrimary: true,
+          proofFileId: 'masters-proof-uuid',
+        },
+      ],
     };
+
+    it('rejects doctoral submission without master degree IRA proof', async () => {
+      mockRepository.findById.mockResolvedValueOnce({
+        ...doctoralBase,
+        projectTitle: 'Projeto',
+        projectFileId: 'project-file-uuid',
+        mastersDegrees: [{ university: 'UFC', graduateProgram: 'CC', ira: 8.5, isPrimary: true }],
+      });
+
+      await expect(service.submit('user-uuid', 'enrollment-uuid')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
 
     it('rejects doctoral submission without project title and file', async () => {
       mockRepository.findById.mockResolvedValueOnce({
@@ -723,6 +744,84 @@ describe('EnrollmentService', () => {
       await service.uploadProjectFile('user-uuid', 'enrollment-uuid', {} as Express.Multer.File);
 
       expect(mockFileStorageService.delete).toHaveBeenCalledWith('old-file');
+    });
+  });
+
+  describe('uploadMastersDegreeProof', () => {
+    const doctoralWithDegrees = {
+      ...mockEnrollment,
+      level: 'doctoral',
+      status: 'draft',
+      mastersDegrees: [{ university: 'UFC', graduateProgram: 'CC', ira: 8.5, isPrimary: true }],
+    };
+
+    it('uploads proof for the master degree at the given index', async () => {
+      mockRepository.findById.mockResolvedValueOnce(doctoralWithDegrees);
+      mockRepository.update.mockImplementationOnce((_id, data) => ({
+        ...doctoralWithDegrees,
+        ...data,
+      }));
+
+      const result = await service.uploadMastersDegreeProof(
+        'user-uuid',
+        'enrollment-uuid',
+        0,
+        {} as Express.Multer.File,
+      );
+
+      expect(mockFileStorageService.upload).toHaveBeenCalled();
+      expect(result.mastersDegrees?.[0].proofFileId).toBe('file-uuid');
+    });
+
+    it('rejects when the index is out of range', async () => {
+      mockRepository.findById.mockResolvedValueOnce(doctoralWithDegrees);
+
+      await expect(
+        service.uploadMastersDegreeProof(
+          'user-uuid',
+          'enrollment-uuid',
+          5,
+          {} as Express.Multer.File,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rejects when enrollment is not doctoral', async () => {
+      mockRepository.findById.mockResolvedValueOnce(mockEnrollment); // masters
+
+      await expect(
+        service.uploadMastersDegreeProof(
+          'user-uuid',
+          'enrollment-uuid',
+          0,
+          {} as Express.Multer.File,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('replaces the previous proof file', async () => {
+      mockRepository.findById.mockResolvedValueOnce({
+        ...doctoralWithDegrees,
+        mastersDegrees: [
+          {
+            university: 'UFC',
+            graduateProgram: 'CC',
+            ira: 8.5,
+            isPrimary: true,
+            proofFileId: 'old',
+          },
+        ],
+      });
+      mockRepository.update.mockResolvedValueOnce(doctoralWithDegrees);
+
+      await service.uploadMastersDegreeProof(
+        'user-uuid',
+        'enrollment-uuid',
+        0,
+        {} as Express.Multer.File,
+      );
+
+      expect(mockFileStorageService.delete).toHaveBeenCalledWith('old');
     });
   });
 

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -303,5 +304,44 @@ export class EnrollmentController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<{ url: string; fileName: string }> {
     return this.enrollmentService.getProjectFileUrl(user, id);
+  }
+
+  @Post(':id/masters-degrees/:index/proof')
+  @Roles(RoleEnum.candidate)
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: "Upload master's degree IRA proof (doctoral only)" })
+  @ApiConsumes('multipart/form-data')
+  @ApiOkResponse({ type: EnrollmentResponseDto })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  uploadMastersDegreeProof(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('index', ParseIntPipe) index: number,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<EnrollmentResponseDto> {
+    return this.enrollmentService.uploadMastersDegreeProof(user.id, id, index, file);
+  }
+
+  @Get(':id/masters-degrees/:index/proof')
+  @Roles(
+    RoleEnum.candidate,
+    RoleEnum.professor,
+    RoleEnum.mdccSecretary,
+    RoleEnum.postGraduateCoordinator,
+    RoleEnum.postGraduateViceCoordinator,
+  )
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Get master's degree IRA proof URL" })
+  @ApiOkResponse()
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  getMastersDegreeProof(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('index', ParseIntPipe) index: number,
+  ): Promise<{ url: string; fileName: string }> {
+    return this.enrollmentService.getMastersDegreeProofUrl(user, id, index);
   }
 }

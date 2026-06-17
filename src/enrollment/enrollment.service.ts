@@ -263,6 +263,18 @@ export class EnrollmentService {
         if (primaryCount !== 1) {
           errors.push('Exatamente um curso de mestrado deve ser marcado como principal.');
         }
+
+        const missingIra = enrollment.mastersDegrees.some(
+          d => d.ira === undefined || d.ira === null,
+        );
+        if (missingIra) {
+          errors.push('O IRA de cada curso de mestrado é obrigatório.');
+        }
+
+        const missingProof = enrollment.mastersDegrees.some(d => !d.proofFileId);
+        if (missingProof) {
+          errors.push('O comprovante do IRA de cada curso de mestrado é obrigatório.');
+        }
       }
 
       if (!enrollment.projectTitle) {
@@ -438,6 +450,12 @@ export class EnrollmentService {
 
     if (enrollment.projectFileId) {
       fileIdsToDelete.push(enrollment.projectFileId);
+    }
+
+    for (const degree of enrollment.mastersDegrees ?? []) {
+      if (degree.proofFileId) {
+        fileIdsToDelete.push(degree.proofFileId);
+      }
     }
 
     const cvItemFileIds = await this.enrollmentRepository.findCvItemFileIds(id);
@@ -648,6 +666,92 @@ export class EnrollmentService {
 
     const fileRecord = await this.fileStorageService.findById(enrollment.projectFileId);
     const url = await this.fileStorageService.getSignedDownloadUrl(enrollment.projectFileId);
+    return { url, fileName: fileRecord.originalName };
+  }
+
+  async uploadMastersDegreeProof(
+    userId: string,
+    id: string,
+    index: number,
+    file: Express.Multer.File,
+  ): Promise<Enrollment> {
+    const enrollment = await this.findById(id);
+
+    if (enrollment.candidateId !== userId) {
+      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
+    }
+
+    if (enrollment.level !== 'doctoral') {
+      throw new BadRequestException(
+        'Informações de mestrado são exclusivas para inscrições de doutorado.',
+      );
+    }
+
+    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
+      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
+    }
+
+    const degrees = enrollment.mastersDegrees;
+    if (!degrees || index < 0 || index >= degrees.length) {
+      throw new NotFoundException('Curso de mestrado não encontrado.');
+    }
+
+    const existing = degrees[index];
+    if (existing.proofFileId) {
+      await this.fileStorageService.delete(existing.proofFileId);
+    }
+
+    const fileRecord = await this.fileStorageService.upload(file, userId, 'masters-degree-proofs');
+
+    const updatedDegrees = degrees.map((degree, i) =>
+      i === index ? { ...degree, proofFileId: fileRecord.id } : degree,
+    );
+
+    const now = new Date();
+    const updated = await this.enrollmentRepository.update(id, {
+      mastersDegrees: updatedDegrees,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
+
+    this.logger.log(`Comprovante de mestrado enviado para inscrição ${id} (índice ${index})`);
+    return updated;
+  }
+
+  async getMastersDegreeProofUrl(
+    user: User,
+    id: string,
+    index: number,
+  ): Promise<{ url: string; fileName: string }> {
+    const enrollment = await this.findById(id);
+
+    const isOwner = enrollment.candidateId === user.id;
+    const isStaff = [
+      RoleEnum.professor,
+      RoleEnum.mdccSecretary,
+      RoleEnum.postGraduateCoordinator,
+      RoleEnum.postGraduateViceCoordinator,
+    ].includes(user.role);
+
+    if (!isOwner && !isStaff) {
+      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
+    }
+
+    const degrees = enrollment.mastersDegrees;
+    if (!degrees || index < 0 || index >= degrees.length) {
+      throw new NotFoundException('Curso de mestrado não encontrado.');
+    }
+
+    const proofFileId = degrees[index].proofFileId;
+    if (!proofFileId) {
+      throw new NotFoundException('Comprovante do mestrado não encontrado.');
+    }
+
+    const fileRecord = await this.fileStorageService.findById(proofFileId);
+    const url = await this.fileStorageService.getSignedDownloadUrl(proofFileId);
     return { url, fileName: fileRecord.originalName };
   }
 }

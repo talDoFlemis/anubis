@@ -41,6 +41,8 @@ export interface MastersDegreeData {
   graduateProgram: string;
   ira: number;
   isPrimary: boolean;
+  /** Comprovante (PDF) do IRA/histórico do mestrado. */
+  proofFileId?: string;
 }
 
 export const enrollments = pgTable(
