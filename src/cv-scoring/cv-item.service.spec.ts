@@ -86,6 +86,8 @@ describe('CvItemService', () => {
           },
         ],
         total: 10,
+        base: 6,
+        finalScore: 16,
       }),
     };
 
@@ -395,7 +397,11 @@ describe('CvItemService', () => {
         'masters',
       );
       expect(mockCvScoringService.calculateScoreFromItems).toHaveBeenCalled();
-      expect(mockCvItemRepository.updateEnrollmentScore).toHaveBeenCalled();
+      // base (6) + earned (10) = 16.00
+      expect(mockCvItemRepository.updateEnrollmentScore).toHaveBeenCalledWith(
+        'enrollment-uuid',
+        '16.00',
+      );
     });
   });
 });

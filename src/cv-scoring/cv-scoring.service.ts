@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { CvScoringCategorySelect } from '../database/schema/cv-scoring';
-import { QUALIS_POINTS, type CapesClassification } from './constants/cv-scoring-config';
+import {
+  BASE_CV_SCORE,
+  QUALIS_POINTS,
+  type CapesClassification,
+} from './constants/cv-scoring-config';
 import { CvScoringRepository } from './infrastructure/persistence/cv-scoring.repository';
 
 export interface CvItemForScoring {
@@ -30,7 +34,12 @@ export interface CategoryScoreBreakdown {
 
 export interface ScoreBreakdown {
   categories: CategoryScoreBreakdown[];
+  /** Pontuação obtida pelo candidato nas categorias (sem a base). */
   total: number;
+  /** Pontuação-base do currículo (BASE_CV_SCORE). */
+  base: number;
+  /** Nota final do CV: base + total. */
+  finalScore: number;
 }
 
 @Injectable()
@@ -183,6 +192,12 @@ export class CvScoringService {
       total += score;
     }
 
-    return { categories: categoryBreakdown, total: parseFloat(total.toFixed(2)) };
+    const earned = parseFloat(total.toFixed(2));
+    return {
+      categories: categoryBreakdown,
+      total: earned,
+      base: BASE_CV_SCORE,
+      finalScore: parseFloat((BASE_CV_SCORE + earned).toFixed(2)),
+    };
   }
 }

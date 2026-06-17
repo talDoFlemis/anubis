@@ -133,6 +133,8 @@ describe('CvScoringService', () => {
       expect(result.categories[0].score).toBe(0.9);
       expect(result.categories[1].score).toBe(1.0);
       expect(result.total).toBe(1.9);
+      expect(result.base).toBe(6);
+      expect(result.finalScore).toBe(7.9);
     });
   });
 
