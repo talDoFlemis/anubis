@@ -41,8 +41,6 @@ export class CandidateDrizzleRepository extends CandidateRepository {
         role: users.role,
         status: users.status,
         onboardingCompleted: users.onboardingCompleted,
-        universityOfOrigin: candidates.universityOfOrigin,
-        ira: candidates.ira,
         poscomp: candidates.poscomp,
         createdAt: candidates.createdAt,
         updatedAt: candidates.updatedAt,
@@ -82,15 +80,6 @@ export class CandidateDrizzleRepository extends CandidateRepository {
     if (filters.onboardingCompleted !== undefined) {
       conditions.push(eq(users.onboardingCompleted, filters.onboardingCompleted));
     }
-    if (filters.universityOfOrigin) {
-      conditions.push(ilike(candidates.universityOfOrigin, `%${filters.universityOfOrigin}%`));
-    }
-    if (filters.iraMin !== undefined) {
-      conditions.push(gte(sql`${candidates.ira}::numeric`, String(filters.iraMin)));
-    }
-    if (filters.iraMax !== undefined) {
-      conditions.push(lte(sql`${candidates.ira}::numeric`, String(filters.iraMax)));
-    }
     if (filters.poscompMin !== undefined) {
       conditions.push(gte(candidates.poscomp, filters.poscompMin));
     }
@@ -108,8 +97,6 @@ export class CandidateDrizzleRepository extends CandidateRepository {
         role: users.role,
         status: users.status,
         onboardingCompleted: users.onboardingCompleted,
-        universityOfOrigin: candidates.universityOfOrigin,
-        ira: candidates.ira,
         poscomp: candidates.poscomp,
         createdAt: candidates.createdAt,
         updatedAt: candidates.updatedAt,
@@ -135,25 +122,16 @@ export class CandidateDrizzleRepository extends CandidateRepository {
     });
   }
 
-  async upsertByUserId(params: {
-    userId: string;
-    universityOfOrigin: string;
-    ira: string;
-    poscomp?: number | null;
-  }): Promise<Candidate> {
+  async upsertByUserId(params: { userId: string; poscomp?: number | null }): Promise<Candidate> {
     const [row] = await this.db
       .insert(candidates)
       .values({
         userId: params.userId,
-        universityOfOrigin: params.universityOfOrigin,
-        ira: params.ira,
         poscomp: params.poscomp ?? null,
       })
       .onConflictDoUpdate({
         target: candidates.userId,
         set: {
-          universityOfOrigin: params.universityOfOrigin,
-          ira: params.ira,
           poscomp: params.poscomp ?? null,
           updatedAt: new Date(),
         },
@@ -166,8 +144,6 @@ export class CandidateDrizzleRepository extends CandidateRepository {
   private toDomain(row: CandidateRow): Candidate {
     return {
       userId: row.userId,
-      universityOfOrigin: row.universityOfOrigin,
-      ira: row.ira,
       poscomp: row.poscomp,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -183,8 +159,6 @@ export class CandidateDrizzleRepository extends CandidateRepository {
     role: typeof users.$inferSelect.role;
     status: typeof users.$inferSelect.status;
     onboardingCompleted: boolean;
-    universityOfOrigin: string;
-    ira: string | null;
     poscomp: number | null;
     createdAt: Date;
     updatedAt: Date;
@@ -198,8 +172,6 @@ export class CandidateDrizzleRepository extends CandidateRepository {
       role: row.role as RoleEnum,
       status: row.status as StatusEnum,
       onboardingCompleted: row.onboardingCompleted,
-      universityOfOrigin: row.universityOfOrigin,
-      ira: row.ira,
       poscomp: row.poscomp,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

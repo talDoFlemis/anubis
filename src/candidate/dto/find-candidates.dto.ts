@@ -8,7 +8,6 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -104,27 +103,6 @@ export class FindCandidatesDto extends PaginationQueryDto {
   @Transform(({ value }) => toOptionalBoolean(value))
   @IsBoolean()
   onboardingCompleted?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => toTrimmedString(value))
-  @IsString()
-  @MaxLength(255)
-  universityOfOrigin?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => toOptionalNumber(value))
-  @Min(0)
-  @Max(10)
-  iraMin?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => toOptionalNumber(value))
-  @Min(0)
-  @Max(10)
-  iraMax?: number;
 
   @ApiPropertyOptional()
   @IsOptional()

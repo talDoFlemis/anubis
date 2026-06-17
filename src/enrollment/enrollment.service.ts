@@ -123,11 +123,18 @@ export class EnrollmentService {
     }
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (dto.undergradUniversity !== undefined)
+      updateData.undergradUniversity = dto.undergradUniversity;
+    if (dto.undergradCourse !== undefined) updateData.undergradCourse = dto.undergradCourse;
+    if (dto.undergradDegreeType !== undefined)
+      updateData.undergradDegreeType = dto.undergradDegreeType;
+    if (dto.ira !== undefined) updateData.ira = dto.ira;
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.justification !== undefined) updateData.justification = dto.justification;
     if (dto.sigaaCode !== undefined) updateData.sigaaCode = dto.sigaaCode;
     if (dto.declaration !== undefined) updateData.declaration = dto.declaration;
     if (dto.poscomp !== undefined) updateData.poscomp = dto.poscomp;
+    if (dto.projectTitle !== undefined) updateData.projectTitle = dto.projectTitle;
 
     const updated = await this.enrollmentRepository.update(id, updateData);
 
@@ -159,26 +166,32 @@ export class EnrollmentService {
       throw new BadRequestException('O período de inscrição não está mais aberto.');
     }
 
-    if (dto.primaryThemeId === dto.secondaryThemeId) {
+    const secondaryThemeId = dto.secondaryThemeId ?? null;
+
+    if (secondaryThemeId !== null && dto.primaryThemeId === secondaryThemeId) {
       throw new BadRequestException('Os temas primário e secundário devem ser diferentes.');
     }
 
     const primaryTheme = await this.researchThemeService.findById(dto.primaryThemeId);
-    const secondaryTheme = await this.researchThemeService.findById(dto.secondaryThemeId);
-
-    if (
-      (primaryTheme.level as string) !== enrollment.level ||
-      (secondaryTheme.level as string) !== enrollment.level
-    ) {
+    if ((primaryTheme.level as string) !== enrollment.level) {
       throw new BadRequestException(
         'Os temas selecionados devem ser compatíveis com o nível da inscrição.',
       );
     }
 
+    if (secondaryThemeId !== null) {
+      const secondaryTheme = await this.researchThemeService.findById(secondaryThemeId);
+      if ((secondaryTheme.level as string) !== enrollment.level) {
+        throw new BadRequestException(
+          'Os temas selecionados devem ser compatíveis com o nível da inscrição.',
+        );
+      }
+    }
+
     const now = new Date();
     const updated = await this.enrollmentRepository.update(id, {
       primaryThemeId: dto.primaryThemeId,
-      secondaryThemeId: dto.secondaryThemeId,
+      secondaryThemeId,
       updatedAt: now,
     });
 
@@ -208,6 +221,18 @@ export class EnrollmentService {
 
     const errors: string[] = [];
 
+    if (!enrollment.undergradUniversity) {
+      errors.push('A universidade de graduação é obrigatória.');
+    }
+    if (!enrollment.undergradCourse) {
+      errors.push('O curso de graduação é obrigatório.');
+    }
+    if (!enrollment.undergradDegreeType) {
+      errors.push('O tipo de graduação é obrigatório.');
+    }
+    if (!enrollment.ira) {
+      errors.push('O IRA é obrigatório.');
+    }
     if (!enrollment.phone) {
       errors.push('O campo telefone é obrigatório.');
     }
@@ -226,9 +251,7 @@ export class EnrollmentService {
     if (!enrollment.primaryThemeId) {
       errors.push('O tema primário é obrigatório.');
     }
-    if (!enrollment.secondaryThemeId) {
-      errors.push('O tema secundário é obrigatório.');
-    }
+    // Tema secundário é opcional: candidato pode optar por "Não desejo informar".
 
     if (enrollment.level === 'doctoral') {
       if (!enrollment.mastersDegrees || enrollment.mastersDegrees.length === 0) {
@@ -240,6 +263,13 @@ export class EnrollmentService {
         if (primaryCount !== 1) {
           errors.push('Exatamente um curso de mestrado deve ser marcado como principal.');
         }
+      }
+
+      if (!enrollment.projectTitle) {
+        errors.push('O título do projeto é obrigatório para inscrições de doutorado.');
+      }
+      if (!enrollment.projectFileId) {
+        errors.push('O arquivo PDF do projeto é obrigatório para inscrições de doutorado.');
       }
     }
 
@@ -283,7 +313,9 @@ export class EnrollmentService {
     if (user && user.email) {
       try {
         const primaryTheme = await this.researchThemeService.findById(updated.primaryThemeId!);
-        const secondaryTheme = await this.researchThemeService.findById(updated.secondaryThemeId!);
+        const secondaryThemeTitle = updated.secondaryThemeId
+          ? (await this.researchThemeService.findById(updated.secondaryThemeId)).title
+          : 'Não informado';
 
         const title = 'Inscrição Submetida com Sucesso - MDCC';
         const body = `
@@ -295,7 +327,7 @@ export class EnrollmentService {
             <li><strong>Nível:</strong> ${updated.level === 'masters' ? 'Mestrado' : 'Doutorado'}</li>
             <li><strong>Código SIGAA:</strong> ${updated.sigaaCode}</li>
             <li><strong>Tema de Pesquisa Primário:</strong> ${primaryTheme.title}</li>
-            <li><strong>Tema de Pesquisa Secundário:</strong> ${secondaryTheme.title}</li>
+            <li><strong>Tema de Pesquisa Secundário:</strong> ${secondaryThemeTitle}</li>
           </ul>
           <br/>
           <p>Atenciosamente,</p>
@@ -402,6 +434,10 @@ export class EnrollmentService {
 
     if (enrollment.poscomp?.receiptFileId) {
       fileIdsToDelete.push(enrollment.poscomp.receiptFileId);
+    }
+
+    if (enrollment.projectFileId) {
+      fileIdsToDelete.push(enrollment.projectFileId);
     }
 
     const cvItemFileIds = await this.enrollmentRepository.findCvItemFileIds(id);
@@ -547,6 +583,71 @@ export class EnrollmentService {
 
     const fileRecord = await this.fileStorageService.findById(receiptFileId);
     const url = await this.fileStorageService.getSignedDownloadUrl(receiptFileId);
+    return { url, fileName: fileRecord.originalName };
+  }
+
+  async uploadProjectFile(
+    userId: string,
+    id: string,
+    file: Express.Multer.File,
+  ): Promise<Enrollment> {
+    const enrollment = await this.findById(id);
+
+    if (enrollment.candidateId !== userId) {
+      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
+    }
+
+    if (enrollment.level !== 'doctoral') {
+      throw new BadRequestException(
+        'O arquivo do projeto é exclusivo para inscrições de doutorado.',
+      );
+    }
+
+    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
+      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
+    }
+
+    if (enrollment.projectFileId) {
+      await this.fileStorageService.delete(enrollment.projectFileId);
+    }
+
+    const fileRecord = await this.fileStorageService.upload(file, userId, 'project-files');
+
+    const now = new Date();
+    const updated = await this.enrollmentRepository.update(id, {
+      projectFileId: fileRecord.id,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
+
+    this.logger.log(`Arquivo do projeto enviado para inscrição: ${id}`);
+    return updated;
+  }
+
+  async getProjectFileUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
+    const enrollment = await this.findById(id);
+
+    const isOwner = enrollment.candidateId === user.id;
+    const isStaff = [
+      RoleEnum.professor,
+      RoleEnum.mdccSecretary,
+      RoleEnum.postGraduateCoordinator,
+      RoleEnum.postGraduateViceCoordinator,
+    ].includes(user.role);
+
+    if (!isOwner && !isStaff) {
+      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
+    }
+
+    if (!enrollment.projectFileId) {
+      throw new NotFoundException('Arquivo do projeto não encontrado.');
+    }
+
+    const fileRecord = await this.fileStorageService.findById(enrollment.projectFileId);
+    const url = await this.fileStorageService.getSignedDownloadUrl(enrollment.projectFileId);
     return { url, fileName: fileRecord.originalName };
   }
 }

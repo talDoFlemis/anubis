@@ -6,6 +6,10 @@ export class Enrollment {
   enrollmentPeriodId!: string;
   level!: string;
   status!: string;
+  undergradUniversity!: string | null;
+  undergradCourse!: string | null;
+  undergradDegreeType!: string | null;
+  ira!: string | null;
   phone!: string | null;
   justification!: string | null;
   sigaaCode!: string | null;
@@ -15,6 +19,8 @@ export class Enrollment {
   secondaryThemeId!: string | null;
   poscomp!: PoscompData | null;
   mastersDegrees!: MastersDegreeData[] | null;
+  projectTitle!: string | null;
+  projectFileId!: string | null;
   scoreDraft!: string | null;
   submittedAt!: Date | null;
   createdAt!: Date;

@@ -51,23 +51,17 @@ describe('CandidateDrizzleRepository (integration)', () => {
 
     const created = await candidateRepository.upsertByUserId({
       userId: user.id,
-      universityOfOrigin: 'UFRN',
-      ira: '8.75',
       poscomp: 720,
     });
 
     expect(created.userId).toBe(user.id);
-    expect(created.universityOfOrigin).toBe('UFRN');
+    expect(created.poscomp).toBe(720);
 
     const updated = await candidateRepository.upsertByUserId({
       userId: user.id,
-      universityOfOrigin: 'USP',
-      ira: '9.10',
       poscomp: 800,
     });
 
-    expect(updated.universityOfOrigin).toBe('USP');
-    expect(updated.ira).toBe('9.10');
     expect(updated.poscomp).toBe(800);
   });
 
@@ -90,8 +84,6 @@ describe('CandidateDrizzleRepository (integration)', () => {
 
     await candidateRepository.upsertByUserId({
       userId: user.id,
-      universityOfOrigin: 'UFRN',
-      ira: '8.75',
       poscomp: 720,
     });
 
@@ -102,8 +94,6 @@ describe('CandidateDrizzleRepository (integration)', () => {
       email: 'candidate@example.com',
       firstName: 'Jane',
       lastName: 'Doe',
-      universityOfOrigin: 'UFRN',
-      ira: '8.75',
       poscomp: 720,
     });
   });
@@ -142,23 +132,19 @@ describe('CandidateDrizzleRepository (integration)', () => {
 
     await candidateRepository.upsertByUserId({
       userId: jane.id,
-      universityOfOrigin: 'UFRN',
-      ira: '8.50',
       poscomp: 700,
     });
     await candidateRepository.upsertByUserId({
       userId: john.id,
-      universityOfOrigin: 'USP',
-      ira: '9.20',
       poscomp: 800,
     });
 
-    const byUniversity = await candidateRepository.findAllByFilters({
-      universityOfOrigin: 'UFRN',
+    const byEmail = await candidateRepository.findAllByFilters({
+      email: 'jane@example.com',
     });
-    expect(byUniversity.data).toHaveLength(1);
-    expect(byUniversity.data[0]?.userId).toBe(jane.id);
-    expect(byUniversity.pagination.total).toBe(1);
+    expect(byEmail.data).toHaveLength(1);
+    expect(byEmail.data[0]?.userId).toBe(jane.id);
+    expect(byEmail.pagination.total).toBe(1);
 
     const byStatus = await candidateRepository.findAllByFilters({
       status: StatusEnum.inactive,
@@ -173,7 +159,7 @@ describe('CandidateDrizzleRepository (integration)', () => {
     expect(byFirstName.data[0]?.userId).toBe(jane.id);
   });
 
-  it('filters joined candidate profiles by ira and poscomp range', async () => {
+  it('filters joined candidate profiles by poscomp range', async () => {
     const low = await userRepository.create({
       authProvider: AuthProvidersEnum.email,
       providerSubject: 'low@example.com',
@@ -207,23 +193,12 @@ describe('CandidateDrizzleRepository (integration)', () => {
 
     await candidateRepository.upsertByUserId({
       userId: low.id,
-      universityOfOrigin: 'UFC',
-      ira: '7.20',
       poscomp: 500,
     });
     await candidateRepository.upsertByUserId({
       userId: high.id,
-      universityOfOrigin: 'UFC',
-      ira: '9.10',
       poscomp: 810,
     });
-
-    const iraRange = await candidateRepository.findAllByFilters({
-      iraMin: 8,
-      iraMax: 10,
-    });
-    expect(iraRange.data).toHaveLength(1);
-    expect(iraRange.data[0]?.userId).toBe(high.id);
 
     const poscompRange = await candidateRepository.findAllByFilters({
       poscompMin: 700,
@@ -267,13 +242,11 @@ describe('CandidateDrizzleRepository (integration)', () => {
 
     await candidateRepository.upsertByUserId({
       userId: first.id,
-      universityOfOrigin: 'UFC',
-      ira: '8.5',
+      poscomp: 700,
     });
     await candidateRepository.upsertByUserId({
       userId: second.id,
-      universityOfOrigin: 'UFC',
-      ira: '9.0',
+      poscomp: 750,
     });
 
     const pageOne = await candidateRepository.findAllByFilters({
