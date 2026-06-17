@@ -4,10 +4,12 @@ import { getLoggerToken } from 'nestjs-pino';
 import { CvScoringCategoryService } from '../cv-scoring/cv-scoring-category.service';
 import { EnrollmentPeriodService } from './enrollment-period.service';
 import { EnrollmentPeriodRepository } from './infrastructure/persistence/enrollment-period.repository';
+import { EnrollmentRepository } from './infrastructure/persistence/enrollment.repository';
 
 describe('EnrollmentPeriodService', () => {
   let service: EnrollmentPeriodService;
   let mockRepository: Record<string, jest.Mock>;
+  let mockEnrollmentRepository: Record<string, jest.Mock>;
   let mockCvScoringCategoryService: Record<string, jest.Mock>;
 
   const mockPeriod = {
@@ -34,6 +36,10 @@ describe('EnrollmentPeriodService', () => {
       syncStatuses: jest.fn().mockResolvedValue({ opened: [], closed: [], skipped: [] }),
     };
 
+    mockEnrollmentRepository = {
+      closeDraftsByPeriods: jest.fn().mockResolvedValue(0),
+    };
+
     mockCvScoringCategoryService = {
       create: jest.fn().mockResolvedValue(undefined),
     };
@@ -42,6 +48,7 @@ describe('EnrollmentPeriodService', () => {
       providers: [
         EnrollmentPeriodService,
         { provide: EnrollmentPeriodRepository, useValue: mockRepository },
+        { provide: EnrollmentRepository, useValue: mockEnrollmentRepository },
         { provide: CvScoringCategoryService, useValue: mockCvScoringCategoryService },
         {
           provide: getLoggerToken(EnrollmentPeriodService.name),
@@ -134,6 +141,10 @@ describe('EnrollmentPeriodService', () => {
 
       expect(result.status).toBe('closed');
       expect(mockRepository.update).toHaveBeenCalled();
+      expect(mockEnrollmentRepository.closeDraftsByPeriods).toHaveBeenCalledWith(
+        ['period-uuid'],
+        expect.any(Date),
+      );
     });
   });
 
@@ -166,14 +177,29 @@ describe('EnrollmentPeriodService', () => {
       expect(mockRepository.syncStatuses).toHaveBeenCalled();
     });
 
-    it('closes expired open periods', async () => {
+    it('closes expired open periods and their unsubmitted drafts', async () => {
       mockRepository.syncStatuses.mockResolvedValueOnce({
         opened: [],
         closed: [{ id: 'closed-uuid' }],
-        skipped: [],
+        skipped: [{ id: 'skipped-uuid' }],
       });
 
       await expect(service.syncStatuses()).resolves.toBeUndefined();
+      expect(mockEnrollmentRepository.closeDraftsByPeriods).toHaveBeenCalledWith(
+        ['closed-uuid', 'skipped-uuid'],
+        expect.any(Date),
+      );
+    });
+
+    it('does not close drafts when no period closed', async () => {
+      mockRepository.syncStatuses.mockResolvedValueOnce({
+        opened: [{ id: 'opened-uuid' }],
+        closed: [],
+        skipped: [],
+      });
+
+      await service.syncStatuses();
+      expect(mockEnrollmentRepository.closeDraftsByPeriods).not.toHaveBeenCalled();
     });
   });
 
