@@ -40,8 +40,6 @@ export interface CandidateOnboardingData {
   firstName: string;
   lastName: string;
   cpf: string;
-  universityOfOrigin: string;
-  ira: string;
   poscomp?: number;
 }
 
