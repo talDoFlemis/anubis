@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileUploadField } from '@/features/enrollment/components/file-upload-field';
 import {
+  BASE_CV_SCORE,
   useCreateCvItem,
   useCvItems,
   useRemoveCvItem,
@@ -71,10 +72,6 @@ const INITIAL_FORM_STATE: AddItemFormState = {
   docenciaType: 'monitoria',
   eventoType: 'local',
 };
-
-// Pontuação-base do currículo: todo candidato parte de 6 pontos, somando a
-// pontuação obtida nas categorias. Mantém paridade com o backend (BASE_CV_SCORE).
-const BASE_CV_SCORE = 6;
 
 // ── Helpers ──────────────────────────────────────────────────────────
 

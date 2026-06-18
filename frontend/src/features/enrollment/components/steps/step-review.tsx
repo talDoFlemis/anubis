@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { BASE_CV_SCORE } from '@/features/enrollment/hooks/use-cv-scoring';
 import {
   useResearchThemes,
   useSubmitEnrollment,
@@ -36,9 +37,6 @@ const DEGREE_TYPE_LABELS: Record<string, string> = {
   licenciatura: 'Licenciatura',
   tecnologo: 'Tecnólogo',
 };
-
-// Pontuação-base do currículo: candidato sem itens parte de 6 pontos.
-const BASE_CV_SCORE = 6;
 
 type StepRoute =
   | '/enrollment/new/level'
