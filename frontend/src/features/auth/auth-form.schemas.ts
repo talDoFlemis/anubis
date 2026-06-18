@@ -10,7 +10,6 @@ export const signUpSchema = z.object({
   lastName: z.string().trim().min(1, 'Informe o sobrenome.'),
   cpf: z.string().trim().min(1, 'Informe o CPF.'),
   universityOfOrigin: z.string().trim().min(1, 'Informe a universidade.'),
-  ira: z.string().trim().min(1, 'Informe o IRA.'),
   email: z.string().trim().min(1, 'Informe o e-mail.').email('E-mail invalido.'),
   password: z.string().min(6, 'A senha deve ter no minimo 6 caracteres.'),
 });

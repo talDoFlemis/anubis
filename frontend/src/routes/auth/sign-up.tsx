@@ -31,7 +31,6 @@ function SignUpPage() {
       lastName: '',
       cpf: '',
       universityOfOrigin: '',
-      ira: '',
       email: '',
       password: '',
     } satisfies SignUpFormData,
@@ -186,32 +185,6 @@ function SignUpPage() {
             }}
           </form.Field>
         </div>
-
-        <form.Field name="ira">
-          {field => {
-            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-            const fieldErrors = toFieldErrors(field.state.meta.errors);
-
-            return (
-              <Field data-invalid={isInvalid} className="space-y-2">
-                <FieldLabel htmlFor={field.name}>IRA</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id={field.name}
-                    inputMode="decimal"
-                    placeholder="Ex.: 8.75"
-                    value={field.state.value}
-                    onChange={event => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                    aria-invalid={isInvalid}
-                    required
-                  />
-                  <FieldError errors={fieldErrors} />
-                </FieldContent>
-              </Field>
-            );
-          }}
-        </form.Field>
 
         <form.Field name="password">
           {field => (
