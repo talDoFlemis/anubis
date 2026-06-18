@@ -24,12 +24,7 @@ export class CandidateService {
     private readonly logger: PinoLogger,
   ) {}
 
-  async createProfile(params: {
-    userId: string;
-    universityOfOrigin: string;
-    ira: string;
-    poscomp?: number | null;
-  }): Promise<void> {
+  async createProfile(params: { userId: string; poscomp?: number | null }): Promise<void> {
     this.logger.debug({ userId: params.userId }, 'Upserting candidate profile');
 
     try {
@@ -76,9 +71,6 @@ export class CandidateService {
 
       await this.candidateRepository.upsertByUserId({
         userId: user.id,
-        universityOfOrigin: dto.universityOfOrigin,
-        ira: dto.ira,
-        poscomp: dto.poscomp ?? null,
       });
 
       this.logger.info({ userId }, 'Candidate onboarding completed');
@@ -129,14 +121,6 @@ export class CandidateService {
 
   async findAll(filters: FindCandidatesDto): Promise<PaginatedResult<CandidateProfile>> {
     this.logger.debug({ filters }, 'Fetching candidates by filters');
-
-    if (
-      filters.iraMin !== undefined &&
-      filters.iraMax !== undefined &&
-      filters.iraMin > filters.iraMax
-    ) {
-      throw new BadRequestException('iraMin nao pode ser maior que iraMax.');
-    }
 
     if (
       filters.poscompMin !== undefined &&

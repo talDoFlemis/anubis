@@ -15,6 +15,7 @@ import type { CreateEnrollmentPeriodDto } from './dto/create-enrollment-period.d
 import { EnrollmentLevel } from './dto/enrollment-level.enum';
 import type { UpdateEnrollmentPeriodDto } from './dto/update-enrollment-period.dto';
 import { EnrollmentPeriodRepository } from './infrastructure/persistence/enrollment-period.repository';
+import { EnrollmentRepository } from './infrastructure/persistence/enrollment.repository';
 
 @Injectable()
 export class EnrollmentPeriodService {
@@ -22,6 +23,7 @@ export class EnrollmentPeriodService {
 
   constructor(
     private readonly enrollmentPeriodRepository: EnrollmentPeriodRepository,
+    private readonly enrollmentRepository: EnrollmentRepository,
     private readonly cvScoringCategoryService: CvScoringCategoryService,
   ) {}
 
@@ -148,7 +150,11 @@ export class EnrollmentPeriodService {
       throw new NotFoundException('Período de inscrição não encontrado.');
     }
 
-    this.logger.log('Período de inscrição fechado manualmente');
+    const closedDrafts = await this.enrollmentRepository.closeDraftsByPeriods([id], now);
+
+    this.logger.log(
+      `Período de inscrição fechado manualmente (${closedDrafts} rascunho(s) encerrado(s))`,
+    );
     return updated;
   }
 
@@ -186,6 +192,18 @@ export class EnrollmentPeriodService {
       this.logger.log(
         `Períodos agendados expirados fechados: ${result.skipped.map(r => r.id).join(', ')}`,
       );
+    }
+
+    // Encerra rascunhos não submetidos dos períodos que acabaram de fechar.
+    const closedPeriodIds = [...result.closed, ...result.skipped].map(r => r.id);
+    if (closedPeriodIds.length > 0) {
+      const closedDrafts = await this.enrollmentRepository.closeDraftsByPeriods(
+        closedPeriodIds,
+        now,
+      );
+      if (closedDrafts > 0) {
+        this.logger.log(`Rascunhos encerrados automaticamente: ${closedDrafts}`);
+      }
     }
   }
 }

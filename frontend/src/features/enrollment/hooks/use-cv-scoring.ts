@@ -2,6 +2,12 @@ import type { CreateCvItemPayload, UpdateCvItemPayload } from '@/lib/api';
 import { api } from '@/lib/api';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+/**
+ * Pontuação base do currículo, somada antes das categorias.
+ * Mantém paridade com o backend (cv-scoring-config BASE_CV_SCORE).
+ */
+export const BASE_CV_SCORE = 6;
+
 // ── Query Options ────────────────────────────────────────────────────
 
 export function scoringCategoriesQueryOptions(periodId: string, level: string) {

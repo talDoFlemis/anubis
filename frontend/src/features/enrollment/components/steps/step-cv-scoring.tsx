@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileUploadField } from '@/features/enrollment/components/file-upload-field';
 import {
+  BASE_CV_SCORE,
   useCreateCvItem,
   useCvItems,
   useRemoveCvItem,
@@ -216,10 +217,10 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
   }, [cvItems]);
 
   const totalScore = useMemo(() => {
-    if (!sortedCategories.length || !cvItems) return 0;
+    if (!sortedCategories.length) return 0;
     return sortedCategories.reduce(
-      (sum, cat) => sum + computeCategoryScore(cvItems, cat, level),
-      0,
+      (sum, cat) => sum + computeCategoryScore(cvItems ?? [], cat, level),
+      BASE_CV_SCORE,
     );
   }, [sortedCategories, cvItems, level]);
 

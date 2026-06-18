@@ -30,8 +30,6 @@ function SignUpPage() {
       firstName: '',
       lastName: '',
       cpf: '',
-      universityOfOrigin: '',
-      ira: '',
       email: '',
       password: '',
     } satisfies SignUpFormData,
@@ -135,71 +133,19 @@ function SignUpPage() {
           )}
         </form.Field>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <form.Field name="cpf">
-            {field => {
-              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-              const fieldErrors = toFieldErrors(field.state.meta.errors);
-
-              return (
-                <Field data-invalid={isInvalid} className="space-y-2">
-                  <FieldLabel htmlFor={field.name}>CPF</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id={field.name}
-                      inputMode="numeric"
-                      placeholder="Somente numeros"
-                      value={field.state.value}
-                      onChange={event => field.handleChange(event.target.value)}
-                      onBlur={field.handleBlur}
-                      aria-invalid={isInvalid}
-                      required
-                    />
-                    <FieldError errors={fieldErrors} />
-                  </FieldContent>
-                </Field>
-              );
-            }}
-          </form.Field>
-          <form.Field name="universityOfOrigin">
-            {field => {
-              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-              const fieldErrors = toFieldErrors(field.state.meta.errors);
-
-              return (
-                <Field data-invalid={isInvalid} className="space-y-2">
-                  <FieldLabel htmlFor={field.name}>Universidade</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id={field.name}
-                      placeholder="Ex.: UFRN"
-                      value={field.state.value}
-                      onChange={event => field.handleChange(event.target.value)}
-                      onBlur={field.handleBlur}
-                      aria-invalid={isInvalid}
-                      required
-                    />
-                    <FieldError errors={fieldErrors} />
-                  </FieldContent>
-                </Field>
-              );
-            }}
-          </form.Field>
-        </div>
-
-        <form.Field name="ira">
+        <form.Field name="cpf">
           {field => {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             const fieldErrors = toFieldErrors(field.state.meta.errors);
 
             return (
               <Field data-invalid={isInvalid} className="space-y-2">
-                <FieldLabel htmlFor={field.name}>IRA</FieldLabel>
+                <FieldLabel htmlFor={field.name}>CPF</FieldLabel>
                 <FieldContent>
                   <Input
                     id={field.name}
-                    inputMode="decimal"
-                    placeholder="Ex.: 8.75"
+                    inputMode="numeric"
+                    placeholder="Somente numeros"
                     value={field.state.value}
                     onChange={event => field.handleChange(event.target.value)}
                     onBlur={field.handleBlur}

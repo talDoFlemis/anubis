@@ -24,8 +24,6 @@ describe('CandidateController', () => {
     role: RoleEnum.candidate,
     status: StatusEnum.active,
     onboardingCompleted: true,
-    universityOfOrigin: 'UFRN',
-    ira: '8.50',
     poscomp: 700,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -90,7 +88,7 @@ describe('CandidateController', () => {
       }),
     );
 
-    await expect(controller.findAll({ universityOfOrigin: 'UFRN' })).resolves.toEqual(
+    await expect(controller.findAll({ poscompMin: 600 })).resolves.toEqual(
       buildPaginatedResult({
         data: [candidateProfile],
         page: 1,
@@ -99,7 +97,7 @@ describe('CandidateController', () => {
       }),
     );
     expect(candidateService.findAll).toHaveBeenCalledWith({
-      universityOfOrigin: 'UFRN',
+      poscompMin: 600,
     });
   });
 });

@@ -10,8 +10,6 @@ export class CandidateProfile {
   role!: RoleEnum;
   status!: StatusEnum;
   onboardingCompleted!: boolean;
-  universityOfOrigin!: string;
-  ira!: string | null;
   poscomp!: number | null;
   createdAt!: Date;
   updatedAt!: Date;

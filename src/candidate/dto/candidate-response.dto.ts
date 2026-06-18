@@ -28,12 +28,6 @@ export class CandidateResponseDto {
   @ApiProperty()
   onboardingCompleted!: boolean;
 
-  @ApiProperty()
-  universityOfOrigin!: string;
-
-  @ApiProperty({ nullable: true })
-  ira!: string | null;
-
   @ApiProperty({ nullable: true })
   poscomp!: number | null;
 

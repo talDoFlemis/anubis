@@ -225,7 +225,7 @@ export class CvItemService {
 
     await this.cvItemRepository.updateEnrollmentScore(
       enrollmentId,
-      String(breakdown.total.toFixed(2)),
+      String(breakdown.finalScore.toFixed(2)),
     );
   }
 }

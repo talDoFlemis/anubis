@@ -25,6 +25,14 @@ import type { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { EnrollmentPeriodService } from './enrollment-period.service';
 import { EnrollmentRepository } from './infrastructure/persistence/enrollment.repository';
 
+/** Papéis com permissão de leitura sobre os arquivos de qualquer inscrição. */
+const STAFF_FILE_ACCESS_ROLES: RoleEnum[] = [
+  RoleEnum.professor,
+  RoleEnum.mdccSecretary,
+  RoleEnum.postGraduateCoordinator,
+  RoleEnum.postGraduateViceCoordinator,
+];
+
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger(EnrollmentService.name);
@@ -123,11 +131,18 @@ export class EnrollmentService {
     }
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (dto.undergradUniversity !== undefined)
+      updateData.undergradUniversity = dto.undergradUniversity;
+    if (dto.undergradCourse !== undefined) updateData.undergradCourse = dto.undergradCourse;
+    if (dto.undergradDegreeType !== undefined)
+      updateData.undergradDegreeType = dto.undergradDegreeType;
+    if (dto.ira !== undefined) updateData.ira = dto.ira;
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.justification !== undefined) updateData.justification = dto.justification;
     if (dto.sigaaCode !== undefined) updateData.sigaaCode = dto.sigaaCode;
     if (dto.declaration !== undefined) updateData.declaration = dto.declaration;
     if (dto.poscomp !== undefined) updateData.poscomp = dto.poscomp;
+    if (dto.projectTitle !== undefined) updateData.projectTitle = dto.projectTitle;
 
     const updated = await this.enrollmentRepository.update(id, updateData);
 
@@ -159,26 +174,32 @@ export class EnrollmentService {
       throw new BadRequestException('O período de inscrição não está mais aberto.');
     }
 
-    if (dto.primaryThemeId === dto.secondaryThemeId) {
+    const secondaryThemeId = dto.secondaryThemeId ?? null;
+
+    if (secondaryThemeId !== null && dto.primaryThemeId === secondaryThemeId) {
       throw new BadRequestException('Os temas primário e secundário devem ser diferentes.');
     }
 
     const primaryTheme = await this.researchThemeService.findById(dto.primaryThemeId);
-    const secondaryTheme = await this.researchThemeService.findById(dto.secondaryThemeId);
-
-    if (
-      (primaryTheme.level as string) !== enrollment.level ||
-      (secondaryTheme.level as string) !== enrollment.level
-    ) {
+    if ((primaryTheme.level as string) !== enrollment.level) {
       throw new BadRequestException(
         'Os temas selecionados devem ser compatíveis com o nível da inscrição.',
       );
     }
 
+    if (secondaryThemeId !== null) {
+      const secondaryTheme = await this.researchThemeService.findById(secondaryThemeId);
+      if ((secondaryTheme.level as string) !== enrollment.level) {
+        throw new BadRequestException(
+          'Os temas selecionados devem ser compatíveis com o nível da inscrição.',
+        );
+      }
+    }
+
     const now = new Date();
     const updated = await this.enrollmentRepository.update(id, {
       primaryThemeId: dto.primaryThemeId,
-      secondaryThemeId: dto.secondaryThemeId,
+      secondaryThemeId,
       updatedAt: now,
     });
 
@@ -208,6 +229,21 @@ export class EnrollmentService {
 
     const errors: string[] = [];
 
+    if (!enrollment.undergradUniversity) {
+      errors.push('A universidade de graduação é obrigatória.');
+    }
+    if (!enrollment.undergradCourse) {
+      errors.push('O curso de graduação é obrigatório.');
+    }
+    if (!enrollment.undergradDegreeType) {
+      errors.push('O tipo de graduação é obrigatório.');
+    }
+    if (!enrollment.ira) {
+      errors.push('O IRA é obrigatório.');
+    }
+    if (!enrollment.undergradProofFileId) {
+      errors.push('O comprovante de conclusão da graduação é obrigatório.');
+    }
     if (!enrollment.phone) {
       errors.push('O campo telefone é obrigatório.');
     }
@@ -226,9 +262,7 @@ export class EnrollmentService {
     if (!enrollment.primaryThemeId) {
       errors.push('O tema primário é obrigatório.');
     }
-    if (!enrollment.secondaryThemeId) {
-      errors.push('O tema secundário é obrigatório.');
-    }
+    // Tema secundário é opcional: candidato pode optar por "Não desejo informar".
 
     if (enrollment.level === 'doctoral') {
       if (!enrollment.mastersDegrees || enrollment.mastersDegrees.length === 0) {
@@ -240,6 +274,25 @@ export class EnrollmentService {
         if (primaryCount !== 1) {
           errors.push('Exatamente um curso de mestrado deve ser marcado como principal.');
         }
+
+        const missingIra = enrollment.mastersDegrees.some(
+          d => d.ira === undefined || d.ira === null,
+        );
+        if (missingIra) {
+          errors.push('O IRA de cada curso de mestrado é obrigatório.');
+        }
+
+        const missingProof = enrollment.mastersDegrees.some(d => !d.proofFileId);
+        if (missingProof) {
+          errors.push('O comprovante do IRA de cada curso de mestrado é obrigatório.');
+        }
+      }
+
+      if (!enrollment.projectTitle) {
+        errors.push('O título do projeto é obrigatório para inscrições de doutorado.');
+      }
+      if (!enrollment.projectFileId) {
+        errors.push('O arquivo PDF do projeto é obrigatório para inscrições de doutorado.');
       }
     }
 
@@ -283,7 +336,9 @@ export class EnrollmentService {
     if (user && user.email) {
       try {
         const primaryTheme = await this.researchThemeService.findById(updated.primaryThemeId!);
-        const secondaryTheme = await this.researchThemeService.findById(updated.secondaryThemeId!);
+        const secondaryThemeTitle = updated.secondaryThemeId
+          ? (await this.researchThemeService.findById(updated.secondaryThemeId)).title
+          : 'Não informado';
 
         const title = 'Inscrição Submetida com Sucesso - MDCC';
         const body = `
@@ -295,7 +350,7 @@ export class EnrollmentService {
             <li><strong>Nível:</strong> ${updated.level === 'masters' ? 'Mestrado' : 'Doutorado'}</li>
             <li><strong>Código SIGAA:</strong> ${updated.sigaaCode}</li>
             <li><strong>Tema de Pesquisa Primário:</strong> ${primaryTheme.title}</li>
-            <li><strong>Tema de Pesquisa Secundário:</strong> ${secondaryTheme.title}</li>
+            <li><strong>Tema de Pesquisa Secundário:</strong> ${secondaryThemeTitle}</li>
           </ul>
           <br/>
           <p>Atenciosamente,</p>
@@ -404,6 +459,20 @@ export class EnrollmentService {
       fileIdsToDelete.push(enrollment.poscomp.receiptFileId);
     }
 
+    if (enrollment.projectFileId) {
+      fileIdsToDelete.push(enrollment.projectFileId);
+    }
+
+    if (enrollment.undergradProofFileId) {
+      fileIdsToDelete.push(enrollment.undergradProofFileId);
+    }
+
+    for (const degree of enrollment.mastersDegrees ?? []) {
+      if (degree.proofFileId) {
+        fileIdsToDelete.push(degree.proofFileId);
+      }
+    }
+
     const cvItemFileIds = await this.enrollmentRepository.findCvItemFileIds(id);
     fileIdsToDelete.push(...cvItemFileIds);
 
@@ -424,6 +493,37 @@ export class EnrollmentService {
     this.logger.log(`Inscrição cancelada e removida: ${id}`);
   }
 
+  /** Garante que o usuário é o candidato dono da inscrição. */
+  private assertCandidateOwns(enrollment: Enrollment, userId: string): void {
+    if (enrollment.candidateId !== userId) {
+      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
+    }
+  }
+
+  /** Garante que a inscrição ainda está em rascunho (editável). */
+  private assertDraft(enrollment: Enrollment): void {
+    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
+      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
+    }
+  }
+
+  /** Garante que o usuário pode ler os arquivos da inscrição (dono ou staff). */
+  private assertCanReadFiles(enrollment: Enrollment, user: User): void {
+    const isOwner = enrollment.candidateId === user.id;
+    const isStaff = STAFF_FILE_ACCESS_ROLES.includes(user.role);
+
+    if (!isOwner && !isStaff) {
+      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
+    }
+  }
+
+  /** Resolve a URL assinada e o nome original de um arquivo armazenado. */
+  private async buildSignedFileInfo(fileId: string): Promise<{ url: string; fileName: string }> {
+    const fileRecord = await this.fileStorageService.findById(fileId);
+    const url = await this.fileStorageService.getSignedDownloadUrl(fileId);
+    return { url, fileName: fileRecord.originalName };
+  }
+
   async uploadSigaaReceipt(
     userId: string,
     id: string,
@@ -431,13 +531,8 @@ export class EnrollmentService {
   ): Promise<Enrollment> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
-      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
-    }
-
-    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
-      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
-    }
+    this.assertCandidateOwns(enrollment, userId);
+    this.assertDraft(enrollment);
 
     if (enrollment.sigaaReceiptFileId) {
       await this.fileStorageService.delete(enrollment.sigaaReceiptFileId);
@@ -462,25 +557,13 @@ export class EnrollmentService {
   async getSigaaReceiptUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    const isOwner = enrollment.candidateId === user.id;
-    const isStaff = [
-      RoleEnum.professor,
-      RoleEnum.mdccSecretary,
-      RoleEnum.postGraduateCoordinator,
-      RoleEnum.postGraduateViceCoordinator,
-    ].includes(user.role);
-
-    if (!isOwner && !isStaff) {
-      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
-    }
+    this.assertCanReadFiles(enrollment, user);
 
     if (!enrollment.sigaaReceiptFileId) {
       throw new NotFoundException('Comprovante SIGAA não encontrado.');
     }
 
-    const fileRecord = await this.fileStorageService.findById(enrollment.sigaaReceiptFileId);
-    const url = await this.fileStorageService.getSignedDownloadUrl(enrollment.sigaaReceiptFileId);
-    return { url, fileName: fileRecord.originalName };
+    return this.buildSignedFileInfo(enrollment.sigaaReceiptFileId);
   }
 
   async uploadPoscompReceipt(
@@ -490,13 +573,8 @@ export class EnrollmentService {
   ): Promise<Enrollment> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
-      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
-    }
-
-    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
-      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
-    }
+    this.assertCandidateOwns(enrollment, userId);
+    this.assertDraft(enrollment);
 
     const poscomp = enrollment.poscomp;
     if (!poscomp || !poscomp.hasPoscomp) {
@@ -528,25 +606,174 @@ export class EnrollmentService {
   async getPoscompReceiptUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    const isOwner = enrollment.candidateId === user.id;
-    const isStaff = [
-      RoleEnum.professor,
-      RoleEnum.mdccSecretary,
-      RoleEnum.postGraduateCoordinator,
-      RoleEnum.postGraduateViceCoordinator,
-    ].includes(user.role);
-
-    if (!isOwner && !isStaff) {
-      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
-    }
+    this.assertCanReadFiles(enrollment, user);
 
     const receiptFileId = enrollment.poscomp?.receiptFileId;
     if (!receiptFileId) {
       throw new NotFoundException('Comprovante POSCOMP não encontrado.');
     }
 
-    const fileRecord = await this.fileStorageService.findById(receiptFileId);
-    const url = await this.fileStorageService.getSignedDownloadUrl(receiptFileId);
-    return { url, fileName: fileRecord.originalName };
+    return this.buildSignedFileInfo(receiptFileId);
+  }
+
+  async uploadProjectFile(
+    userId: string,
+    id: string,
+    file: Express.Multer.File,
+  ): Promise<Enrollment> {
+    const enrollment = await this.findById(id);
+
+    this.assertCandidateOwns(enrollment, userId);
+
+    if (enrollment.level !== 'doctoral') {
+      throw new BadRequestException(
+        'O arquivo do projeto é exclusivo para inscrições de doutorado.',
+      );
+    }
+
+    this.assertDraft(enrollment);
+
+    if (enrollment.projectFileId) {
+      await this.fileStorageService.delete(enrollment.projectFileId);
+    }
+
+    const fileRecord = await this.fileStorageService.upload(file, userId, 'project-files');
+
+    const now = new Date();
+    const updated = await this.enrollmentRepository.update(id, {
+      projectFileId: fileRecord.id,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
+
+    this.logger.log(`Arquivo do projeto enviado para inscrição: ${id}`);
+    return updated;
+  }
+
+  async getProjectFileUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
+    const enrollment = await this.findById(id);
+
+    this.assertCanReadFiles(enrollment, user);
+
+    if (!enrollment.projectFileId) {
+      throw new NotFoundException('Arquivo do projeto não encontrado.');
+    }
+
+    return this.buildSignedFileInfo(enrollment.projectFileId);
+  }
+
+  async uploadUndergradProof(
+    userId: string,
+    id: string,
+    file: Express.Multer.File,
+  ): Promise<Enrollment> {
+    const enrollment = await this.findById(id);
+
+    this.assertCandidateOwns(enrollment, userId);
+    this.assertDraft(enrollment);
+
+    if (enrollment.undergradProofFileId) {
+      await this.fileStorageService.delete(enrollment.undergradProofFileId);
+    }
+
+    const fileRecord = await this.fileStorageService.upload(file, userId, 'undergrad-proofs');
+
+    const now = new Date();
+    const updated = await this.enrollmentRepository.update(id, {
+      undergradProofFileId: fileRecord.id,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
+
+    this.logger.log(`Comprovante de graduação enviado para inscrição: ${id}`);
+    return updated;
+  }
+
+  async getUndergradProofUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
+    const enrollment = await this.findById(id);
+
+    this.assertCanReadFiles(enrollment, user);
+
+    if (!enrollment.undergradProofFileId) {
+      throw new NotFoundException('Comprovante de graduação não encontrado.');
+    }
+
+    return this.buildSignedFileInfo(enrollment.undergradProofFileId);
+  }
+
+  async uploadMastersDegreeProof(
+    userId: string,
+    id: string,
+    index: number,
+    file: Express.Multer.File,
+  ): Promise<Enrollment> {
+    const enrollment = await this.findById(id);
+
+    this.assertCandidateOwns(enrollment, userId);
+
+    if (enrollment.level !== 'doctoral') {
+      throw new BadRequestException(
+        'Informações de mestrado são exclusivas para inscrições de doutorado.',
+      );
+    }
+
+    this.assertDraft(enrollment);
+
+    const degrees = enrollment.mastersDegrees;
+    if (!degrees || index < 0 || index >= degrees.length) {
+      throw new NotFoundException('Curso de mestrado não encontrado.');
+    }
+
+    const existing = degrees[index];
+    if (existing.proofFileId) {
+      await this.fileStorageService.delete(existing.proofFileId);
+    }
+
+    const fileRecord = await this.fileStorageService.upload(file, userId, 'masters-degree-proofs');
+
+    const updatedDegrees = degrees.map((degree, i) =>
+      i === index ? { ...degree, proofFileId: fileRecord.id } : degree,
+    );
+
+    const now = new Date();
+    const updated = await this.enrollmentRepository.update(id, {
+      mastersDegrees: updatedDegrees,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
+
+    this.logger.log(`Comprovante de mestrado enviado para inscrição ${id} (índice ${index})`);
+    return updated;
+  }
+
+  async getMastersDegreeProofUrl(
+    user: User,
+    id: string,
+    index: number,
+  ): Promise<{ url: string; fileName: string }> {
+    const enrollment = await this.findById(id);
+
+    this.assertCanReadFiles(enrollment, user);
+
+    const degrees = enrollment.mastersDegrees;
+    if (!degrees || index < 0 || index >= degrees.length) {
+      throw new NotFoundException('Curso de mestrado não encontrado.');
+    }
+
+    const proofFileId = degrees[index].proofFileId;
+    if (!proofFileId) {
+      throw new NotFoundException('Comprovante do mestrado não encontrado.');
+    }
+
+    return this.buildSignedFileInfo(proofFileId);
   }
 }

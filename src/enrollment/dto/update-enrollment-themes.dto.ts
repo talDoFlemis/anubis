@@ -1,12 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsUUID } from 'class-validator';
 
 export class UpdateEnrollmentThemesDto {
   @ApiProperty()
   @IsUUID()
   primaryThemeId!: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description: 'Tema secundário. Omitir/null quando o candidato não deseja informar.',
+    nullable: true,
+  })
+  @IsOptional()
   @IsUUID()
-  secondaryThemeId!: string;
+  secondaryThemeId?: string | null;
 }

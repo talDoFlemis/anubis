@@ -46,30 +46,30 @@ export const STEP_ROUTES = [
   '/enrollment/new/poscomp',
   '/enrollment/new/cv',
   '/enrollment/new/sigaa',
+  '/enrollment/new/review',
 ] as const;
 
 function detectCompletedSteps(enrollment: Enrollment | null): number[] {
   if (!enrollment) return [];
+
+  // Per-step signals persisted on the enrollment.
+  const reached = new Set<number>();
+  reached.add(0); // Nível (enrollment exists)
+  if (enrollment.primaryThemeId) reached.add(1); // Temas
+  if (enrollment.phone && enrollment.justification) reached.add(2); // Acadêmico
+  if (enrollment.poscomp !== null) reached.add(3); // POSCOMP
+  if (enrollment.scoreDraft !== null) reached.add(4); // Currículo
+  if (enrollment.sigaaCode) reached.add(5); // SIGAA
+
+  // The wizard is linear: reaching a later step means every earlier step was
+  // already passed. Fill the gaps so a refresh keeps prior steps complete
+  // (e.g. Currículo stays done once SIGAA is reached). Revisão (6) only
+  // completes on submit, so it is never auto-filled.
+  const furthest = Math.max(...reached);
   const completed: number[] = [];
-
-  completed.push(0);
-
-  if (enrollment.primaryThemeId && enrollment.secondaryThemeId) {
-    completed.push(1);
+  for (let i = 0; i <= furthest; i++) {
+    completed.push(i);
   }
-
-  if (enrollment.phone && enrollment.justification) {
-    completed.push(2);
-  }
-
-  if (enrollment.poscomp !== null) {
-    completed.push(3);
-  }
-
-  if (enrollment.sigaaCode) {
-    completed.push(5);
-  }
-
   return completed;
 }
 

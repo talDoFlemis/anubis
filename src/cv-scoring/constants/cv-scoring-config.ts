@@ -1,3 +1,10 @@
+/**
+ * Pontuação-base do currículo. A nota final do CV é esta base somada à
+ * pontuação obtida pelo candidato nas categorias. Mestrado e doutorado
+ * têm teto de 4,0 em categorias, logo a nota final máxima é 10,0.
+ */
+export const BASE_CV_SCORE = 6;
+
 export type CapesClassification = 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'A6' | 'A7' | 'A8' | 'none';
 
 export interface QualisPointsConfig {

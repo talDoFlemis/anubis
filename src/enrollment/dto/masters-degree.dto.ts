@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
@@ -27,6 +28,13 @@ export class MastersDegreeDto {
   @ApiPropertyOptional({ default: false })
   @IsBoolean()
   isPrimary!: boolean;
+
+  @ApiPropertyOptional({
+    description: 'ID do comprovante do IRA do mestrado (enviado via upload).',
+  })
+  @IsOptional()
+  @IsString()
+  proofFileId?: string;
 }
 
 export class UpdateMastersDegreesDto {

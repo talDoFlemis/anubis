@@ -10,10 +10,5 @@ export abstract class CandidateRepository {
 
   abstract findAllByFilters(filters: FindCandidatesDto): Promise<PaginatedResult<CandidateProfile>>;
 
-  abstract upsertByUserId(params: {
-    userId: string;
-    universityOfOrigin: string;
-    ira: string;
-    poscomp?: number | null;
-  }): Promise<Candidate>;
+  abstract upsertByUserId(params: { userId: string; poscomp?: number | null }): Promise<Candidate>;
 }
