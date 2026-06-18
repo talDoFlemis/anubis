@@ -3,6 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import { candidates } from '../../src/database/schema/candidates';
 import { cvScoringCategories } from '../../src/database/schema/cv-scoring';
 import { enrollmentPeriods } from '../../src/database/schema/enrollment-periods';
 import { professors } from '../../src/database/schema/professor';
@@ -278,6 +279,10 @@ async function seedDefaultUsersAndThemes(db: NodePgDatabase): Promise<void> {
           institution: 'UFC',
         })
         .onConflictDoNothing();
+    }
+
+    if (defaultUser.role === 'candidate') {
+      await db.insert(candidates).values({ userId }).onConflictDoNothing();
     }
   }
 
