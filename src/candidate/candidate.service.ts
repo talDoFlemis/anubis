@@ -71,7 +71,6 @@ export class CandidateService {
 
       await this.candidateRepository.upsertByUserId({
         userId: user.id,
-        poscomp: dto.poscomp ?? null,
       });
 
       this.logger.info({ userId }, 'Candidate onboarding completed');
