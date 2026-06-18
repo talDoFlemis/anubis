@@ -17,7 +17,10 @@ export interface MastersDegreeData {
   graduateProgram: string;
   ira: number;
   isPrimary: boolean;
+  proofFileId?: string;
 }
+
+export type UndergradDegreeType = 'bacharelado' | 'licenciatura' | 'tecnologo';
 
 export interface Enrollment {
   id: string;
@@ -25,6 +28,11 @@ export interface Enrollment {
   enrollmentPeriodId: string;
   level: string;
   status: string;
+  undergradUniversity: string | null;
+  undergradCourse: string | null;
+  undergradDegreeType: UndergradDegreeType | null;
+  ira: string | null;
+  undergradProofFileId: string | null;
   phone: string | null;
   justification: string | null;
   sigaaCode: string | null;
@@ -34,6 +42,8 @@ export interface Enrollment {
   secondaryThemeId: string | null;
   poscomp: PoscompData | null;
   mastersDegrees: MastersDegreeData[] | null;
+  projectTitle: string | null;
+  projectFileId: string | null;
   scoreDraft: string | null;
   submittedAt: string | null;
   createdAt: string;
@@ -46,6 +56,11 @@ export interface CreateEnrollmentPayload {
 }
 
 export interface UpdateEnrollmentPayload {
+  undergradUniversity?: string;
+  undergradCourse?: string;
+  undergradDegreeType?: UndergradDegreeType;
+  ira?: string;
+  projectTitle?: string;
   phone?: string;
   justification?: string;
   sigaaCode?: string;
@@ -59,7 +74,7 @@ export interface UpdateMastersDegreesPayload {
 
 export interface UpdateEnrollmentThemesPayload {
   primaryThemeId: string;
-  secondaryThemeId: string;
+  secondaryThemeId?: string | null;
 }
 
 // ── Normalizers ──────────────────────────────────────────────────────
@@ -72,6 +87,12 @@ function normalizeEnrollment(data: unknown): Enrollment {
     enrollmentPeriodId: asString(r.enrollmentPeriodId),
     level: asString(r.level),
     status: asString(r.status),
+    undergradUniversity: asNullableString(r.undergradUniversity),
+    undergradCourse: asNullableString(r.undergradCourse),
+    undergradDegreeType:
+      (asNullableString(r.undergradDegreeType) as UndergradDegreeType | null) ?? null,
+    ira: asNullableString(r.ira),
+    undergradProofFileId: asNullableString(r.undergradProofFileId),
     phone: asNullableString(r.phone),
     justification: asNullableString(r.justification),
     sigaaCode: asNullableString(r.sigaaCode),
@@ -81,6 +102,8 @@ function normalizeEnrollment(data: unknown): Enrollment {
     secondaryThemeId: asNullableString(r.secondaryThemeId),
     poscomp: (r.poscomp as PoscompData | null) ?? null,
     mastersDegrees: (r.mastersDegrees as MastersDegreeData[] | null) ?? null,
+    projectTitle: asNullableString(r.projectTitle),
+    projectFileId: asNullableString(r.projectFileId),
     scoreDraft: asNullableString(r.scoreDraft),
     submittedAt: asNullableString(r.submittedAt),
     createdAt: asString(r.createdAt),
@@ -188,6 +211,63 @@ export const enrollmentsApi = {
 
   getPoscompReceiptInfo: async (id: string): Promise<{ url: string; fileName: string }> => {
     const { data } = await apiClient.get(`/enrollments/${id}/poscomp-receipt`);
+    const r = data as Record<string, unknown>;
+    return { url: asString(r.url), fileName: asString(r.fileName) };
+  },
+
+  uploadUndergradProof: async (id: string, file: File): Promise<Enrollment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return normalizeEnrollment(
+      (
+        await apiClient.post(`/enrollments/${id}/undergrad-proof`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      ).data,
+    );
+  },
+
+  getUndergradProofInfo: async (id: string): Promise<{ url: string; fileName: string }> => {
+    const { data } = await apiClient.get(`/enrollments/${id}/undergrad-proof`);
+    const r = data as Record<string, unknown>;
+    return { url: asString(r.url), fileName: asString(r.fileName) };
+  },
+
+  uploadProjectFile: async (id: string, file: File): Promise<Enrollment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return normalizeEnrollment(
+      (
+        await apiClient.post(`/enrollments/${id}/project-file`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      ).data,
+    );
+  },
+
+  getProjectFileInfo: async (id: string): Promise<{ url: string; fileName: string }> => {
+    const { data } = await apiClient.get(`/enrollments/${id}/project-file`);
+    const r = data as Record<string, unknown>;
+    return { url: asString(r.url), fileName: asString(r.fileName) };
+  },
+
+  uploadMastersDegreeProof: async (id: string, index: number, file: File): Promise<Enrollment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return normalizeEnrollment(
+      (
+        await apiClient.post(`/enrollments/${id}/masters-degrees/${index}/proof`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      ).data,
+    );
+  },
+
+  getMastersDegreeProofInfo: async (
+    id: string,
+    index: number,
+  ): Promise<{ url: string; fileName: string }> => {
+    const { data } = await apiClient.get(`/enrollments/${id}/masters-degrees/${index}/proof`);
     const r = data as Record<string, unknown>;
     return { url: asString(r.url), fileName: asString(r.fileName) };
   },

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -7,11 +8,37 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { FileUploadField } from '@/features/enrollment/components/file-upload-field';
+import {
   useUpdateEnrollment,
   useUpdateMastersDegrees,
 } from '@/features/enrollment/hooks/use-enrollment';
-import type { Enrollment, EnrollmentPeriod, MastersDegreeData } from '@/lib/api';
+import type {
+  Enrollment,
+  EnrollmentPeriod,
+  MastersDegreeData,
+  UndergradDegreeType,
+} from '@/lib/api';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+
+// ── Undergrad degree type options ────────────────────────────────────
+
+const UNDERGRAD_DEGREE_TYPES: { value: UndergradDegreeType; label: string }[] = [
+  { value: 'bacharelado', label: 'Bacharelado' },
+  { value: 'licenciatura', label: 'Licenciatura' },
+  { value: 'tecnologo', label: 'Tecnólogo' },
+];
+
+// ── IRA validation ───────────────────────────────────────────────────
+
+const IRA_PATTERN = /^\d{1,2}(\.\d{1,2})?$/;
 
 // ── Props ────────────────────────────────────────────────────────────
 
@@ -29,6 +56,7 @@ interface MastersDegreeEntry {
   graduateProgram: string;
   ira: string;
   isPrimary: boolean;
+  proofFileId?: string;
 }
 
 function createEmptyEntry(isPrimary = false): MastersDegreeEntry {
@@ -49,15 +77,46 @@ function formatPhone(value: string): string {
 // ── Component ────────────────────────────────────────────────────────
 
 export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInfoProps) {
+  const queryClient = useQueryClient();
   const updateEnrollment = useUpdateEnrollment();
   const updateMastersDegrees = useUpdateMastersDegrees();
 
   const isDoctoralLevel = enrollment?.level === 'doctoral';
 
   // ── Local state ──────────────────────────────────────────────────
+  const [undergradUniversity, setUndergradUniversity] = useState(
+    enrollment?.undergradUniversity ?? '',
+  );
+  const [undergradCourse, setUndergradCourse] = useState(enrollment?.undergradCourse ?? '');
+  const [undergradDegreeType, setUndergradDegreeType] = useState<UndergradDegreeType | ''>(
+    enrollment?.undergradDegreeType ?? '',
+  );
+  const [ira, setIra] = useState(enrollment?.ira ?? '');
   const [phone, setPhone] = useState(enrollment?.phone ?? '');
   const [justification, setJustification] = useState(enrollment?.justification ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // ── Undergrad conclusion proof ───────────────────────────────────
+  const [undergradProofFile, setUndergradProofFile] = useState<File | null>(null);
+  const [undergradProofName, setUndergradProofName] = useState<string | null>(null);
+  const hasExistingUndergradProof = !!enrollment?.undergradProofFileId;
+
+  useEffect(() => {
+    if (hasExistingUndergradProof && enrollment) {
+      api.enrollments
+        .getUndergradProofInfo(enrollment.id)
+        .then(info => setUndergradProofName(info.fileName))
+        .catch(() => {});
+    }
+  }, [hasExistingUndergradProof, enrollment]);
+
+  // ── Masters degree proofs (pending uploads, doctoral only) ───────
+  const [mastersProofFiles, setMastersProofFiles] = useState<Record<number, File>>({});
+
+  // ── Doctoral project (doctoral only) ─────────────────────────────
+  const [projectTitle, setProjectTitle] = useState(enrollment?.projectTitle ?? '');
+  const [projectFile, setProjectFile] = useState<File | null>(null);
+  const hasExistingProjectFile = !!enrollment?.projectFileId;
 
   // ── Masters degrees state (doctoral only) ────────────────────────
   const [mastersDegrees, setMastersDegrees] = useState<MastersDegreeEntry[]>(() => {
@@ -67,6 +126,7 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
         graduateProgram: md.graduateProgram,
         ira: String(md.ira),
         isPrimary: md.isPrimary,
+        proofFileId: md.proofFileId,
       }));
     }
     return isDoctoralLevel ? [createEmptyEntry(true)] : [];
@@ -83,6 +143,17 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
       // Ensure at least one entry and one primary
       if (next.length > 0 && !next.some(e => e.isPrimary)) {
         next[0].isPrimary = true;
+      }
+      return next;
+    });
+    // Keep pending proof uploads aligned with the new indexes: drop the
+    // removed entry's file and shift later keys down by one.
+    setMastersProofFiles(prev => {
+      const next: Record<number, File> = {};
+      for (const [key, file] of Object.entries(prev)) {
+        const i = Number(key);
+        if (i === index) continue;
+        next[i > index ? i - 1 : i] = file;
       }
       return next;
     });
@@ -110,6 +181,30 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
   // ── Validation ───────────────────────────────────────────────────
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
+
+    if (!undergradUniversity.trim()) {
+      newErrors.undergradUniversity = 'A universidade de graduação é obrigatória.';
+    }
+
+    if (!undergradCourse.trim()) {
+      newErrors.undergradCourse = 'O curso de graduação é obrigatório.';
+    }
+
+    if (!undergradDegreeType) {
+      newErrors.undergradDegreeType = 'O tipo de graduação é obrigatório.';
+    }
+
+    if (!ira.trim()) {
+      newErrors.ira = 'O IRA é obrigatório.';
+    } else if (!IRA_PATTERN.test(ira.trim())) {
+      newErrors.ira = 'IRA deve ser um número válido (ex.: 8.75).';
+    } else if (Number(ira) < 0 || Number(ira) > 10) {
+      newErrors.ira = 'IRA deve estar entre 0 e 10.';
+    }
+
+    if (!undergradProofFile && !enrollment?.undergradProofFileId) {
+      newErrors.undergradProof = 'O comprovante de conclusão da graduação é obrigatório.';
+    }
 
     if (!phone.trim()) {
       newErrors.phone = 'Telefone é obrigatório.';
@@ -145,7 +240,17 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
               newErrors[`masters_${i}_ira`] = 'IRA deve estar entre 0 e 10.';
             }
           }
+          if (!mastersProofFiles[i] && !entry.proofFileId) {
+            newErrors[`masters_${i}_proof`] = 'O comprovante do IRA do mestrado é obrigatório.';
+          }
         });
+      }
+
+      if (!projectTitle.trim()) {
+        newErrors.projectTitle = 'O título do projeto é obrigatório.';
+      }
+      if (!projectFile && !enrollment?.projectFileId) {
+        newErrors.projectFile = 'O arquivo PDF do projeto é obrigatório.';
       }
     }
 
@@ -164,10 +269,20 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
       await updateEnrollment.mutateAsync({
         id: enrollment.id,
         payload: {
+          undergradUniversity: undergradUniversity.trim(),
+          undergradCourse: undergradCourse.trim(),
+          undergradDegreeType: undergradDegreeType || undefined,
+          ira: ira.trim(),
           phone: phone.trim(),
           justification: justification.trim(),
+          ...(isDoctoralLevel ? { projectTitle: projectTitle.trim() } : {}),
         },
       });
+
+      // Upload undergrad conclusion proof if a new file was selected
+      if (undergradProofFile) {
+        await api.enrollments.uploadUndergradProof(enrollment.id, undergradProofFile);
+      }
 
       if (isDoctoralLevel && mastersDegrees.length > 0) {
         const payload: MastersDegreeData[] = mastersDegrees.map(entry => ({
@@ -175,12 +290,26 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
           graduateProgram: entry.graduateProgram.trim(),
           ira: Number(entry.ira),
           isPrimary: entry.isPrimary,
+          proofFileId: entry.proofFileId,
         }));
         await updateMastersDegrees.mutateAsync({
           id: enrollment.id,
           payload: { mastersDegrees: payload },
         });
+
+        // Upload pending master's degree proofs by index (degrees now persisted)
+        for (const [index, file] of Object.entries(mastersProofFiles)) {
+          await api.enrollments.uploadMastersDegreeProof(enrollment.id, Number(index), file);
+        }
       }
+
+      // Upload doctoral project PDF if a new file was selected
+      if (isDoctoralLevel && projectFile) {
+        await api.enrollments.uploadProjectFile(enrollment.id, projectFile);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['enrollments', enrollment.id] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
 
       onNext();
     } catch (err) {
@@ -198,6 +327,126 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
           Preencha as informações complementares da sua inscrição.
         </p>
       </div>
+
+      {/* ── Graduação (undergrad) ──────────────────────────────── */}
+      <section className="space-y-5">
+        <div>
+          <h3 className="font-serif text-xl font-semibold tracking-tight">Graduação</h3>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Informe os dados da sua graduação concluída.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field data-invalid={!!errors.undergradUniversity} className="space-y-2">
+            <FieldLabel htmlFor="undergrad-university">Universidade de graduação</FieldLabel>
+            <FieldContent>
+              <Input
+                id="undergrad-university"
+                value={undergradUniversity}
+                onChange={e => {
+                  setUndergradUniversity(e.target.value);
+                  setErrors(prev => {
+                    const { undergradUniversity: _, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                placeholder="Ex.: UFC"
+                aria-invalid={!!errors.undergradUniversity}
+              />
+              {errors.undergradUniversity && <FieldError>{errors.undergradUniversity}</FieldError>}
+            </FieldContent>
+          </Field>
+
+          <Field data-invalid={!!errors.undergradCourse} className="space-y-2">
+            <FieldLabel htmlFor="undergrad-course">Curso de graduação</FieldLabel>
+            <FieldContent>
+              <Input
+                id="undergrad-course"
+                value={undergradCourse}
+                onChange={e => {
+                  setUndergradCourse(e.target.value);
+                  setErrors(prev => {
+                    const { undergradCourse: _, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                placeholder="Ex.: Ciência da Computação"
+                aria-invalid={!!errors.undergradCourse}
+              />
+              {errors.undergradCourse && <FieldError>{errors.undergradCourse}</FieldError>}
+            </FieldContent>
+          </Field>
+
+          <Field data-invalid={!!errors.undergradDegreeType} className="space-y-2">
+            <FieldLabel htmlFor="undergrad-degree-type">Tipo de graduação</FieldLabel>
+            <FieldContent>
+              <Select
+                value={undergradDegreeType}
+                onValueChange={value => {
+                  setUndergradDegreeType(value as UndergradDegreeType);
+                  setErrors(prev => {
+                    const { undergradDegreeType: _, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+              >
+                <SelectTrigger
+                  id="undergrad-degree-type"
+                  aria-invalid={!!errors.undergradDegreeType}
+                >
+                  <SelectValue placeholder="Selecione o tipo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNDERGRAD_DEGREE_TYPES.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.undergradDegreeType && <FieldError>{errors.undergradDegreeType}</FieldError>}
+            </FieldContent>
+          </Field>
+
+          <Field data-invalid={!!errors.ira} className="space-y-2">
+            <FieldLabel htmlFor="undergrad-ira">IRA</FieldLabel>
+            <FieldContent>
+              <Input
+                id="undergrad-ira"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                value={ira}
+                onChange={e => {
+                  setIra(e.target.value);
+                  setErrors(prev => {
+                    const { ira: _, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                placeholder="Ex.: 8.75"
+                aria-invalid={!!errors.ira}
+              />
+              {errors.ira && <FieldError>{errors.ira}</FieldError>}
+            </FieldContent>
+          </Field>
+        </div>
+
+        <FileUploadField
+          label="Comprovante de conclusão da graduação (diploma ou histórico)"
+          value={undergradProofFile}
+          existingFileName={undergradProofName}
+          onChange={file => {
+            setUndergradProofFile(file);
+            setErrors(prev => {
+              const { undergradProof: _, ...rest } = prev;
+              return rest;
+            });
+          }}
+          error={errors.undergradProof}
+        />
+      </section>
 
       {/* ── Phone field ────────────────────────────────────────── */}
       <Field data-invalid={!!errors.phone} className="space-y-2">
@@ -364,6 +613,28 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
                     </FieldContent>
                   </Field>
                 </div>
+
+                <FileUploadField
+                  label="Comprovante do IRA do mestrado (histórico ou diploma)"
+                  value={mastersProofFiles[index] ?? null}
+                  existingFileName={entry.proofFileId ? 'Comprovante enviado' : null}
+                  onChange={file => {
+                    setMastersProofFiles(prev => {
+                      const next = { ...prev };
+                      if (file) {
+                        next[index] = file;
+                      } else {
+                        delete next[index];
+                      }
+                      return next;
+                    });
+                    setErrors(prev => {
+                      const { [`masters_${index}_proof`]: _, ...rest } = prev;
+                      return rest;
+                    });
+                  }}
+                  error={errors[`masters_${index}_proof`]}
+                />
               </div>
             ))}
           </div>
@@ -372,6 +643,53 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
             <Plus className="h-4 w-4" />
             Adicionar mestrado
           </Button>
+
+          {/* ── Doctoral project ──────────────────────────────────── */}
+          <div className="space-y-5 pt-2">
+            <div>
+              <h3 className="font-serif text-xl font-semibold tracking-tight">
+                Projeto de pesquisa
+              </h3>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Informe o título e anexe o PDF do seu projeto de doutorado.
+              </p>
+            </div>
+
+            <Field data-invalid={!!errors.projectTitle} className="space-y-2">
+              <FieldLabel htmlFor="project-title">Título do projeto</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="project-title"
+                  value={projectTitle}
+                  onChange={e => {
+                    setProjectTitle(e.target.value);
+                    setErrors(prev => {
+                      const { projectTitle: _, ...rest } = prev;
+                      return rest;
+                    });
+                  }}
+                  placeholder="Ex.: Escalabilidade em blockchains de Proof of Stake"
+                  aria-invalid={!!errors.projectTitle}
+                />
+                {errors.projectTitle && <FieldError>{errors.projectTitle}</FieldError>}
+              </FieldContent>
+            </Field>
+
+            <FileUploadField
+              label="Arquivo do projeto (PDF)"
+              accept=".pdf"
+              value={projectFile}
+              existingFileName={hasExistingProjectFile ? 'Projeto enviado' : null}
+              onChange={file => {
+                setProjectFile(file);
+                setErrors(prev => {
+                  const { projectFile: _, ...rest } = prev;
+                  return rest;
+                });
+              }}
+              error={errors.projectFile}
+            />
+          </div>
         </section>
       )}
 

@@ -25,6 +25,7 @@ export type {
   Enrollment,
   MastersDegreeData,
   PoscompData,
+  UndergradDegreeType,
   UpdateEnrollmentPayload,
   UpdateEnrollmentThemesPayload,
   UpdateMastersDegreesPayload,
