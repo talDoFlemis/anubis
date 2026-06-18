@@ -34,7 +34,6 @@ export interface EmailRegisterData {
   firstName: string;
   lastName: string;
   cpf: string;
-  universityOfOrigin: string;
 }
 
 export interface CandidateOnboardingData {
