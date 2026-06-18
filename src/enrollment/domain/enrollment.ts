@@ -10,6 +10,7 @@ export class Enrollment {
   undergradCourse!: string | null;
   undergradDegreeType!: string | null;
   ira!: string | null;
+  undergradProofFileId!: string | null;
   phone!: string | null;
   justification!: string | null;
   sigaaCode!: string | null;

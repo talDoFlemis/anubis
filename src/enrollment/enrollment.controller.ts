@@ -306,6 +306,43 @@ export class EnrollmentController {
     return this.enrollmentService.getProjectFileUrl(user, id);
   }
 
+  @Post(':id/undergrad-proof')
+  @Roles(RoleEnum.candidate)
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload undergraduate conclusion proof' })
+  @ApiConsumes('multipart/form-data')
+  @ApiOkResponse({ type: EnrollmentResponseDto })
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  uploadUndergradProof(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<EnrollmentResponseDto> {
+    return this.enrollmentService.uploadUndergradProof(user.id, id, file);
+  }
+
+  @Get(':id/undergrad-proof')
+  @Roles(
+    RoleEnum.candidate,
+    RoleEnum.professor,
+    RoleEnum.mdccSecretary,
+    RoleEnum.postGraduateCoordinator,
+    RoleEnum.postGraduateViceCoordinator,
+  )
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get undergraduate conclusion proof URL' })
+  @ApiOkResponse()
+  @ApiUnauthorizedResponse({ description: 'No active session' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions' })
+  getUndergradProof(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<{ url: string; fileName: string }> {
+    return this.enrollmentService.getUndergradProofUrl(user, id);
+  }
+
   @Post(':id/masters-degrees/:index/proof')
   @Roles(RoleEnum.candidate)
   @HttpCode(HttpStatus.OK)

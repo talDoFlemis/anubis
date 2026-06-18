@@ -11,6 +11,7 @@ export class EnrollmentResponseDto {
   @ApiPropertyOptional() undergradCourse!: string | null;
   @ApiPropertyOptional() undergradDegreeType!: string | null;
   @ApiPropertyOptional() ira!: string | null;
+  @ApiPropertyOptional() undergradProofFileId!: string | null;
   @ApiPropertyOptional() phone!: string | null;
   @ApiPropertyOptional() justification!: string | null;
   @ApiPropertyOptional() sigaaCode!: string | null;

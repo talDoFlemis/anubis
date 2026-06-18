@@ -295,6 +295,7 @@ describe('EnrollmentService', () => {
         undergradCourse: 'Ciência da Computação',
         undergradDegreeType: 'bacharelado',
         ira: '8.50',
+        undergradProofFileId: 'undergrad-proof-uuid',
         phone: '11999999999',
         justification: 'Minha justificativa',
         declaration: true,
@@ -328,6 +329,7 @@ describe('EnrollmentService', () => {
         undergradCourse: 'Ciência da Computação',
         undergradDegreeType: 'bacharelado',
         ira: '8.50',
+        undergradProofFileId: 'undergrad-proof-uuid',
         phone: '11999999999',
         justification: 'Minha justificativa',
         declaration: true,
@@ -394,6 +396,29 @@ describe('EnrollmentService', () => {
       );
     });
 
+    it('rejects submission with missing undergrad conclusion proof', async () => {
+      const incompleteEnrollment = {
+        ...mockEnrollment,
+        undergradUniversity: 'UFRN',
+        undergradCourse: 'Ciência da Computação',
+        undergradDegreeType: 'bacharelado',
+        ira: '8.50',
+        undergradProofFileId: null,
+        phone: '11999999999',
+        justification: 'Minha justificativa',
+        declaration: true,
+        sigaaCode: 'sigaa-code',
+        sigaaReceiptFileId: 'file-uuid',
+        primaryThemeId: 'theme-uuid-1',
+        secondaryThemeId: 'theme-uuid-2',
+      };
+      mockRepository.findById.mockResolvedValueOnce(incompleteEnrollment);
+
+      await expect(service.submit('user-uuid', 'enrollment-uuid')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
     it('rejects submission when enrollment is not draft', async () => {
       mockRepository.findById.mockResolvedValueOnce({ ...mockEnrollment, status: 'submitted' });
 
@@ -427,6 +452,7 @@ describe('EnrollmentService', () => {
       undergradCourse: 'Ciência da Computação',
       undergradDegreeType: 'bacharelado',
       ira: '8.50',
+      undergradProofFileId: 'undergrad-proof-uuid',
       phone: '11999999999',
       justification: 'Minha justificativa',
       declaration: true,
@@ -742,6 +768,56 @@ describe('EnrollmentService', () => {
       mockRepository.update.mockResolvedValueOnce({ ...doctoralDraft, projectFileId: 'file-uuid' });
 
       await service.uploadProjectFile('user-uuid', 'enrollment-uuid', {} as Express.Multer.File);
+
+      expect(mockFileStorageService.delete).toHaveBeenCalledWith('old-file');
+    });
+  });
+
+  describe('uploadUndergradProof', () => {
+    const draft = { ...mockEnrollment, status: 'draft' };
+
+    it('uploads undergrad conclusion proof for a draft', async () => {
+      mockRepository.findById.mockResolvedValueOnce(draft);
+      mockRepository.update.mockResolvedValueOnce({
+        ...draft,
+        undergradProofFileId: 'file-uuid',
+      });
+
+      const result = await service.uploadUndergradProof('user-uuid', 'enrollment-uuid', {
+        originalname: 'diploma.pdf',
+      } as Express.Multer.File);
+
+      expect(mockFileStorageService.upload).toHaveBeenCalled();
+      expect(result.undergradProofFileId).toBe('file-uuid');
+    });
+
+    it('rejects when enrollment is not a draft', async () => {
+      mockRepository.findById.mockResolvedValueOnce({ ...mockEnrollment, status: 'submitted' });
+
+      await expect(
+        service.uploadUndergradProof('user-uuid', 'enrollment-uuid', {} as Express.Multer.File),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects when user does not own enrollment', async () => {
+      mockRepository.findById.mockResolvedValueOnce({ ...draft, candidateId: 'other-user' });
+
+      await expect(
+        service.uploadUndergradProof('user-uuid', 'enrollment-uuid', {} as Express.Multer.File),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('replaces the previous undergrad proof file', async () => {
+      mockRepository.findById.mockResolvedValueOnce({
+        ...draft,
+        undergradProofFileId: 'old-file',
+      });
+      mockRepository.update.mockResolvedValueOnce({
+        ...draft,
+        undergradProofFileId: 'file-uuid',
+      });
+
+      await service.uploadUndergradProof('user-uuid', 'enrollment-uuid', {} as Express.Multer.File);
 
       expect(mockFileStorageService.delete).toHaveBeenCalledWith('old-file');
     });

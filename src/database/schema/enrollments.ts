@@ -61,6 +61,7 @@ export const enrollments = pgTable(
     undergradCourse: varchar('undergrad_course', { length: 255 }),
     undergradDegreeType: undergradDegreeTypeEnum('undergrad_degree_type'),
     ira: numeric('ira', { precision: 5, scale: 2 }),
+    undergradProofFileId: varchar('undergrad_proof_file_id', { length: 255 }),
     phone: varchar('phone', { length: 20 }),
     justification: text('justification'),
     sigaaCode: varchar('sigaa_code', { length: 50 }),

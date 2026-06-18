@@ -233,6 +233,9 @@ export class EnrollmentService {
     if (!enrollment.ira) {
       errors.push('O IRA é obrigatório.');
     }
+    if (!enrollment.undergradProofFileId) {
+      errors.push('O comprovante de conclusão da graduação é obrigatório.');
+    }
     if (!enrollment.phone) {
       errors.push('O campo telefone é obrigatório.');
     }
@@ -452,6 +455,10 @@ export class EnrollmentService {
       fileIdsToDelete.push(enrollment.projectFileId);
     }
 
+    if (enrollment.undergradProofFileId) {
+      fileIdsToDelete.push(enrollment.undergradProofFileId);
+    }
+
     for (const degree of enrollment.mastersDegrees ?? []) {
       if (degree.proofFileId) {
         fileIdsToDelete.push(degree.proofFileId);
@@ -666,6 +673,65 @@ export class EnrollmentService {
 
     const fileRecord = await this.fileStorageService.findById(enrollment.projectFileId);
     const url = await this.fileStorageService.getSignedDownloadUrl(enrollment.projectFileId);
+    return { url, fileName: fileRecord.originalName };
+  }
+
+  async uploadUndergradProof(
+    userId: string,
+    id: string,
+    file: Express.Multer.File,
+  ): Promise<Enrollment> {
+    const enrollment = await this.findById(id);
+
+    if (enrollment.candidateId !== userId) {
+      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
+    }
+
+    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
+      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
+    }
+
+    if (enrollment.undergradProofFileId) {
+      await this.fileStorageService.delete(enrollment.undergradProofFileId);
+    }
+
+    const fileRecord = await this.fileStorageService.upload(file, userId, 'undergrad-proofs');
+
+    const now = new Date();
+    const updated = await this.enrollmentRepository.update(id, {
+      undergradProofFileId: fileRecord.id,
+      updatedAt: now,
+    });
+
+    if (!updated) {
+      throw new NotFoundException('Inscrição não encontrada.');
+    }
+
+    this.logger.log(`Comprovante de graduação enviado para inscrição: ${id}`);
+    return updated;
+  }
+
+  async getUndergradProofUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
+    const enrollment = await this.findById(id);
+
+    const isOwner = enrollment.candidateId === user.id;
+    const isStaff = [
+      RoleEnum.professor,
+      RoleEnum.mdccSecretary,
+      RoleEnum.postGraduateCoordinator,
+      RoleEnum.postGraduateViceCoordinator,
+    ].includes(user.role);
+
+    if (!isOwner && !isStaff) {
+      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
+    }
+
+    if (!enrollment.undergradProofFileId) {
+      throw new NotFoundException('Comprovante de graduação não encontrado.');
+    }
+
+    const fileRecord = await this.fileStorageService.findById(enrollment.undergradProofFileId);
+    const url = await this.fileStorageService.getSignedDownloadUrl(enrollment.undergradProofFileId);
     return { url, fileName: fileRecord.originalName };
   }
 
