@@ -46,6 +46,7 @@ export const STEP_ROUTES = [
   '/enrollment/new/poscomp',
   '/enrollment/new/cv',
   '/enrollment/new/sigaa',
+  '/enrollment/new/review',
 ] as const;
 
 function detectCompletedSteps(enrollment: Enrollment | null): number[] {
@@ -54,7 +55,7 @@ function detectCompletedSteps(enrollment: Enrollment | null): number[] {
 
   completed.push(0);
 
-  if (enrollment.primaryThemeId && enrollment.secondaryThemeId) {
+  if (enrollment.primaryThemeId) {
     completed.push(1);
   }
 

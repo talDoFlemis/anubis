@@ -32,6 +32,7 @@ import { Route as AppEnrollmentNewIndexRouteImport } from './routes/_app/enrollm
 import { Route as AppManageEnrollmentsIdRouteImport } from './routes/_app/manage/enrollments.$id'
 import { Route as AppEnrollmentNewThemesRouteImport } from './routes/_app/enrollment/new/themes'
 import { Route as AppEnrollmentNewSigaaRouteImport } from './routes/_app/enrollment/new/sigaa'
+import { Route as AppEnrollmentNewReviewRouteImport } from './routes/_app/enrollment/new/review'
 import { Route as AppEnrollmentNewPoscompRouteImport } from './routes/_app/enrollment/new/poscomp'
 import { Route as AppEnrollmentNewLevelRouteImport } from './routes/_app/enrollment/new/level'
 import { Route as AppEnrollmentNewCvRouteImport } from './routes/_app/enrollment/new/cv'
@@ -152,6 +153,11 @@ const AppEnrollmentNewSigaaRoute = AppEnrollmentNewSigaaRouteImport.update({
   path: '/sigaa',
   getParentRoute: () => AppEnrollmentNewRoute,
 } as any)
+const AppEnrollmentNewReviewRoute = AppEnrollmentNewReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AppEnrollmentNewRoute,
+} as any)
 const AppEnrollmentNewPoscompRoute = AppEnrollmentNewPoscompRouteImport.update({
   id: '/poscomp',
   path: '/poscomp',
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
   '/enrollment/new/level': typeof AppEnrollmentNewLevelRoute
   '/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
+  '/enrollment/new/review': typeof AppEnrollmentNewReviewRoute
   '/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
   '/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
   '/manage/enrollments/$id': typeof AppManageEnrollmentsIdRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
   '/enrollment/new/level': typeof AppEnrollmentNewLevelRoute
   '/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
+  '/enrollment/new/review': typeof AppEnrollmentNewReviewRoute
   '/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
   '/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
   '/manage/enrollments/$id': typeof AppManageEnrollmentsIdRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/_app/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
   '/_app/enrollment/new/level': typeof AppEnrollmentNewLevelRoute
   '/_app/enrollment/new/poscomp': typeof AppEnrollmentNewPoscompRoute
+  '/_app/enrollment/new/review': typeof AppEnrollmentNewReviewRoute
   '/_app/enrollment/new/sigaa': typeof AppEnrollmentNewSigaaRoute
   '/_app/enrollment/new/themes': typeof AppEnrollmentNewThemesRoute
   '/_app/manage/enrollments/$id': typeof AppManageEnrollmentsIdRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/enrollment/new/cv'
     | '/enrollment/new/level'
     | '/enrollment/new/poscomp'
+    | '/enrollment/new/review'
     | '/enrollment/new/sigaa'
     | '/enrollment/new/themes'
     | '/manage/enrollments/$id'
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/enrollment/new/cv'
     | '/enrollment/new/level'
     | '/enrollment/new/poscomp'
+    | '/enrollment/new/review'
     | '/enrollment/new/sigaa'
     | '/enrollment/new/themes'
     | '/manage/enrollments/$id'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/_app/enrollment/new/cv'
     | '/_app/enrollment/new/level'
     | '/_app/enrollment/new/poscomp'
+    | '/_app/enrollment/new/review'
     | '/_app/enrollment/new/sigaa'
     | '/_app/enrollment/new/themes'
     | '/_app/manage/enrollments/$id'
@@ -514,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEnrollmentNewSigaaRouteImport
       parentRoute: typeof AppEnrollmentNewRoute
     }
+    '/_app/enrollment/new/review': {
+      id: '/_app/enrollment/new/review'
+      path: '/review'
+      fullPath: '/enrollment/new/review'
+      preLoaderRoute: typeof AppEnrollmentNewReviewRouteImport
+      parentRoute: typeof AppEnrollmentNewRoute
+    }
     '/_app/enrollment/new/poscomp': {
       id: '/_app/enrollment/new/poscomp'
       path: '/poscomp'
@@ -550,6 +569,7 @@ interface AppEnrollmentNewRouteChildren {
   AppEnrollmentNewCvRoute: typeof AppEnrollmentNewCvRoute
   AppEnrollmentNewLevelRoute: typeof AppEnrollmentNewLevelRoute
   AppEnrollmentNewPoscompRoute: typeof AppEnrollmentNewPoscompRoute
+  AppEnrollmentNewReviewRoute: typeof AppEnrollmentNewReviewRoute
   AppEnrollmentNewSigaaRoute: typeof AppEnrollmentNewSigaaRoute
   AppEnrollmentNewThemesRoute: typeof AppEnrollmentNewThemesRoute
   AppEnrollmentNewIndexRoute: typeof AppEnrollmentNewIndexRoute
@@ -560,6 +580,7 @@ const AppEnrollmentNewRouteChildren: AppEnrollmentNewRouteChildren = {
   AppEnrollmentNewCvRoute: AppEnrollmentNewCvRoute,
   AppEnrollmentNewLevelRoute: AppEnrollmentNewLevelRoute,
   AppEnrollmentNewPoscompRoute: AppEnrollmentNewPoscompRoute,
+  AppEnrollmentNewReviewRoute: AppEnrollmentNewReviewRoute,
   AppEnrollmentNewSigaaRoute: AppEnrollmentNewSigaaRoute,
   AppEnrollmentNewThemesRoute: AppEnrollmentNewThemesRoute,
   AppEnrollmentNewIndexRoute: AppEnrollmentNewIndexRoute,
