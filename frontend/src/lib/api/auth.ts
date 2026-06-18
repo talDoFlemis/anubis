@@ -40,7 +40,6 @@ export interface CandidateOnboardingData {
   firstName: string;
   lastName: string;
   cpf: string;
-  poscomp?: number;
 }
 
 export interface UpdateUserData {

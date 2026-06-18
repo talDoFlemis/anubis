@@ -24,7 +24,6 @@ function CandidateOnboardingPage() {
       firstName: user?.firstName ?? '',
       lastName: user?.lastName ?? '',
       cpf: user?.cpf ?? '',
-      poscomp: '',
     } satisfies OnboardingFormData,
     validators: { onSubmit: onboardingSchema },
     onSubmit: async ({ value }) => {
@@ -33,7 +32,6 @@ function CandidateOnboardingPage() {
           firstName: value.firstName,
           lastName: value.lastName,
           cpf: value.cpf,
-          poscomp: value.poscomp.trim() ? Number(value.poscomp) : undefined,
         },
         {
           onSuccess: updatedUser => {
@@ -134,24 +132,6 @@ function CandidateOnboardingPage() {
               </Field>
             );
           }}
-        </form.Field>
-
-        <form.Field name="poscomp">
-          {field => (
-            <Field className="space-y-2">
-              <FieldLabel htmlFor={field.name}>POSCOMP (opcional)</FieldLabel>
-              <FieldContent>
-                <Input
-                  id={field.name}
-                  inputMode="numeric"
-                  value={field.state.value}
-                  onChange={event => field.handleChange(event.target.value)}
-                  onBlur={field.handleBlur}
-                  placeholder="Ex.: 780"
-                />
-              </FieldContent>
-            </Field>
-          )}
         </form.Field>
 
         <AuthErrorMessage message={onboarding.isError ? onboarding.error.message : null} />

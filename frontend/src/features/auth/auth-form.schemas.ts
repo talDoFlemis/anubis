@@ -44,7 +44,6 @@ export const onboardingSchema = z.object({
   firstName: z.string().trim().min(1, 'Informe o nome.'),
   lastName: z.string().trim().min(1, 'Informe o sobrenome.'),
   cpf: z.string().trim().min(1, 'Informe o CPF.'),
-  poscomp: z.string().trim(),
 });
 
 export type SignInFormData = z.infer<typeof signInSchema>;
