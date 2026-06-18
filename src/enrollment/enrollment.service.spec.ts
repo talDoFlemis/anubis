@@ -823,6 +823,66 @@ describe('EnrollmentService', () => {
     });
   });
 
+  describe('getUndergradProofUrl', () => {
+    const draftWithProof = { ...mockEnrollment, undergradProofFileId: 'file-uuid' };
+
+    it('returns a signed url and filename for the owner', async () => {
+      mockRepository.findById.mockResolvedValueOnce(draftWithProof);
+
+      const result = await service.getUndergradProofUrl(
+        { id: 'user-uuid', role: RoleEnum.candidate } as never,
+        'enrollment-uuid',
+      );
+
+      expect(result).toEqual({
+        url: 'https://signed-url.example.com',
+        fileName: 'projeto.pdf',
+      });
+    });
+
+    it('allows staff to read another candidate proof', async () => {
+      mockRepository.findById.mockResolvedValueOnce({
+        ...draftWithProof,
+        candidateId: 'other-user',
+      });
+
+      const result = await service.getUndergradProofUrl(
+        { id: 'staff-uuid', role: RoleEnum.mdccSecretary } as never,
+        'enrollment-uuid',
+      );
+
+      expect(result.url).toBe('https://signed-url.example.com');
+    });
+
+    it('rejects a user that is neither owner nor staff', async () => {
+      mockRepository.findById.mockResolvedValueOnce({
+        ...draftWithProof,
+        candidateId: 'other-user',
+      });
+
+      await expect(
+        service.getUndergradProofUrl(
+          { id: 'intruder-uuid', role: RoleEnum.candidate } as never,
+          'enrollment-uuid',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('returns not found when there is no undergrad proof', async () => {
+      mockRepository.findById.mockResolvedValueOnce({
+        ...mockEnrollment,
+        undergradProofFileId: null,
+      });
+
+      await expect(
+        service.getUndergradProofUrl(
+          { id: 'user-uuid', role: RoleEnum.candidate } as never,
+          'enrollment-uuid',
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('uploadMastersDegreeProof', () => {
     const doctoralWithDegrees = {
       ...mockEnrollment,

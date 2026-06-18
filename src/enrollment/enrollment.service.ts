@@ -25,6 +25,14 @@ import type { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { EnrollmentPeriodService } from './enrollment-period.service';
 import { EnrollmentRepository } from './infrastructure/persistence/enrollment.repository';
 
+/** Papéis com permissão de leitura sobre os arquivos de qualquer inscrição. */
+const STAFF_FILE_ACCESS_ROLES: RoleEnum[] = [
+  RoleEnum.professor,
+  RoleEnum.mdccSecretary,
+  RoleEnum.postGraduateCoordinator,
+  RoleEnum.postGraduateViceCoordinator,
+];
+
 @Injectable()
 export class EnrollmentService {
   private readonly logger = new Logger(EnrollmentService.name);
@@ -485,6 +493,37 @@ export class EnrollmentService {
     this.logger.log(`Inscrição cancelada e removida: ${id}`);
   }
 
+  /** Garante que o usuário é o candidato dono da inscrição. */
+  private assertCandidateOwns(enrollment: Enrollment, userId: string): void {
+    if (enrollment.candidateId !== userId) {
+      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
+    }
+  }
+
+  /** Garante que a inscrição ainda está em rascunho (editável). */
+  private assertDraft(enrollment: Enrollment): void {
+    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
+      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
+    }
+  }
+
+  /** Garante que o usuário pode ler os arquivos da inscrição (dono ou staff). */
+  private assertCanReadFiles(enrollment: Enrollment, user: User): void {
+    const isOwner = enrollment.candidateId === user.id;
+    const isStaff = STAFF_FILE_ACCESS_ROLES.includes(user.role);
+
+    if (!isOwner && !isStaff) {
+      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
+    }
+  }
+
+  /** Resolve a URL assinada e o nome original de um arquivo armazenado. */
+  private async buildSignedFileInfo(fileId: string): Promise<{ url: string; fileName: string }> {
+    const fileRecord = await this.fileStorageService.findById(fileId);
+    const url = await this.fileStorageService.getSignedDownloadUrl(fileId);
+    return { url, fileName: fileRecord.originalName };
+  }
+
   async uploadSigaaReceipt(
     userId: string,
     id: string,
@@ -492,13 +531,8 @@ export class EnrollmentService {
   ): Promise<Enrollment> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
-      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
-    }
-
-    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
-      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
-    }
+    this.assertCandidateOwns(enrollment, userId);
+    this.assertDraft(enrollment);
 
     if (enrollment.sigaaReceiptFileId) {
       await this.fileStorageService.delete(enrollment.sigaaReceiptFileId);
@@ -523,25 +557,13 @@ export class EnrollmentService {
   async getSigaaReceiptUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    const isOwner = enrollment.candidateId === user.id;
-    const isStaff = [
-      RoleEnum.professor,
-      RoleEnum.mdccSecretary,
-      RoleEnum.postGraduateCoordinator,
-      RoleEnum.postGraduateViceCoordinator,
-    ].includes(user.role);
-
-    if (!isOwner && !isStaff) {
-      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
-    }
+    this.assertCanReadFiles(enrollment, user);
 
     if (!enrollment.sigaaReceiptFileId) {
       throw new NotFoundException('Comprovante SIGAA não encontrado.');
     }
 
-    const fileRecord = await this.fileStorageService.findById(enrollment.sigaaReceiptFileId);
-    const url = await this.fileStorageService.getSignedDownloadUrl(enrollment.sigaaReceiptFileId);
-    return { url, fileName: fileRecord.originalName };
+    return this.buildSignedFileInfo(enrollment.sigaaReceiptFileId);
   }
 
   async uploadPoscompReceipt(
@@ -551,13 +573,8 @@ export class EnrollmentService {
   ): Promise<Enrollment> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
-      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
-    }
-
-    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
-      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
-    }
+    this.assertCandidateOwns(enrollment, userId);
+    this.assertDraft(enrollment);
 
     const poscomp = enrollment.poscomp;
     if (!poscomp || !poscomp.hasPoscomp) {
@@ -589,26 +606,14 @@ export class EnrollmentService {
   async getPoscompReceiptUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    const isOwner = enrollment.candidateId === user.id;
-    const isStaff = [
-      RoleEnum.professor,
-      RoleEnum.mdccSecretary,
-      RoleEnum.postGraduateCoordinator,
-      RoleEnum.postGraduateViceCoordinator,
-    ].includes(user.role);
-
-    if (!isOwner && !isStaff) {
-      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
-    }
+    this.assertCanReadFiles(enrollment, user);
 
     const receiptFileId = enrollment.poscomp?.receiptFileId;
     if (!receiptFileId) {
       throw new NotFoundException('Comprovante POSCOMP não encontrado.');
     }
 
-    const fileRecord = await this.fileStorageService.findById(receiptFileId);
-    const url = await this.fileStorageService.getSignedDownloadUrl(receiptFileId);
-    return { url, fileName: fileRecord.originalName };
+    return this.buildSignedFileInfo(receiptFileId);
   }
 
   async uploadProjectFile(
@@ -618,9 +623,7 @@ export class EnrollmentService {
   ): Promise<Enrollment> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
-      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
-    }
+    this.assertCandidateOwns(enrollment, userId);
 
     if (enrollment.level !== 'doctoral') {
       throw new BadRequestException(
@@ -628,9 +631,7 @@ export class EnrollmentService {
       );
     }
 
-    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
-      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
-    }
+    this.assertDraft(enrollment);
 
     if (enrollment.projectFileId) {
       await this.fileStorageService.delete(enrollment.projectFileId);
@@ -655,25 +656,13 @@ export class EnrollmentService {
   async getProjectFileUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    const isOwner = enrollment.candidateId === user.id;
-    const isStaff = [
-      RoleEnum.professor,
-      RoleEnum.mdccSecretary,
-      RoleEnum.postGraduateCoordinator,
-      RoleEnum.postGraduateViceCoordinator,
-    ].includes(user.role);
-
-    if (!isOwner && !isStaff) {
-      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
-    }
+    this.assertCanReadFiles(enrollment, user);
 
     if (!enrollment.projectFileId) {
       throw new NotFoundException('Arquivo do projeto não encontrado.');
     }
 
-    const fileRecord = await this.fileStorageService.findById(enrollment.projectFileId);
-    const url = await this.fileStorageService.getSignedDownloadUrl(enrollment.projectFileId);
-    return { url, fileName: fileRecord.originalName };
+    return this.buildSignedFileInfo(enrollment.projectFileId);
   }
 
   async uploadUndergradProof(
@@ -683,13 +672,8 @@ export class EnrollmentService {
   ): Promise<Enrollment> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
-      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
-    }
-
-    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
-      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
-    }
+    this.assertCandidateOwns(enrollment, userId);
+    this.assertDraft(enrollment);
 
     if (enrollment.undergradProofFileId) {
       await this.fileStorageService.delete(enrollment.undergradProofFileId);
@@ -714,25 +698,13 @@ export class EnrollmentService {
   async getUndergradProofUrl(user: User, id: string): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    const isOwner = enrollment.candidateId === user.id;
-    const isStaff = [
-      RoleEnum.professor,
-      RoleEnum.mdccSecretary,
-      RoleEnum.postGraduateCoordinator,
-      RoleEnum.postGraduateViceCoordinator,
-    ].includes(user.role);
-
-    if (!isOwner && !isStaff) {
-      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
-    }
+    this.assertCanReadFiles(enrollment, user);
 
     if (!enrollment.undergradProofFileId) {
       throw new NotFoundException('Comprovante de graduação não encontrado.');
     }
 
-    const fileRecord = await this.fileStorageService.findById(enrollment.undergradProofFileId);
-    const url = await this.fileStorageService.getSignedDownloadUrl(enrollment.undergradProofFileId);
-    return { url, fileName: fileRecord.originalName };
+    return this.buildSignedFileInfo(enrollment.undergradProofFileId);
   }
 
   async uploadMastersDegreeProof(
@@ -743,9 +715,7 @@ export class EnrollmentService {
   ): Promise<Enrollment> {
     const enrollment = await this.findById(id);
 
-    if (enrollment.candidateId !== userId) {
-      throw new ForbiddenException('Você não tem permissão para editar esta inscrição.');
-    }
+    this.assertCandidateOwns(enrollment, userId);
 
     if (enrollment.level !== 'doctoral') {
       throw new BadRequestException(
@@ -753,9 +723,7 @@ export class EnrollmentService {
       );
     }
 
-    if (enrollment.status !== ENROLLMENT_STATUS.DRAFT) {
-      throw new BadRequestException('Apenas inscrições em rascunho podem ser editadas.');
-    }
+    this.assertDraft(enrollment);
 
     const degrees = enrollment.mastersDegrees;
     if (!degrees || index < 0 || index >= degrees.length) {
@@ -794,17 +762,7 @@ export class EnrollmentService {
   ): Promise<{ url: string; fileName: string }> {
     const enrollment = await this.findById(id);
 
-    const isOwner = enrollment.candidateId === user.id;
-    const isStaff = [
-      RoleEnum.professor,
-      RoleEnum.mdccSecretary,
-      RoleEnum.postGraduateCoordinator,
-      RoleEnum.postGraduateViceCoordinator,
-    ].includes(user.role);
-
-    if (!isOwner && !isStaff) {
-      throw new ForbiddenException('Você não tem permissão para acessar esta inscrição.');
-    }
+    this.assertCanReadFiles(enrollment, user);
 
     const degrees = enrollment.mastersDegrees;
     if (!degrees || index < 0 || index >= degrees.length) {
@@ -816,8 +774,6 @@ export class EnrollmentService {
       throw new NotFoundException('Comprovante do mestrado não encontrado.');
     }
 
-    const fileRecord = await this.fileStorageService.findById(proofFileId);
-    const url = await this.fileStorageService.getSignedDownloadUrl(proofFileId);
-    return { url, fileName: fileRecord.originalName };
+    return this.buildSignedFileInfo(proofFileId);
   }
 }
