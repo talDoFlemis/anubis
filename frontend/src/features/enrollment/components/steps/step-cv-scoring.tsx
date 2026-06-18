@@ -72,6 +72,10 @@ const INITIAL_FORM_STATE: AddItemFormState = {
   eventoType: 'local',
 };
 
+// Pontuação-base do currículo: todo candidato parte de 6 pontos, somando a
+// pontuação obtida nas categorias. Mantém paridade com o backend (BASE_CV_SCORE).
+const BASE_CV_SCORE = 6;
+
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function getCategoryKey(name: string): string {
@@ -216,10 +220,10 @@ export function StepCvScoring({ enrollment, period, onNext, onBack }: StepCvScor
   }, [cvItems]);
 
   const totalScore = useMemo(() => {
-    if (!sortedCategories.length || !cvItems) return 0;
+    if (!sortedCategories.length) return 0;
     return sortedCategories.reduce(
-      (sum, cat) => sum + computeCategoryScore(cvItems, cat, level),
-      0,
+      (sum, cat) => sum + computeCategoryScore(cvItems ?? [], cat, level),
+      BASE_CV_SCORE,
     );
   }, [sortedCategories, cvItems, level]);
 
