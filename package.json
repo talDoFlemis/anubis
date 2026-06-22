@@ -52,7 +52,7 @@
     "googleapis": "^171.4.0",
     "helmet": "^8.2.0",
     "nestjs-pino": "^4.6.1",
-    "nodemailer": "^8.0.10",
+    "nodemailer": "^9.0.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pg": "^8.21.0",
