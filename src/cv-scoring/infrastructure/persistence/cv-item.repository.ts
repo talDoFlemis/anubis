@@ -39,6 +39,7 @@ export interface UpdateCvItemData {
   correctedClassification?: string | null;
   verificationComment?: string | null;
   updatedAt: Date;
+  score?: number | null;
 }
 
 export abstract class CvItemRepository {

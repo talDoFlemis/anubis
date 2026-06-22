@@ -111,6 +111,7 @@ export class CvItemService {
     if (dto.isInArea !== undefined) updateData.isInArea = dto.isInArea;
     if (dto.docenciaType !== undefined) updateData.docenciaType = dto.docenciaType;
     if (dto.eventoType !== undefined) updateData.eventoType = dto.eventoType;
+    if (dto.score !== undefined) updateData.score = dto.score;
 
     if (file) {
       if (existingItem.proofFileId) {

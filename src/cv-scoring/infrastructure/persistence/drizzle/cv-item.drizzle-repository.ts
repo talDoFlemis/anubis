@@ -86,6 +86,7 @@ export class CvItemDrizzleRepository extends CvItemRepository {
       updateData.correctedClassification = data.correctedClassification;
     if (data.verificationComment !== undefined)
       updateData.verificationComment = data.verificationComment;
+    if (data.score !== undefined) updateData.score = data.score;
 
     const [row] = await this.db
       .update(cvItems)
