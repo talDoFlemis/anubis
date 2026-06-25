@@ -1,10 +1,18 @@
-import { Check, FileCheck } from 'lucide-react';
+import { Check, ClipboardCheck, FileCheck } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-const STEP_LABELS = ['Nível', 'Acadêmico', 'POSCOMP', 'Currículo', 'Temas', 'SIGAA'] as const;
+const STEP_LABELS = [
+  'Nível',
+  'Temas',
+  'Acadêmico',
+  'POSCOMP',
+  'Currículo',
+  'SIGAA',
+  'Revisão',
+] as const;
 
-const STEP_ICONS = [null, null, null, null, null, FileCheck] as const;
+const STEP_ICONS = [null, null, null, null, null, FileCheck, ClipboardCheck] as const;
 
 interface WizardStepperProps {
   currentStep: number;
@@ -70,7 +78,7 @@ export function WizardStepper({ currentStep, completedSteps, onStepClick }: Wiza
                   aria-hidden="true"
                   className={cn(
                     'mx-2 mb-6 h-0.5 flex-1 rounded-full sm:mb-7',
-                    isCompleted ? 'bg-primary' : 'bg-surface-high',
+                    isCompleted ? 'bg-primary' : 'bg-[var(--outline-soft)]',
                   )}
                 />
               )}

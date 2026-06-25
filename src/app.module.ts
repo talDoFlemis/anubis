@@ -11,6 +11,8 @@ import { CandidateModule } from './candidate/candidate.module';
 import { LoggingModule } from './common/logging.module';
 import { HttpLoggerMiddleware } from './common/middlewares/http-logger.middleware';
 import { CvScoringModule } from './cv-scoring/cv-scoring.module';
+import { ValidationModule } from './validation/validation.module';
+
 import { DatabaseModule } from './database/database.module';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { validate } from './env.validation';
@@ -55,6 +57,7 @@ import { UsersModule } from './users/users.module';
     SystemModule,
     EnrollmentModule,
     CvScoringModule,
+    ValidationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

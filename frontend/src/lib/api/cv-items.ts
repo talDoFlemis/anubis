@@ -12,6 +12,19 @@ export interface CvItem {
   proofFileId: string | null;
   proofFileName: string | null;
   score: string | null;
+  classification: string | null;
+  isComplete: boolean;
+  isResumo: boolean;
+  isPeriodico: boolean;
+  isAutorPrincipal: boolean;
+  isDissertacao: boolean;
+  isEncontroIc: boolean;
+  isInArea: boolean;
+  docenciaType: string | null;
+  eventoType: string | null;
+  isVerified: string;
+  correctedClassification: string | null;
+  verificationComment: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,12 +33,35 @@ export interface CreateCvItemPayload {
   scoringCategoryId: string;
   description: string;
   quantity?: number;
+  classification?: string | null;
+  isComplete?: boolean;
+  isResumo?: boolean;
+  isPeriodico?: boolean;
+  isAutorPrincipal?: boolean;
+  isDissertacao?: boolean;
+  isEncontroIc?: boolean;
+  isInArea?: boolean;
+  docenciaType?: string | null;
+  eventoType?: string | null;
 }
 
 export interface UpdateCvItemPayload {
   scoringCategoryId?: string;
   description?: string;
   quantity?: number;
+  classification?: string | null;
+  isComplete?: boolean;
+  isResumo?: boolean;
+  isPeriodico?: boolean;
+  isAutorPrincipal?: boolean;
+  isDissertacao?: boolean;
+  isEncontroIc?: boolean;
+  isInArea?: boolean;
+  docenciaType?: string | null;
+  eventoType?: string | null;
+  isVerified?: string;
+  correctedClassification?: string | null;
+  verificationComment?: string | null;
 }
 
 // ── Normalizers ──────────────────────────────────────────────────────
@@ -41,6 +77,19 @@ function normalizeCvItem(data: unknown): CvItem {
     proofFileId: asNullableString(r.proofFileId),
     proofFileName: asNullableString(r.proofFileName),
     score: asNullableString(r.score),
+    classification: asNullableString(r.classification),
+    isComplete: !!r.isComplete,
+    isResumo: !!r.isResumo,
+    isPeriodico: !!r.isPeriodico,
+    isAutorPrincipal: !!r.isAutorPrincipal,
+    isDissertacao: !!r.isDissertacao,
+    isEncontroIc: !!r.isEncontroIc,
+    isInArea: !!r.isInArea,
+    docenciaType: asNullableString(r.docenciaType),
+    eventoType: asNullableString(r.eventoType),
+    isVerified: asString(r.isVerified || 'pending'),
+    correctedClassification: asNullableString(r.correctedClassification),
+    verificationComment: asNullableString(r.verificationComment),
     createdAt: asString(r.createdAt),
     updatedAt: asString(r.updatedAt),
   };
@@ -58,6 +107,45 @@ function buildFormData(payload: CreateCvItemPayload | UpdateCvItemPayload, file?
   }
   if (payload.quantity != null) {
     formData.append('quantity', String(payload.quantity));
+  }
+  if (payload.classification !== undefined) {
+    formData.append('classification', payload.classification || '');
+  }
+  if (payload.isComplete !== undefined) {
+    formData.append('isComplete', String(payload.isComplete));
+  }
+  if (payload.isResumo !== undefined) {
+    formData.append('isResumo', String(payload.isResumo));
+  }
+  if (payload.isPeriodico !== undefined) {
+    formData.append('isPeriodico', String(payload.isPeriodico));
+  }
+  if (payload.isAutorPrincipal !== undefined) {
+    formData.append('isAutorPrincipal', String(payload.isAutorPrincipal));
+  }
+  if (payload.isDissertacao !== undefined) {
+    formData.append('isDissertacao', String(payload.isDissertacao));
+  }
+  if (payload.isEncontroIc !== undefined) {
+    formData.append('isEncontroIc', String(payload.isEncontroIc));
+  }
+  if (payload.isInArea !== undefined) {
+    formData.append('isInArea', String(payload.isInArea));
+  }
+  if (payload.docenciaType !== undefined) {
+    formData.append('docenciaType', payload.docenciaType || '');
+  }
+  if (payload.eventoType !== undefined) {
+    formData.append('eventoType', payload.eventoType || '');
+  }
+  if ('isVerified' in payload && payload.isVerified !== undefined) {
+    formData.append('isVerified', payload.isVerified || '');
+  }
+  if ('correctedClassification' in payload && payload.correctedClassification !== undefined) {
+    formData.append('correctedClassification', payload.correctedClassification || '');
+  }
+  if ('verificationComment' in payload && payload.verificationComment !== undefined) {
+    formData.append('verificationComment', payload.verificationComment || '');
   }
   if (file) {
     formData.append('file', file);
@@ -102,6 +190,22 @@ export const cvItemsApi = {
         })
       ).data,
     );
+  },
+
+  verify: async (
+    enrollmentId: string,
+    itemId: string,
+    payload: {
+      isVerified: 'verified' | 'incorrect';
+      correctedClassification?: string;
+      verificationComment?: string;
+    },
+  ): Promise<CvItem> => {
+    const { data } = await apiClient.patch(
+      `/enrollments/${enrollmentId}/cv-items/${itemId}/verify`,
+      payload,
+    );
+    return normalizeCvItem(data);
   },
 
   remove: async (enrollmentId: string, itemId: string): Promise<void> => {

@@ -189,8 +189,6 @@ describe('AuthEmailService', () => {
       firstName: 'John',
       lastName: 'Doe',
       cpf: '12345678901',
-      universityOfOrigin: 'UFRN',
-      ira: '8.75',
     });
 
     // ASSERT
@@ -204,8 +202,6 @@ describe('AuthEmailService', () => {
     expect(createProfileSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'user-1',
-        universityOfOrigin: 'UFRN',
-        ira: '8.75',
       }),
     );
     expect(sendMailSpy).toHaveBeenCalled();
@@ -226,8 +222,6 @@ describe('AuthEmailService', () => {
         firstName: 'John',
         lastName: 'Doe',
         cpf: '12345678901',
-        universityOfOrigin: 'UFRN',
-        ira: '8.75',
       }),
     ).rejects.toThrow(ConflictException);
   });

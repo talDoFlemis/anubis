@@ -47,4 +47,11 @@ export abstract class EnrollmentRepository {
   abstract remove(id: string): Promise<void>;
 
   abstract findCvItemFileIds(enrollmentId: string): Promise<string[]>;
+
+  /**
+   * Transiciona para 'closed' todas as inscrições ainda em rascunho dos
+   * períodos informados (inscrições não submetidas no encerramento).
+   * Retorna a quantidade de inscrições afetadas.
+   */
+  abstract closeDraftsByPeriods(periodIds: string[], now: Date): Promise<number>;
 }

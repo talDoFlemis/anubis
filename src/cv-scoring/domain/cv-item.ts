@@ -7,6 +7,19 @@ export class CvItem {
   proofFileId!: string | null;
   proofFileName!: string | null;
   score!: string | null;
+  classification!: string | null;
+  isComplete!: boolean;
+  isResumo!: boolean;
+  isPeriodico!: boolean;
+  isAutorPrincipal!: boolean;
+  isDissertacao!: boolean;
+  isEncontroIc!: boolean;
+  isInArea!: boolean;
+  docenciaType!: string | null;
+  eventoType!: string | null;
+  isVerified!: string;
+  correctedClassification!: string | null;
+  verificationComment!: string | null;
   createdAt!: Date;
   updatedAt!: Date;
 

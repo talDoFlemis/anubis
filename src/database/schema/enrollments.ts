@@ -21,6 +21,12 @@ export const enrollmentStatusEnum = pgEnum('enrollment_status', [
   'cancelled',
 ]);
 
+export const undergradDegreeTypeEnum = pgEnum('undergrad_degree_type', [
+  'bacharelado',
+  'licenciatura',
+  'tecnologo',
+]);
+
 export interface PoscompData {
   hasPoscomp: boolean;
   year?: number;
@@ -35,6 +41,8 @@ export interface MastersDegreeData {
   graduateProgram: string;
   ira: number;
   isPrimary: boolean;
+  /** Comprovante (PDF) do IRA/histórico do mestrado. */
+  proofFileId?: string;
 }
 
 export const enrollments = pgTable(
@@ -49,6 +57,11 @@ export const enrollments = pgTable(
       .references(() => enrollmentPeriods.id, { onDelete: 'restrict' }),
     level: enrollmentLevelEnum('level').notNull(),
     status: enrollmentStatusEnum('status').notNull().default('draft'),
+    undergradUniversity: varchar('undergrad_university', { length: 255 }),
+    undergradCourse: varchar('undergrad_course', { length: 255 }),
+    undergradDegreeType: undergradDegreeTypeEnum('undergrad_degree_type'),
+    ira: numeric('ira', { precision: 5, scale: 2 }),
+    undergradProofFileId: varchar('undergrad_proof_file_id', { length: 255 }),
     phone: varchar('phone', { length: 20 }),
     justification: text('justification'),
     sigaaCode: varchar('sigaa_code', { length: 50 }),
@@ -62,6 +75,8 @@ export const enrollments = pgTable(
     }),
     poscomp: jsonb('poscomp').$type<PoscompData | null>(),
     mastersDegrees: jsonb('masters_degrees').$type<MastersDegreeData[] | null>(),
+    projectTitle: varchar('project_title', { length: 255 }),
+    projectFileId: varchar('project_file_id', { length: 255 }),
     scoreDraft: numeric('score_draft', { precision: 7, scale: 2 }),
     submittedAt: timestamp('submitted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

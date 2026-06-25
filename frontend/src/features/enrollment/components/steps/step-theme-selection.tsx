@@ -75,12 +75,12 @@ export function StepThemeSelection({ enrollment, onNext, onBack }: StepThemeSele
   const handleSave = () => {
     if (!enrollment) return;
 
-    if (!primaryThemeId || !secondaryThemeId) {
-      toast.error('Por favor, selecione as duas opções de tema.');
+    if (!primaryThemeId) {
+      toast.error('Por favor, selecione a primeira opção de tema.');
       return;
     }
 
-    if (primaryThemeId === secondaryThemeId) {
+    if (secondaryThemeId && primaryThemeId === secondaryThemeId) {
       toast.error('A primeira e a segunda opção de tema devem ser diferentes.');
       return;
     }
@@ -90,7 +90,7 @@ export function StepThemeSelection({ enrollment, onNext, onBack }: StepThemeSele
         id: enrollment.id,
         payload: {
           primaryThemeId,
-          secondaryThemeId,
+          secondaryThemeId: secondaryThemeId || null,
         },
       },
       {
@@ -148,7 +148,7 @@ export function StepThemeSelection({ enrollment, onNext, onBack }: StepThemeSele
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="secondary-theme">Segunda Opção de Tema</FieldLabel>
+          <FieldLabel htmlFor="secondary-theme">Segunda Opção de Tema (opcional)</FieldLabel>
           <FieldContent>
             <Select value={secondaryThemeId} onValueChange={setSecondaryThemeId}>
               <SelectTrigger id="secondary-theme">
@@ -372,7 +372,9 @@ export function StepThemeSelection({ enrollment, onNext, onBack }: StepThemeSele
           type="button"
           onClick={handleSave}
           disabled={
-            isSaving || !primaryThemeId || !secondaryThemeId || primaryThemeId === secondaryThemeId
+            isSaving ||
+            !primaryThemeId ||
+            (!!secondaryThemeId && primaryThemeId === secondaryThemeId)
           }
           className="ml-auto"
         >

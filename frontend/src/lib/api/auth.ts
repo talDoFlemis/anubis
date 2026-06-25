@@ -34,17 +34,12 @@ export interface EmailRegisterData {
   firstName: string;
   lastName: string;
   cpf: string;
-  universityOfOrigin: string;
-  ira: string;
 }
 
 export interface CandidateOnboardingData {
   firstName: string;
   lastName: string;
   cpf: string;
-  universityOfOrigin: string;
-  ira: string;
-  poscomp?: number;
 }
 
 export interface UpdateUserData {

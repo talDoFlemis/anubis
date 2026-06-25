@@ -7,6 +7,7 @@ import {
 
 import type { CreateCvItemDto } from './dto/create-cv-item.dto';
 import type { UpdateCvItemDto } from './dto/update-cv-item.dto';
+import type { VerifyCvItemDto } from './dto/verify-cv-item.dto';
 
 import { FileStorageService } from '../file-storage/file-storage.service';
 import { CvScoringService } from './cv-scoring.service';
@@ -48,6 +49,16 @@ export class CvItemService {
       description: dto.description,
       quantity: dto.quantity ?? 1,
       proofFileId,
+      classification: dto.classification ?? null,
+      isComplete: dto.isComplete ?? false,
+      isResumo: dto.isResumo ?? false,
+      isPeriodico: dto.isPeriodico ?? false,
+      isAutorPrincipal: dto.isAutorPrincipal ?? false,
+      isDissertacao: dto.isDissertacao ?? false,
+      isEncontroIc: dto.isEncontroIc ?? false,
+      isInArea: dto.isInArea ?? false,
+      docenciaType: dto.docenciaType ?? null,
+      eventoType: dto.eventoType ?? null,
     });
 
     await this.recalculateScore(enrollmentId);
@@ -90,6 +101,17 @@ export class CvItemService {
       );
       updateData.scoringCategoryId = dto.scoringCategoryId;
     }
+    if (dto.classification !== undefined) updateData.classification = dto.classification;
+    if (dto.isComplete !== undefined) updateData.isComplete = dto.isComplete;
+    if (dto.isResumo !== undefined) updateData.isResumo = dto.isResumo;
+    if (dto.isPeriodico !== undefined) updateData.isPeriodico = dto.isPeriodico;
+    if (dto.isAutorPrincipal !== undefined) updateData.isAutorPrincipal = dto.isAutorPrincipal;
+    if (dto.isDissertacao !== undefined) updateData.isDissertacao = dto.isDissertacao;
+    if (dto.isEncontroIc !== undefined) updateData.isEncontroIc = dto.isEncontroIc;
+    if (dto.isInArea !== undefined) updateData.isInArea = dto.isInArea;
+    if (dto.docenciaType !== undefined) updateData.docenciaType = dto.docenciaType;
+    if (dto.eventoType !== undefined) updateData.eventoType = dto.eventoType;
+    if (dto.score !== undefined) updateData.score = dto.score;
 
     if (file) {
       if (existingItem.proofFileId) {
@@ -100,6 +122,20 @@ export class CvItemService {
     }
 
     const item = await this.cvItemRepository.update(itemId, updateData);
+
+    await this.recalculateScore(enrollmentId);
+    return item;
+  }
+
+  async verify(enrollmentId: string, itemId: string, dto: VerifyCvItemDto): Promise<CvItem> {
+    await this.findById(enrollmentId, itemId);
+
+    const item = await this.cvItemRepository.update(itemId, {
+      isVerified: dto.isVerified,
+      correctedClassification: dto.correctedClassification ?? null,
+      verificationComment: dto.verificationComment ?? null,
+      updatedAt: new Date(),
+    });
 
     await this.recalculateScore(enrollmentId);
     return item;
@@ -169,15 +205,28 @@ export class CvItemService {
     );
 
     const scoringItems = items.map(item => ({
+      id: item.id,
       scoringCategoryId: item.scoringCategoryId,
       quantity: item.quantity,
+      classification: item.classification,
+      isComplete: item.isComplete,
+      isResumo: item.isResumo,
+      isPeriodico: item.isPeriodico,
+      isAutorPrincipal: item.isAutorPrincipal,
+      isDissertacao: item.isDissertacao,
+      isEncontroIc: item.isEncontroIc,
+      isInArea: item.isInArea,
+      docenciaType: item.docenciaType,
+      eventoType: item.eventoType,
+      isVerified: item.isVerified,
+      correctedClassification: item.correctedClassification,
     }));
 
     const breakdown = this.cvScoringService.calculateScoreFromItems(scoringItems, categories);
 
     await this.cvItemRepository.updateEnrollmentScore(
       enrollmentId,
-      String(breakdown.total.toFixed(2)),
+      String(breakdown.finalScore.toFixed(2)),
     );
   }
 }

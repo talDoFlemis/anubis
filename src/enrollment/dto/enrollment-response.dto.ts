@@ -7,6 +7,11 @@ export class EnrollmentResponseDto {
   @ApiProperty() enrollmentPeriodId!: string;
   @ApiProperty() level!: string;
   @ApiProperty() status!: string;
+  @ApiPropertyOptional() undergradUniversity!: string | null;
+  @ApiPropertyOptional() undergradCourse!: string | null;
+  @ApiPropertyOptional() undergradDegreeType!: string | null;
+  @ApiPropertyOptional() ira!: string | null;
+  @ApiPropertyOptional() undergradProofFileId!: string | null;
   @ApiPropertyOptional() phone!: string | null;
   @ApiPropertyOptional() justification!: string | null;
   @ApiPropertyOptional() sigaaCode!: string | null;
@@ -16,6 +21,8 @@ export class EnrollmentResponseDto {
   @ApiPropertyOptional() secondaryThemeId!: string | null;
   @ApiPropertyOptional() poscomp!: PoscompData | null;
   @ApiPropertyOptional() mastersDegrees!: MastersDegreeData[] | null;
+  @ApiPropertyOptional() projectTitle!: string | null;
+  @ApiPropertyOptional() projectFileId!: string | null;
   @ApiPropertyOptional() scoreDraft!: string | null;
   @ApiPropertyOptional() submittedAt!: Date | null;
   @ApiProperty() createdAt!: Date;

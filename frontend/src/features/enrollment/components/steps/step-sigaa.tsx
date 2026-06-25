@@ -1,26 +1,13 @@
 import { useState } from 'react';
 
-import { useNavigate } from '@tanstack/react-router';
-import { AlertTriangle, ArrowLeft, ExternalLink, FileCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, FileCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { FileUploadField } from '@/features/enrollment/components/file-upload-field';
-import {
-  useSubmitEnrollment,
-  useUpdateEnrollment,
-} from '@/features/enrollment/hooks/use-enrollment';
+import { useUpdateEnrollment } from '@/features/enrollment/hooks/use-enrollment';
 import type { Enrollment, EnrollmentPeriod } from '@/lib/api';
 import { api } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -38,18 +25,13 @@ const SIGAA_URL = 'https://si3.ufc.br/sigaa/public/processo_seletivo/lista.jsf';
 
 // ── Component ────────────────────────────────────────────────────────
 
-export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
-  const navigate = useNavigate();
+export function StepSigaa({ enrollment, onNext, onBack }: StepSigaaProps) {
   const queryClient = useQueryClient();
   const updateEnrollment = useUpdateEnrollment();
-  const submitEnrollment = useSubmitEnrollment();
 
   const [sigaaCode, setSigaaCode] = useState(enrollment?.sigaaCode ?? '');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [declaration, setDeclaration] = useState(enrollment?.declaration ?? false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
-  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const uploadReceipt = useMutation({
     mutationFn: async ({ enrollmentId, file }: { enrollmentId: string; file: File }) => {
@@ -74,73 +56,34 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
       newErrors.receipt = 'Comprovante de inscrição é obrigatório.';
     }
 
-    if (!declaration) {
-      newErrors.declaration = 'Você deve aceitar a declaração de veracidade.';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
 
-  const isPending =
-    updateEnrollment.isPending || uploadReceipt.isPending || submitEnrollment.isPending;
+  const isPending = updateEnrollment.isPending || uploadReceipt.isPending;
 
-  async function handleSaveAndSubmit() {
+  async function handleNext() {
     if (!validate()) return;
     if (!enrollment) return;
 
-    setShowSubmitDialog(true);
-  }
-
-  async function handleConfirmSubmit() {
-    if (!enrollment) return;
-
     try {
-      setSubmissionErrors([]);
-
-      // Save sigaaCode and declaration
       await updateEnrollment.mutateAsync({
         id: enrollment.id,
-        payload: { sigaaCode: sigaaCode.trim(), declaration },
+        payload: { sigaaCode: sigaaCode.trim() },
       });
 
-      // Upload receipt file if selected
       if (receiptFile) {
-        await uploadReceipt.mutateAsync({
-          enrollmentId: enrollment.id,
-          file: receiptFile,
-        });
+        await uploadReceipt.mutateAsync({ enrollmentId: enrollment.id, file: receiptFile });
       }
 
-      // Submit enrollment
-      submitEnrollment.mutate(enrollment.id, {
-        onSuccess: () => {
-          toast.success('Inscrição submetida com sucesso!');
-          setShowSubmitDialog(false);
-          navigate({ to: '/enrollment' });
-        },
-        onError: err => {
-          toast.error('Não foi possível submeter a inscrição. Verifique as pendências.');
-          if (err && typeof err === 'object' && 'message' in err) {
-            const rawMsg = (err as { message: string }).message;
-            if (typeof rawMsg === 'string') {
-              const list = rawMsg.split('. ').filter(Boolean);
-              setSubmissionErrors(list);
-            }
-          }
-          setShowSubmitDialog(false);
-        },
-      });
+      onNext();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao salvar dados do SIGAA.';
       toast.error(message);
-      setShowSubmitDialog(false);
     }
   }
 
   const hasExistingReceipt = !!enrollment?.sigaaReceiptFileId;
-  const isFormComplete =
-    sigaaCode.trim() !== '' && (hasExistingReceipt || receiptFile !== null) && declaration;
 
   return (
     <div className="space-y-10">
@@ -152,21 +95,6 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
           Gestão de Atividades Acadêmicas).
         </p>
       </div>
-
-      {/* ── Submission Errors ───────────────────────────────────── */}
-      {submissionErrors.length > 0 && (
-        <div className="flex flex-col gap-2 rounded-2xl bg-destructive/10 p-5 text-sm text-destructive border border-destructive/20 animate-in fade-in duration-300">
-          <div className="flex items-center gap-2 font-semibold">
-            <AlertTriangle className="h-5 w-5" />
-            <span>Existem pendências para a submissão de sua inscrição:</span>
-          </div>
-          <ul className="list-disc pl-5 space-y-1">
-            {submissionErrors.map((errText, idx) => (
-              <li key={idx}>{errText}</li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {/* ── Instructions ───────────────────────────────────────── */}
       <div className="bg-surface-dim/40 space-y-4 rounded-2xl p-6">
@@ -235,32 +163,6 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
         {errors.receipt && <p className="text-destructive text-sm">{errors.receipt}</p>}
       </div>
 
-      {/* ── Declaration Checkbox ───────────────────────────────── */}
-      <div className="flex items-start gap-3 rounded-2xl bg-surface-dim/30 p-5 border border-slate-200/50">
-        <input
-          id="declaration-checkbox"
-          type="checkbox"
-          checked={declaration}
-          onChange={e => {
-            setDeclaration(e.target.checked);
-            setErrors(prev => {
-              const { declaration: _, ...rest } = prev;
-              return rest;
-            });
-          }}
-          className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
-        />
-        <label
-          htmlFor="declaration-checkbox"
-          className="text-sm leading-relaxed text-muted-foreground select-none cursor-pointer"
-        >
-          Declaro para os devidos fins que as informações prestadas nesta inscrição e os documentos
-          enviados são verídicos e autênticos, estando ciente de que qualquer falsidade sujeitará o
-          candidato às sanções cabíveis.
-        </label>
-      </div>
-      {errors.declaration && <p className="text-destructive text-sm mt-1">{errors.declaration}</p>}
-
       {/* ── Navigation ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between pt-2">
         {onBack ? (
@@ -272,61 +174,17 @@ export function StepSigaa({ enrollment, onBack }: StepSigaaProps) {
           <span />
         )}
 
-        <Button
-          type="button"
-          onClick={handleSaveAndSubmit}
-          disabled={isPending || !isFormComplete}
-          className="anubis-gradient-action min-w-44 text-white font-medium"
-        >
+        <Button type="button" onClick={handleNext} disabled={isPending} className="min-w-32">
           {isPending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Processando...
+              Salvando...
             </>
           ) : (
-            'Finalizar e Submeter'
+            'Próximo'
           )}
         </Button>
       </div>
-
-      {/* ── Submit confirmation dialog ──────────────────────────── */}
-      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="text-primary h-5 w-5" />
-              Submeter inscrição
-            </DialogTitle>
-            <DialogDescription>
-              Após a submissão, você não poderá mais editar sua inscrição. Certifique-se de que
-              todos os dados e documentos estão corretos antes de confirmar.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPending}>
-                Cancelar
-              </Button>
-            </DialogClose>
-            <Button
-              type="button"
-              className="anubis-gradient-action text-white"
-              onClick={handleConfirmSubmit}
-              disabled={isPending}
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Submetendo...
-                </>
-              ) : (
-                'Confirmar Submissão'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

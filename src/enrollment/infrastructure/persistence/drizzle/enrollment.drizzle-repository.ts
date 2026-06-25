@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import type { PaginatedResult } from '../../../../common/dto/paginated-response.dto';
 import { buildPaginatedResult } from '../../../../common/dto/paginated-response.dto';
@@ -132,5 +132,19 @@ export class EnrollmentDrizzleRepository extends EnrollmentRepository {
       .where(eq(cvItems.enrollmentId, enrollmentId));
 
     return rows.map(r => r.proofFileId).filter((id): id is string => id !== null);
+  }
+
+  async closeDraftsByPeriods(periodIds: string[], now: Date): Promise<number> {
+    if (periodIds.length === 0) return 0;
+
+    const rows = await this.db
+      .update(enrollments)
+      .set({ status: 'closed', updatedAt: now })
+      .where(
+        and(inArray(enrollments.enrollmentPeriodId, periodIds), eq(enrollments.status, 'draft')),
+      )
+      .returning({ id: enrollments.id });
+
+    return rows.length;
   }
 }

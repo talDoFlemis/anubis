@@ -23,8 +23,6 @@ describe('CandidateService', () => {
     role: RoleEnum.candidate,
     status: StatusEnum.active,
     onboardingCompleted: true,
-    universityOfOrigin: 'UFRN',
-    ira: '8.50',
     poscomp: 700,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -80,8 +78,6 @@ describe('CandidateService', () => {
       firstName: 'John',
       lastName: 'Doe',
       cpf: '12345678901',
-      universityOfOrigin: 'UFRN',
-      ira: '8.75',
     });
 
     expect(usersService.update).toHaveBeenCalledWith(
@@ -89,7 +85,7 @@ describe('CandidateService', () => {
       expect.objectContaining({ onboardingCompleted: true }),
     );
     expect(candidateRepository.upsertByUserId).toHaveBeenCalledWith(
-      expect.objectContaining({ universityOfOrigin: 'UFRN', ira: '8.75' }),
+      expect.objectContaining({ userId: 'user-1' }),
     );
   });
 
@@ -134,7 +130,7 @@ describe('CandidateService', () => {
       }),
     );
 
-    await expect(service.findAll({ universityOfOrigin: 'UFRN' })).resolves.toEqual(
+    await expect(service.findAll({ email: 'jane@example.com' })).resolves.toEqual(
       buildPaginatedResult({
         data: [candidateProfile],
         page: 1,
@@ -142,10 +138,6 @@ describe('CandidateService', () => {
         total: 1,
       }),
     );
-  });
-
-  it('rejects invalid ira range filters', async () => {
-    await expect(service.findAll({ iraMin: 9, iraMax: 8 })).rejects.toThrow(BadRequestException);
   });
 
   it('rejects invalid poscomp range filters', async () => {

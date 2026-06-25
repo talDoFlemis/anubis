@@ -1,0 +1,1 @@
+ALTER TABLE "enrollments" ADD COLUMN "undergrad_proof_file_id" varchar(255);

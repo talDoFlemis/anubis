@@ -24,9 +24,6 @@ function CandidateOnboardingPage() {
       firstName: user?.firstName ?? '',
       lastName: user?.lastName ?? '',
       cpf: user?.cpf ?? '',
-      universityOfOrigin: '',
-      ira: '',
-      poscomp: '',
     } satisfies OnboardingFormData,
     validators: { onSubmit: onboardingSchema },
     onSubmit: async ({ value }) => {
@@ -35,9 +32,6 @@ function CandidateOnboardingPage() {
           firstName: value.firstName,
           lastName: value.lastName,
           cpf: value.cpf,
-          universityOfOrigin: value.universityOfOrigin,
-          ira: value.ira.trim(),
-          poscomp: value.poscomp.trim() ? Number(value.poscomp) : undefined,
         },
         {
           onSuccess: updatedUser => {
@@ -139,69 +133,6 @@ function CandidateOnboardingPage() {
             );
           }}
         </form.Field>
-
-        <form.Field name="universityOfOrigin">
-          {field => {
-            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-            const fieldErrors = toFieldErrors(field.state.meta.errors);
-
-            return (
-              <Field data-invalid={isInvalid} className="space-y-2">
-                <FieldLabel htmlFor={field.name}>Universidade de origem</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id={field.name}
-                    value={field.state.value}
-                    onChange={event => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                    placeholder="Ex.: UFRN"
-                    required
-                    aria-invalid={isInvalid}
-                  />
-                  <FieldError errors={fieldErrors} />
-                </FieldContent>
-              </Field>
-            );
-          }}
-        </form.Field>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <form.Field name="ira">
-            {field => (
-              <Field className="space-y-2">
-                <FieldLabel htmlFor={field.name}>IRA</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id={field.name}
-                    inputMode="decimal"
-                    value={field.state.value}
-                    onChange={event => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                    placeholder="Ex.: 8.75"
-                    required
-                  />
-                </FieldContent>
-              </Field>
-            )}
-          </form.Field>
-          <form.Field name="poscomp">
-            {field => (
-              <Field className="space-y-2">
-                <FieldLabel htmlFor={field.name}>POSCOMP (opcional)</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id={field.name}
-                    inputMode="numeric"
-                    value={field.state.value}
-                    onChange={event => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                    placeholder="Ex.: 780"
-                  />
-                </FieldContent>
-              </Field>
-            )}
-          </form.Field>
-        </div>
 
         <AuthErrorMessage message={onboarding.isError ? onboarding.error.message : null} />
 

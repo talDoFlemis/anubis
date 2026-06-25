@@ -2,6 +2,12 @@ import type { CreateCvItemPayload, UpdateCvItemPayload } from '@/lib/api';
 import { api } from '@/lib/api';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+/**
+ * Pontuação base do currículo, somada antes das categorias.
+ * Mantém paridade com o backend (cv-scoring-config BASE_CV_SCORE).
+ */
+export const BASE_CV_SCORE = 6;
+
 // ── Query Options ────────────────────────────────────────────────────
 
 export function scoringCategoriesQueryOptions(periodId: string, level: string) {
@@ -94,5 +100,30 @@ export function useCvItemFileUrl(enrollmentId: string, itemId: string) {
     queryFn: () => api.cvItems.getFileUrl(enrollmentId, itemId),
     enabled: !!enrollmentId && !!itemId,
     staleTime: 30 * 60 * 1000,
+  });
+}
+
+export function useVerifyCvItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      enrollmentId,
+      itemId,
+      payload,
+    }: {
+      enrollmentId: string;
+      itemId: string;
+      payload: {
+        isVerified: 'verified' | 'incorrect';
+        correctedClassification?: string;
+        verificationComment?: string;
+      };
+    }) => api.cvItems.verify(enrollmentId, itemId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['cv-items', variables.enrollmentId] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments', variables.enrollmentId] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
+    },
   });
 }

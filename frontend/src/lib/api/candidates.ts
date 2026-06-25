@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, type PaginatedResponse } from './client';
 import { asBool, asNullableNumber, asNullableString, asRecord, asString } from './normalizers';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -44,4 +44,28 @@ function normalizeCandidateProfile(data: unknown): CandidateProfile {
 
 export const candidatesApi = {
   me: async () => normalizeCandidateProfile((await apiClient.get('/candidates/me')).data),
+
+  findById: async (userId: string): Promise<CandidateProfile> => {
+    const { data } = await apiClient.get(`/candidates/${userId}`);
+    return normalizeCandidateProfile(data);
+  },
+
+  findAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<CandidateProfile>> => {
+    const res = await apiClient.get('/candidates', { params });
+    const r = asRecord(res.data);
+    const m = asRecord(r.pagination || {});
+    return {
+      data: Array.isArray(r.data) ? r.data.map(normalizeCandidateProfile) : [],
+      pagination: {
+        page: Number(m.page) || 1,
+        limit: Number(m.limit) || 20,
+        total: Number(m.total) || 0,
+        totalPages: Number(m.totalPages) || 1,
+      },
+    };
+  },
 };

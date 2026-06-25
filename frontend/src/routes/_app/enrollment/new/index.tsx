@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { useEnrollmentWizard } from '../new';
+import { STEP_ROUTES, useEnrollmentWizard } from '../new';
 
 export const Route = createFileRoute('/_app/enrollment/new/')({
   component: RedirectToCurrentStep,
@@ -11,15 +11,6 @@ function RedirectToCurrentStep() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const STEP_ROUTES = [
-      '/enrollment/new/level',
-      '/enrollment/new/academic',
-      '/enrollment/new/poscomp',
-      '/enrollment/new/cv',
-      '/enrollment/new/themes',
-      '/enrollment/new/sigaa',
-    ];
-
     let targetStep = 0;
     if (enrollment) {
       for (let i = 0; i < STEP_ROUTES.length; i++) {

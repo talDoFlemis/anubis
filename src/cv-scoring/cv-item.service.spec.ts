@@ -86,6 +86,8 @@ describe('CvItemService', () => {
           },
         ],
         total: 10,
+        base: 6,
+        finalScore: 16,
       }),
     };
 
@@ -343,6 +345,46 @@ describe('CvItemService', () => {
         }),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('updates score field (including null)', async () => {
+      const updatedWithScore = { ...mockCvItem, score: 7.5 };
+      const updatedWithNullScore = { ...mockCvItem, score: null };
+
+      // Test with numeric score
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment); // getAndValidateEnrollment
+      mockCvItemRepository.findById.mockResolvedValueOnce(mockCvItem); // findById
+      mockCvItemRepository.update.mockResolvedValueOnce(updatedWithScore); // update
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment); // recalculateScore → getEnrollment
+      mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([updatedWithScore]); // recalculateScore → findByEnrollment
+
+      let result = await service.update('user-uuid', 'enrollment-uuid', 'item-uuid', {
+        score: 7.5,
+      });
+
+      expect(result.score).toBe(7.5);
+      expect(mockCvItemRepository.update).toHaveBeenCalledWith(
+        'item-uuid',
+        expect.objectContaining({ score: 7.5 }),
+      );
+
+      // Reset mock call counts
+      mockCvItemRepository.update.mockClear();
+
+      // Test with null score
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
+      mockCvItemRepository.findById.mockResolvedValueOnce(mockCvItem);
+      mockCvItemRepository.update.mockResolvedValueOnce(updatedWithNullScore);
+      mockCvItemRepository.findEnrollmentById.mockResolvedValueOnce(mockEnrollment);
+      mockCvItemRepository.findByEnrollment.mockResolvedValueOnce([updatedWithNullScore]);
+
+      result = await service.update('user-uuid', 'enrollment-uuid', 'item-uuid', { score: null });
+
+      expect(result.score).toBeNull();
+      expect(mockCvItemRepository.update).toHaveBeenCalledWith(
+        'item-uuid',
+        expect.objectContaining({ score: null }),
+      );
+    });
   });
 
   describe('remove', () => {
@@ -395,7 +437,11 @@ describe('CvItemService', () => {
         'masters',
       );
       expect(mockCvScoringService.calculateScoreFromItems).toHaveBeenCalled();
-      expect(mockCvItemRepository.updateEnrollmentScore).toHaveBeenCalled();
+      // base (6) + earned (10) = 16.00
+      expect(mockCvItemRepository.updateEnrollmentScore).toHaveBeenCalledWith(
+        'enrollment-uuid',
+        '16.00',
+      );
     });
   });
 });
