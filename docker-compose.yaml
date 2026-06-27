@@ -64,6 +64,7 @@ services:
       SYSTEM_SECRET: supersecrethereasdfasasdfasdasdfasdfjhlkasdsdlfkjhasdfsdflkjashflldasdfasdflf
 
       S3_ENDPOINT: http://rustfs:9000
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT}
       S3_ACCESS_KEY_ID: minioadmin
       S3_SECRET_ACCESS_KEY: minioadmin
       S3_BUCKET: anubis

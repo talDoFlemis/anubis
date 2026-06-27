@@ -43,7 +43,16 @@ export class S3StorageDriver implements StorageDriver {
       Bucket: this.bucket,
       Key: key,
     });
-    return getSignedUrl(this.s3, command, { expiresIn: expiresInSeconds });
+    let url = await getSignedUrl(this.s3, command, { expiresIn: expiresInSeconds });
+
+    const publicEndpoint = this.configService.get<string>('S3_PUBLIC_ENDPOINT');
+    if (typeof publicEndpoint === 'string' && publicEndpoint) {
+      const internalEndpoint = this.configService.getOrThrow<string>('S3_ENDPOINT');
+      const normalizedInternal = internalEndpoint.replace(/\/$/, '');
+      const normalizedPublic = publicEndpoint.replace(/\/$/, '');
+      url = url.replace(normalizedInternal, normalizedPublic);
+    }
+    return url;
   }
 
   async delete(key: string): Promise<void> {

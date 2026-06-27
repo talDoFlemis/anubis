@@ -100,4 +100,28 @@ describe('S3StorageDriver', () => {
     expect(options).toEqual({ expiresIn: 7200 });
     expect(url).toBe('http://signed-url');
   });
+
+  it('should translate signed url when S3_PUBLIC_ENDPOINT is configured', async () => {
+    const configGetMock = jest.fn().mockImplementation((key: string) => {
+      if (key === 'S3_PUBLIC_ENDPOINT') return 'http://localhost:9000';
+      if (key === 'S3_ENDPOINT') return 'http://rustfs:9000';
+      return null;
+    });
+    const customDriver = new S3StorageDriver({
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
+        if (key === 'S3_BUCKET') return 'anubis';
+        if (key === 'S3_ENDPOINT') return 'http://rustfs:9000';
+        if (key === 'S3_REGION') return 'us-east-1';
+        if (key === 'S3_ACCESS_KEY_ID') return 'minioadmin';
+        if (key === 'S3_SECRET_ACCESS_KEY') return 'minioadmin';
+        return null;
+      }),
+      get: configGetMock,
+    } as unknown as ConfigService);
+
+    (getSignedUrl as jest.Mock).mockResolvedValueOnce('http://rustfs:9000/anubis/file.pdf?sig=123');
+
+    const url = await customDriver.getSignedDownloadUrl('file.pdf');
+    expect(url).toBe('http://localhost:9000/anubis/file.pdf?sig=123');
+  });
 });
