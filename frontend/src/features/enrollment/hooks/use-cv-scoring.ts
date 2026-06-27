@@ -124,6 +124,7 @@ export function useVerifyCvItem() {
       queryClient.invalidateQueries({ queryKey: ['cv-items', variables.enrollmentId] });
       queryClient.invalidateQueries({ queryKey: ['enrollments', variables.enrollmentId] });
       queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['validation'] });
     },
   });
 }

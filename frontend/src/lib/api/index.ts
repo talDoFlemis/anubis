@@ -56,6 +56,7 @@ export { authApi as auth } from './auth';
 export { candidatesApi as candidates } from './candidates';
 export { professorsApi as professors } from './professors';
 export { researchThemesApi as researchThemes } from './research-themes';
+export { validationApi as validation } from './validation';
 
 // Re-compose the legacy `api` namespace so existing `api.auth.*` calls keep working.
 import { authApi } from './auth';
@@ -67,6 +68,7 @@ import { enrollmentsApi } from './enrollments';
 import { professorsApi } from './professors';
 import { researchThemesApi } from './research-themes';
 import { universitiesApi } from './universities';
+import { validationApi } from './validation';
 
 export const api = {
   auth: authApi,
@@ -78,4 +80,5 @@ export const api = {
   professors: professorsApi,
   researchThemes: researchThemesApi,
   universities: universitiesApi,
+  validation: validationApi,
 } as const;

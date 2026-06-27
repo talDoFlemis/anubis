@@ -21,9 +21,11 @@ import { Route as AuthConfirmEmailRouteImport } from './routes/auth/confirm-emai
 import { Route as AuthChangePasswordRouteImport } from './routes/auth/change-password'
 import { Route as AppResearchThemesRouteImport } from './routes/_app/research-themes'
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
+import { Route as AppValidationIndexRouteImport } from './routes/_app/validation/index'
 import { Route as AppEnrollmentIndexRouteImport } from './routes/_app/enrollment/index'
 import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboarding/secretary'
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
+import { Route as AppValidationEnrollmentIdRouteImport } from './routes/_app/validation/$enrollmentId'
 import { Route as AppManageResearchThemesRouteImport } from './routes/_app/manage/research-themes'
 import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/professors'
 import { Route as AppManageEnrollmentPeriodsRouteImport } from './routes/_app/manage/enrollment-periods'
@@ -97,6 +99,11 @@ const AuthOnboardingIndexRoute = AuthOnboardingIndexRouteImport.update({
   path: '/onboarding/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppValidationIndexRoute = AppValidationIndexRouteImport.update({
+  id: '/validation/',
+  path: '/validation/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEnrollmentIndexRoute = AppEnrollmentIndexRouteImport.update({
   id: '/enrollment/',
   path: '/enrollment/',
@@ -112,6 +119,12 @@ const AuthOnboardingProfessorRoute = AuthOnboardingProfessorRouteImport.update({
   path: '/onboarding/professor',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppValidationEnrollmentIdRoute =
+  AppValidationEnrollmentIdRouteImport.update({
+    id: '/validation/$enrollmentId',
+    path: '/validation/$enrollmentId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppManageResearchThemesRoute = AppManageResearchThemesRouteImport.update({
   id: '/manage/research-themes',
   path: '/manage/research-themes',
@@ -195,9 +208,11 @@ export interface FileRoutesByFullPath {
   '/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
+  '/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/enrollment/': typeof AppEnrollmentIndexRoute
+  '/validation/': typeof AppValidationIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/enrollment/new/academic': typeof AppEnrollmentNewAcademicRoute
   '/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
@@ -223,9 +238,11 @@ export interface FileRoutesByTo {
   '/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
+  '/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/enrollment': typeof AppEnrollmentIndexRoute
+  '/validation': typeof AppValidationIndexRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
   '/enrollment/new/academic': typeof AppEnrollmentNewAcademicRoute
   '/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
@@ -254,9 +271,11 @@ export interface FileRoutesById {
   '/_app/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
   '/_app/manage/professors': typeof AppManageProfessorsRoute
   '/_app/manage/research-themes': typeof AppManageResearchThemesRoute
+  '/_app/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
   '/_app/enrollment/': typeof AppEnrollmentIndexRoute
+  '/_app/validation/': typeof AppValidationIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_app/enrollment/new/academic': typeof AppEnrollmentNewAcademicRoute
   '/_app/enrollment/new/cv': typeof AppEnrollmentNewCvRoute
@@ -285,9 +304,11 @@ export interface FileRouteTypes {
     | '/manage/enrollment-periods'
     | '/manage/professors'
     | '/manage/research-themes'
+    | '/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/enrollment/'
+    | '/validation/'
     | '/auth/onboarding/'
     | '/enrollment/new/academic'
     | '/enrollment/new/cv'
@@ -313,9 +334,11 @@ export interface FileRouteTypes {
     | '/manage/enrollment-periods'
     | '/manage/professors'
     | '/manage/research-themes'
+    | '/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/enrollment'
+    | '/validation'
     | '/auth/onboarding'
     | '/enrollment/new/academic'
     | '/enrollment/new/cv'
@@ -343,9 +366,11 @@ export interface FileRouteTypes {
     | '/_app/manage/enrollment-periods'
     | '/_app/manage/professors'
     | '/_app/manage/research-themes'
+    | '/_app/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
     | '/_app/enrollment/'
+    | '/_app/validation/'
     | '/auth/onboarding/'
     | '/_app/enrollment/new/academic'
     | '/_app/enrollment/new/cv'
@@ -449,6 +474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_app/validation/': {
+      id: '/_app/validation/'
+      path: '/validation'
+      fullPath: '/validation/'
+      preLoaderRoute: typeof AppValidationIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/enrollment/': {
       id: '/_app/enrollment/'
       path: '/enrollment'
@@ -469,6 +501,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/onboarding/professor'
       preLoaderRoute: typeof AuthOnboardingProfessorRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_app/validation/$enrollmentId': {
+      id: '/_app/validation/$enrollmentId'
+      path: '/validation/$enrollmentId'
+      fullPath: '/validation/$enrollmentId'
+      preLoaderRoute: typeof AppValidationEnrollmentIdRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/manage/research-themes': {
       id: '/_app/manage/research-themes'
@@ -596,7 +635,9 @@ interface AppRouteChildren {
   AppManageEnrollmentPeriodsRoute: typeof AppManageEnrollmentPeriodsRoute
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
   AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
+  AppValidationEnrollmentIdRoute: typeof AppValidationEnrollmentIdRoute
   AppEnrollmentIndexRoute: typeof AppEnrollmentIndexRoute
+  AppValidationIndexRoute: typeof AppValidationIndexRoute
   AppManageEnrollmentsIdRoute: typeof AppManageEnrollmentsIdRoute
 }
 
@@ -607,7 +648,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppManageEnrollmentPeriodsRoute: AppManageEnrollmentPeriodsRoute,
   AppManageProfessorsRoute: AppManageProfessorsRoute,
   AppManageResearchThemesRoute: AppManageResearchThemesRoute,
+  AppValidationEnrollmentIdRoute: AppValidationEnrollmentIdRoute,
   AppEnrollmentIndexRoute: AppEnrollmentIndexRoute,
+  AppValidationIndexRoute: AppValidationIndexRoute,
   AppManageEnrollmentsIdRoute: AppManageEnrollmentsIdRoute,
 }
 

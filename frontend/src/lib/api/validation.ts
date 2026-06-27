@@ -1,7 +1,5 @@
-import { type PaginatedResponse } from './client';
+import { apiClient, type PaginatedResponse } from './client';
 import { asRecord, asString } from './normalizers';
-
-import { mockValidationCandidates } from '@/lib/mock-validation-data';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -18,6 +16,9 @@ export interface CandidateValidationSummary {
   validatedScore: number | null;
   status: ValidationStatus;
   submittedAt: string;
+  primaryThemeId?: string | null;
+  secondaryThemeId?: string | null;
+  ira?: number | null;
 }
 
 export type PaginatedValidationCandidates = PaginatedResponse<CandidateValidationSummary>;
@@ -40,10 +41,26 @@ function normalizeCandidateValidation(data: unknown): CandidateValidationSummary
     themeName: asString(r.themeName),
     professorName: r.professorName ? asString(r.professorName) : undefined,
     level: r.level ? asString(r.level) : undefined,
-    declaredScore: typeof r.declaredScore === 'number' ? r.declaredScore : 0,
-    validatedScore: typeof r.validatedScore === 'number' ? r.validatedScore : null,
+    declaredScore:
+      typeof r.declaredScore === 'number'
+        ? r.declaredScore
+        : parseFloat(r.declaredScore as string) || 0,
+    validatedScore:
+      typeof r.validatedScore === 'number'
+        ? r.validatedScore
+        : r.validatedScore
+          ? parseFloat(r.validatedScore as string)
+          : null,
     status: asString(r.status) as ValidationStatus,
     submittedAt: asString(r.submittedAt),
+    primaryThemeId: r.primaryThemeId ? asString(r.primaryThemeId) : null,
+    secondaryThemeId: r.secondaryThemeId ? asString(r.secondaryThemeId) : null,
+    ira:
+      r.ira !== undefined && r.ira !== null
+        ? typeof r.ira === 'number'
+          ? r.ira
+          : parseFloat(r.ira as string)
+        : null,
   };
 }
 
@@ -51,16 +68,14 @@ function normalizeCandidateValidation(data: unknown): CandidateValidationSummary
 
 export const validationApi = {
   getSecretaryStats: async (): Promise<SecretaryDashboardStats> => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          total: 120,
-          validated: 45,
-          pending: 65,
-          inProgress: 10,
-        });
-      }, 600);
-    });
+    const { data } = await apiClient.get('/validation/stats');
+    const r = asRecord(data);
+    return {
+      total: Number(r.total) || 0,
+      validated: Number(r.validated) || 0,
+      pending: Number(r.pending) || 0,
+      inProgress: Number(r.inProgress) || 0,
+    };
   },
 
   findCandidates: async (params?: {
@@ -70,49 +85,58 @@ export const validationApi = {
     level?: string;
     status?: string;
     professor?: string;
+    themeId?: string;
   }): Promise<PaginatedValidationCandidates> => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        let mockData = [...mockValidationCandidates].map(normalizeCandidateValidation);
+    const { data } = await apiClient.get('/validation/candidates');
+    let list = Array.isArray(data) ? data.map(normalizeCandidateValidation) : [];
 
-        if (params?.search) {
-          const search = params.search.toLowerCase();
-          mockData = mockData.filter(c => c.candidateName.toLowerCase().includes(search));
-        }
+    if (params?.search) {
+      const search = params.search.toLowerCase();
+      list = list.filter(c => c.candidateName.toLowerCase().includes(search));
+    }
 
-        if (params?.level && params.level !== 'all') {
-          const levelFilter = params.level.toLowerCase();
-          mockData = mockData.filter(c => c.level?.toLowerCase() === levelFilter);
-        }
+    if (params?.level && params.level !== 'all') {
+      const levelFilter = params.level.toLowerCase();
+      list = list.filter(c => c.level?.toLowerCase() === levelFilter);
+    }
 
-        if (params?.status && params.status !== 'all') {
-          const statusFilter = params.status;
-          mockData = mockData.filter(c => c.status === statusFilter);
-        }
+    if (params?.status && params.status !== 'all') {
+      const statusFilter = params.status;
+      list = list.filter(c => c.status === statusFilter);
+    }
 
-        if (params?.professor && params.professor !== 'all') {
-          const professorFilter = params.professor.toLowerCase();
-          mockData = mockData.filter(c => c.professorName?.toLowerCase().includes(professorFilter));
-        }
+    if (params?.professor && params.professor !== 'all') {
+      const professorFilter = params.professor.toLowerCase();
+      list = list.filter(c => c.professorName?.toLowerCase().includes(professorFilter));
+    }
 
-        resolve({
-          data: mockData,
-          pagination: {
-            page: params?.page || 1,
-            limit: params?.limit || 10,
-            total: mockData.length,
-            totalPages: 1,
-          },
-        });
-      }, 800);
-    });
+    if (params?.themeId) {
+      list = list.filter(
+        c => c.primaryThemeId === params.themeId || c.secondaryThemeId === params.themeId,
+      );
+    }
+
+    const page = params?.page || 1;
+    const limit = params?.limit || 10;
+    const offset = (page - 1) * limit;
+    const paginatedData = list.slice(offset, offset + limit);
+
+    return {
+      data: paginatedData,
+      pagination: {
+        page,
+        limit,
+        total: list.length,
+        totalPages: Math.ceil(list.length / limit) || 1,
+      },
+    };
   },
 
-  getDetails: async (_enrollmentId: string) => {
-    return { id: _enrollmentId };
+  getDetails: async (enrollmentId: string) => {
+    return { id: enrollmentId };
   },
 
-  updateScore: async (_enrollmentId: string, _itemId: string, _score: number | null) => {
-    return new Promise(resolve => setTimeout(resolve, 500));
+  updateScore: async (enrollmentId: string, itemId: string, score: number | null) => {
+    return { enrollmentId, itemId, score };
   },
 };
