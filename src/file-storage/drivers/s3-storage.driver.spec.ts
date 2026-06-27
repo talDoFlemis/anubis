@@ -101,12 +101,14 @@ describe('S3StorageDriver', () => {
     expect(url).toBe('http://signed-url');
   });
 
-  it('should translate signed url when S3_PUBLIC_ENDPOINT is configured', async () => {
+  it('should initialize a separate S3Client for presigning when S3_PUBLIC_ENDPOINT is configured', () => {
     const configGetMock = jest.fn().mockImplementation((key: string) => {
       if (key === 'S3_PUBLIC_ENDPOINT') return 'http://localhost:9000';
-      if (key === 'S3_ENDPOINT') return 'http://rustfs:9000';
       return null;
     });
+
+    (S3Client as jest.Mock).mockClear();
+
     const customDriver = new S3StorageDriver({
       getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'S3_BUCKET') return 'anubis';
@@ -119,9 +121,18 @@ describe('S3StorageDriver', () => {
       get: configGetMock,
     } as unknown as ConfigService);
 
-    (getSignedUrl as jest.Mock).mockResolvedValueOnce('http://rustfs:9000/anubis/file.pdf?sig=123');
-
-    const url = await customDriver.getSignedDownloadUrl('file.pdf');
-    expect(url).toBe('http://localhost:9000/anubis/file.pdf?sig=123');
+    expect(S3Client).toHaveBeenCalledTimes(2);
+    expect(S3Client).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        endpoint: 'http://rustfs:9000',
+      }),
+    );
+    expect(S3Client).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        endpoint: 'http://localhost:9000',
+      }),
+    );
   });
 });
