@@ -78,6 +78,7 @@ export const enrollments = pgTable(
     projectTitle: varchar('project_title', { length: 255 }),
     projectFileId: varchar('project_file_id', { length: 255 }),
     scoreDraft: numeric('score_draft', { precision: 7, scale: 2 }),
+    scoreValidated: numeric('score_validated', { precision: 7, scale: 2 }),
     submittedAt: timestamp('submitted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

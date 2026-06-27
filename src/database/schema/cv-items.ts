@@ -26,6 +26,7 @@ export const cvItems = pgTable('cv_items', {
     onDelete: 'set null',
   }),
   score: numeric('score', { precision: 5, scale: 2 }),
+  validatedScore: numeric('validated_score', { precision: 5, scale: 2 }),
   classification: varchar('classification', { length: 50 }),
   isComplete: boolean('is_complete').default(false),
   isResumo: boolean('is_resumo').default(false),
