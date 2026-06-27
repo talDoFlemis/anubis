@@ -12,19 +12,37 @@ import type { StorageDriver, UploadOptions } from './storage-driver.interface';
 @Injectable()
 export class S3StorageDriver implements StorageDriver {
   private readonly s3: S3Client;
+  private readonly presignS3: S3Client;
   private readonly bucket: string;
 
   constructor(private readonly configService: ConfigService) {
     this.bucket = this.configService.getOrThrow<string>('S3_BUCKET');
+
+    const region = this.configService.getOrThrow<string>('S3_REGION');
+    const credentials = {
+      accessKeyId: this.configService.getOrThrow<string>('S3_ACCESS_KEY_ID'),
+      secretAccessKey: this.configService.getOrThrow<string>('S3_SECRET_ACCESS_KEY'),
+    };
+    const forcePathStyle = this.configService.get<boolean>('S3_FORCE_PATH_STYLE', true);
+
     this.s3 = new S3Client({
       endpoint: this.configService.getOrThrow<string>('S3_ENDPOINT'),
-      region: this.configService.getOrThrow<string>('S3_REGION'),
-      credentials: {
-        accessKeyId: this.configService.getOrThrow<string>('S3_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.getOrThrow<string>('S3_SECRET_ACCESS_KEY'),
-      },
-      forcePathStyle: this.configService.get<boolean>('S3_FORCE_PATH_STYLE', true),
+      region,
+      credentials,
+      forcePathStyle,
     });
+
+    const publicEndpoint = this.configService.get<string>('S3_PUBLIC_ENDPOINT');
+    if (publicEndpoint) {
+      this.presignS3 = new S3Client({
+        endpoint: publicEndpoint,
+        region,
+        credentials,
+        forcePathStyle,
+      });
+    } else {
+      this.presignS3 = this.s3;
+    }
   }
 
   async upload(options: UploadOptions): Promise<void> {
@@ -43,16 +61,7 @@ export class S3StorageDriver implements StorageDriver {
       Bucket: this.bucket,
       Key: key,
     });
-    let url = await getSignedUrl(this.s3, command, { expiresIn: expiresInSeconds });
-
-    const publicEndpoint = this.configService.get<string>('S3_PUBLIC_ENDPOINT');
-    if (typeof publicEndpoint === 'string' && publicEndpoint) {
-      const internalEndpoint = this.configService.getOrThrow<string>('S3_ENDPOINT');
-      const normalizedInternal = internalEndpoint.replace(/\/$/, '');
-      const normalizedPublic = publicEndpoint.replace(/\/$/, '');
-      url = url.replace(normalizedInternal, normalizedPublic);
-    }
-    return url;
+    return getSignedUrl(this.presignS3, command, { expiresIn: expiresInSeconds });
   }
 
   async delete(key: string): Promise<void> {
