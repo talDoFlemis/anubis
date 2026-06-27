@@ -222,11 +222,52 @@ export class CvItemService {
       correctedClassification: item.correctedClassification,
     }));
 
-    const breakdown = this.cvScoringService.calculateScoreFromItems(scoringItems, categories);
+    for (const item of items) {
+      const category = categories.find(c => c.id === item.scoringCategoryId);
+      if (!category) continue;
+
+      const scoringItem = scoringItems.find(si => si.id === item.id);
+      if (!scoringItem) continue;
+
+      const itemDeclaredScore = this.cvScoringService.calculateItemScore(
+        scoringItem,
+        category,
+        false,
+      );
+      const itemValidatedScore = this.cvScoringService.calculateItemScore(
+        scoringItem,
+        category,
+        true,
+      );
+
+      if (
+        item.score !== String(itemDeclaredScore.toFixed(2)) ||
+        item.validatedScore !== String(itemValidatedScore.toFixed(2))
+      ) {
+        await this.cvItemRepository.update(item.id, {
+          score: itemDeclaredScore,
+          validatedScore: itemValidatedScore,
+          updatedAt: new Date(),
+        });
+      }
+    }
+
+    const declaredBreakdown = this.cvScoringService.calculateScoreFromItems(
+      scoringItems,
+      categories,
+      false,
+    );
+
+    const validatedBreakdown = this.cvScoringService.calculateScoreFromItems(
+      scoringItems,
+      categories,
+      true,
+    );
 
     await this.cvItemRepository.updateEnrollmentScore(
       enrollmentId,
-      String(breakdown.finalScore.toFixed(2)),
+      String(declaredBreakdown.finalScore.toFixed(2)),
+      String(validatedBreakdown.finalScore.toFixed(2)),
     );
   }
 }

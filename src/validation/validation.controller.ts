@@ -2,9 +2,11 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { StaffOnly } from '../roles/roles.decorator';
+import { User } from '../users/domain/user';
 
 import { ValidationService } from './validation.service';
 
@@ -17,8 +19,8 @@ export class ValidationController {
 
   @Get('candidates')
   @StaffOnly()
-  async getCandidates() {
-    return this.validationService.getCandidatesForDashboard();
+  async getCandidates(@CurrentUser() user: User) {
+    return this.validationService.getCandidatesForDashboard(user);
   }
 
   @Get('stats')

@@ -46,9 +46,10 @@ describe('ValidationController', () => {
       const mockResult = [{ id: '1' }];
       mockValidationService.getCandidatesForDashboard.mockResolvedValue(mockResult);
 
-      const result = await controller.getCandidates();
+      const mockUser = { id: 'user-1', role: 'mdcc-secretary' } as any;
+      const result = await controller.getCandidates(mockUser);
 
-      expect(mockValidationService.getCandidatesForDashboard).toHaveBeenCalled();
+      expect(mockValidationService.getCandidatesForDashboard).toHaveBeenCalledWith(mockUser);
       expect(result).toEqual(mockResult);
     });
   });

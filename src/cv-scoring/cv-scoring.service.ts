@@ -76,96 +76,105 @@ export class CvScoringService {
     return 'UNKNOWN';
   }
 
-  calculateCategoryScore(items: CvItemForScoring[], category: CvScoringCategorySelect): number {
-    const maxPoints = parseFloat(category.maxPoints);
+  calculateItemScore(
+    item: CvItemForScoring,
+    category: CvScoringCategorySelect,
+    useVerification = true,
+  ): number {
     const key = this.getCategoryKey(category.name);
     const level = category.level;
 
+    const isVerified = useVerification ? item.isVerified : 'pending';
+    const correctedClassification = useVerification ? item.correctedClassification : null;
+
+    // If marked as incorrect and set no correction, it scores 0
+    if (isVerified === 'incorrect' && !correctedClassification) {
+      return 0;
+    }
+
+    const activeClassification =
+      isVerified === 'incorrect' && correctedClassification
+        ? correctedClassification
+        : item.classification || 'none';
+
+    switch (key) {
+      case 'PROJECTS': {
+        const basePoints = level === 'masters' ? 0.3 : 0.2;
+        const areaBonus = level === 'masters' ? 0.2 : 0.1;
+        const pointsPerSemester = basePoints + (item.isInArea ? areaBonus : 0);
+        return item.quantity * pointsPerSemester;
+      }
+
+      case 'PRODUCTION': {
+        if (level === 'masters' && item.isEncontroIc) {
+          return 0.1;
+        } else {
+          // Base score from CAPES classification
+          const qualisClass = activeClassification as CapesClassification;
+          const basePoints = QUALIS_POINTS.classifications[qualisClass] ?? 0.1;
+          let itemScore = basePoints;
+
+          // Cumulative bonuses
+          if (item.isComplete) {
+            itemScore += QUALIS_POINTS.bonuses.completeArticle;
+          } else if (item.isResumo) {
+            itemScore += QUALIS_POINTS.bonuses.summaryPoster;
+          }
+
+          if (item.isPeriodico) {
+            itemScore += QUALIS_POINTS.bonuses.periodical;
+          }
+
+          if (item.isAutorPrincipal) {
+            itemScore += QUALIS_POINTS.bonuses.mainAuthor;
+          }
+
+          if (level === 'doctoral' && item.isDissertacao) {
+            itemScore += QUALIS_POINTS.bonuses.dissertationOutcome;
+          }
+          return itemScore;
+        }
+      }
+
+      case 'TEACHING': {
+        if (level === 'masters') {
+          const points = item.docenciaType === 'ies' ? 0.3 : 0.2;
+          return item.quantity * points;
+        } else {
+          return item.quantity * 0.2;
+        }
+      }
+
+      case 'ORIENTATION': {
+        if (level === 'doctoral') {
+          return item.quantity * 0.2;
+        }
+        return 0;
+      }
+
+      case 'EVENTS': {
+        const type = item.eventoType || 'local';
+        const points = type === 'internacional' ? 0.3 : type === 'nacional' ? 0.2 : 0.1;
+        return item.quantity * points;
+      }
+
+      default: {
+        const pointsPerItem = parseFloat(category.pointsPerItem);
+        return item.quantity * pointsPerItem;
+      }
+    }
+  }
+
+  calculateCategoryScore(
+    items: CvItemForScoring[],
+    category: CvScoringCategorySelect,
+    useVerification = true,
+  ): number {
+    const maxPoints = parseFloat(category.maxPoints);
     let totalScore = 0;
 
     for (const item of items) {
-      // If professor marked as incorrect and set no correction, it scores 0
-      if (item.isVerified === 'incorrect' && !item.correctedClassification) {
-        continue;
-      }
-
-      const activeClassification =
-        item.isVerified === 'incorrect' && item.correctedClassification
-          ? item.correctedClassification
-          : item.classification || 'none';
-
-      switch (key) {
-        case 'PROJECTS': {
-          const basePoints = level === 'masters' ? 0.3 : 0.2;
-          const areaBonus = level === 'masters' ? 0.2 : 0.1;
-          const pointsPerSemester = basePoints + (item.isInArea ? areaBonus : 0);
-          totalScore += item.quantity * pointsPerSemester;
-          break;
-        }
-
-        case 'PRODUCTION': {
-          let itemScore = 0;
-          if (level === 'masters' && item.isEncontroIc) {
-            itemScore = 0.1; // Encontro de IC is a flat 0.1 points with no bonuses
-          } else {
-            // Base score from CAPES classification
-            const qualisClass = activeClassification as CapesClassification;
-            const basePoints = QUALIS_POINTS.classifications[qualisClass] ?? 0.1;
-            itemScore = basePoints;
-
-            // Cumulative bonuses
-            if (item.isComplete) {
-              itemScore += QUALIS_POINTS.bonuses.completeArticle;
-            } else if (item.isResumo) {
-              itemScore += QUALIS_POINTS.bonuses.summaryPoster;
-            }
-
-            if (item.isPeriodico) {
-              itemScore += QUALIS_POINTS.bonuses.periodical;
-            }
-
-            if (item.isAutorPrincipal) {
-              itemScore += QUALIS_POINTS.bonuses.mainAuthor;
-            }
-
-            if (level === 'doctoral' && item.isDissertacao) {
-              itemScore += QUALIS_POINTS.bonuses.dissertationOutcome;
-            }
-          }
-          totalScore += itemScore;
-          break;
-        }
-
-        case 'TEACHING': {
-          if (level === 'masters') {
-            const points = item.docenciaType === 'ies' ? 0.3 : 0.2;
-            totalScore += item.quantity * points;
-          } else {
-            totalScore += item.quantity * 0.2;
-          }
-          break;
-        }
-
-        case 'ORIENTATION': {
-          if (level === 'doctoral') {
-            totalScore += item.quantity * 0.2;
-          }
-          break;
-        }
-
-        case 'EVENTS': {
-          const type = item.eventoType || 'local';
-          const points = type === 'internacional' ? 0.3 : type === 'nacional' ? 0.2 : 0.1;
-          totalScore += item.quantity * points;
-          break;
-        }
-
-        default: {
-          const pointsPerItem = parseFloat(category.pointsPerItem);
-          totalScore += item.quantity * pointsPerItem;
-          break;
-        }
-      }
+      totalScore += this.calculateItemScore(item, category, useVerification);
     }
 
     return parseFloat(Math.min(totalScore, maxPoints).toFixed(2));
@@ -174,6 +183,7 @@ export class CvScoringService {
   calculateScoreFromItems(
     items: CvItemForScoring[],
     categories: CvScoringCategorySelect[],
+    useVerification = true,
   ): ScoreBreakdown {
     const categoryBreakdown: CategoryScoreBreakdown[] = [];
     let total = 0;
@@ -181,7 +191,7 @@ export class CvScoringService {
     for (const category of categories) {
       const categoryItems = items.filter(item => item.scoringCategoryId === category.id);
 
-      const score = this.calculateCategoryScore(categoryItems, category);
+      const score = this.calculateCategoryScore(categoryItems, category, useVerification);
       categoryBreakdown.push({
         categoryId: category.id,
         name: category.name,

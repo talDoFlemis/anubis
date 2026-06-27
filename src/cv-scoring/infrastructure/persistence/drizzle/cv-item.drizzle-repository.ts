@@ -87,6 +87,7 @@ export class CvItemDrizzleRepository extends CvItemRepository {
     if (data.verificationComment !== undefined)
       updateData.verificationComment = data.verificationComment;
     if (data.score !== undefined) updateData.score = data.score;
+    if (data.validatedScore !== undefined) updateData.validatedScore = data.validatedScore;
 
     const [row] = await this.db
       .update(cvItems)
@@ -121,13 +122,18 @@ export class CvItemDrizzleRepository extends CvItemRepository {
     return row ?? null;
   }
 
-  async updateEnrollmentScore(enrollmentId: string, scoreDraft: string): Promise<void> {
-    await this.db
-      .update(enrollments)
-      .set({
-        scoreDraft,
-        updatedAt: new Date(),
-      })
-      .where(eq(enrollments.id, enrollmentId));
+  async updateEnrollmentScore(
+    enrollmentId: string,
+    scoreDraft: string,
+    scoreValidated?: string,
+  ): Promise<void> {
+    const updateObj: Record<string, unknown> = {
+      scoreDraft,
+      updatedAt: new Date(),
+    };
+    if (scoreValidated !== undefined) {
+      updateObj.scoreValidated = scoreValidated;
+    }
+    await this.db.update(enrollments).set(updateObj).where(eq(enrollments.id, enrollmentId));
   }
 }

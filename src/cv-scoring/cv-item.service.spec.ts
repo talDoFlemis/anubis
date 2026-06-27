@@ -76,6 +76,7 @@ describe('CvItemService', () => {
 
     mockCvScoringService = {
       getCategoriesForPeriod: jest.fn().mockResolvedValue([mockCategory]),
+      calculateItemScore: jest.fn().mockReturnValue(10),
       calculateScoreFromItems: jest.fn().mockReturnValue({
         categories: [
           {
@@ -440,6 +441,7 @@ describe('CvItemService', () => {
       // base (6) + earned (10) = 16.00
       expect(mockCvItemRepository.updateEnrollmentScore).toHaveBeenCalledWith(
         'enrollment-uuid',
+        '16.00',
         '16.00',
       );
     });
