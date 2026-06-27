@@ -33,9 +33,11 @@ export class S3StorageDriver implements StorageDriver {
     });
 
     const publicEndpoint = this.configService.get<string>('S3_PUBLIC_ENDPOINT');
-    if (publicEndpoint) {
+    if (typeof publicEndpoint === 'string' && publicEndpoint) {
+      const urlObj = new URL(publicEndpoint);
+      const presignEndpoint = `${urlObj.protocol}//${urlObj.host}`;
       this.presignS3 = new S3Client({
-        endpoint: publicEndpoint,
+        endpoint: presignEndpoint,
         region,
         credentials,
         forcePathStyle,
@@ -61,7 +63,18 @@ export class S3StorageDriver implements StorageDriver {
       Bucket: this.bucket,
       Key: key,
     });
-    return getSignedUrl(this.presignS3, command, { expiresIn: expiresInSeconds });
+    let url = await getSignedUrl(this.presignS3, command, { expiresIn: expiresInSeconds });
+
+    const publicEndpoint = this.configService.get<string>('S3_PUBLIC_ENDPOINT');
+    if (typeof publicEndpoint === 'string' && publicEndpoint) {
+      const urlObj = new URL(publicEndpoint);
+      const pathPrefix = urlObj.pathname.replace(/\/$/, '');
+      if (pathPrefix) {
+        const presignEndpoint = `${urlObj.protocol}//${urlObj.host}`;
+        url = url.replace(presignEndpoint, `${presignEndpoint}${pathPrefix}`);
+      }
+    }
+    return url;
   }
 
   async delete(key: string): Promise<void> {

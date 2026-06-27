@@ -101,9 +101,9 @@ describe('S3StorageDriver', () => {
     expect(url).toBe('http://signed-url');
   });
 
-  it('should initialize a separate S3Client for presigning when S3_PUBLIC_ENDPOINT is configured', () => {
+  it('should initialize S3Client for presigning without path prefix, and re-inject path prefix in getSignedDownloadUrl', async () => {
     const configGetMock = jest.fn().mockImplementation((key: string) => {
-      if (key === 'S3_PUBLIC_ENDPOINT') return 'http://localhost:9000';
+      if (key === 'S3_PUBLIC_ENDPOINT') return 'https://public.example.com/storage';
       return null;
     });
 
@@ -131,8 +131,14 @@ describe('S3StorageDriver', () => {
     expect(S3Client).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
-        endpoint: 'http://localhost:9000',
+        endpoint: 'https://public.example.com',
       }),
     );
+
+    (getSignedUrl as jest.Mock).mockResolvedValueOnce(
+      'https://public.example.com/anubis/file.pdf?sig=123',
+    );
+    const url = await customDriver.getSignedDownloadUrl('file.pdf');
+    expect(url).toBe('https://public.example.com/storage/anubis/file.pdf?sig=123');
   });
 });
