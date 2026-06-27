@@ -244,6 +244,24 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
     }
   };
 
+  const handleDownloadUndergradProof = async () => {
+    try {
+      const { url } = await api.enrollments.getUndergradProofInfo(id);
+      window.open(url, '_blank');
+    } catch {
+      toast.error('Erro ao obter histórico acadêmico de graduação.');
+    }
+  };
+
+  const handleDownloadProjectFile = async () => {
+    try {
+      const { url } = await api.enrollments.getProjectFileInfo(id);
+      window.open(url, '_blank');
+    } catch {
+      toast.error('Erro ao obter o projeto de pesquisa.');
+    }
+  };
+
   const handleVerifyItem = (itemId: string, isVerified: 'verified' | 'incorrect') => {
     if (isVerified === 'verified') {
       verifyCvItem.mutate(
@@ -489,16 +507,57 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
                   Universidade de Origem
                 </span>
-                <p className="font-medium text-slate-800">{candidate?.universityOfOrigin ?? '—'}</p>
+                <p className="font-medium text-slate-800">
+                  {enrollment?.undergradUniversity ?? candidate?.universityOfOrigin ?? '—'}
+                </p>
               </div>
+
+              {enrollment?.undergradCourse && (
+                <div className="space-y-1">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                    Curso de Origem
+                  </span>
+                  <p className="font-medium text-slate-800 capitalize">
+                    {enrollment.undergradCourse}
+                    {enrollment.undergradDegreeType && ` (${enrollment.undergradDegreeType})`}
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
                   IRA do Candidato
                 </span>
                 <p className="font-semibold text-slate-800 text-lg">
-                  {candidate?.ira ? parseFloat(candidate.ira).toFixed(2) : '—'}
+                  {enrollment?.ira
+                    ? parseFloat(enrollment.ira).toFixed(2)
+                    : candidate?.ira
+                      ? parseFloat(candidate.ira).toFixed(2)
+                      : '—'}
                 </p>
+              </div>
+
+              {/* Comprovante de Graduação / Histórico */}
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                  Histórico de Graduação
+                </span>
+                {enrollment.undergradProofFileId ? (
+                  <Button
+                    onClick={handleDownloadUndergradProof}
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 rounded-xl text-slate-700 border-slate-200"
+                  >
+                    <Download className="h-4 w-4" />
+                    Baixar histórico de graduação
+                  </Button>
+                ) : (
+                  <p className="text-xs text-red-500 flex items-center gap-1.5 pt-1">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    Histórico acadêmico não enviado
+                  </p>
+                )}
               </div>
 
               {/* SIGAA */}
@@ -583,7 +642,7 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
               ) : (
                 <div className="pt-3 border-t border-slate-100 text-xs text-muted-foreground flex items-center gap-1.5">
                   <Clock className="h-4 w-4" />
-                  Candidato não realizou o POSCOMP
+                  Candidato não cadastrou o POSCOMP
                 </div>
               )}
             </CardContent>
@@ -631,6 +690,44 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
                   <p className="text-sm text-red-500 flex items-center gap-1.5">
                     <AlertCircle className="h-4 w-4" />
                     Nenhum curso de mestrado informado
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Projeto de Pesquisa (if doctoral) */}
+          {enrollment.level === 'doctoral' && (
+            <Card className="rounded-3xl border border-slate-100 shadow-sm">
+              <CardHeader className="pb-3 border-b border-slate-50">
+                <CardTitle className="text-lg font-serif font-semibold text-slate-900 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Projeto de Pesquisa
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4 text-sm">
+                <div className="space-y-1">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                    Título do Projeto
+                  </span>
+                  <p className="font-medium text-slate-800 leading-snug">
+                    {enrollment.projectTitle || '—'}
+                  </p>
+                </div>
+                {enrollment.projectFileId ? (
+                  <Button
+                    onClick={handleDownloadProjectFile}
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 rounded-xl text-slate-700 border-slate-200"
+                  >
+                    <Download className="h-4 w-4" />
+                    Baixar projeto de pesquisa
+                  </Button>
+                ) : (
+                  <p className="text-xs text-red-500 flex items-center gap-1.5 pt-1">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    Projeto de pesquisa não enviado
                   </p>
                 )}
               </CardContent>

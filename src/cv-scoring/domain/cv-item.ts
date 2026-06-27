@@ -7,6 +7,7 @@ export class CvItem {
   proofFileId!: string | null;
   proofFileName!: string | null;
   score!: string | null;
+  validatedScore!: string | null;
   classification!: string | null;
   isComplete!: boolean;
   isResumo!: boolean;

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 
@@ -47,25 +47,20 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
   });
   const professors = professorsData?.data ?? [];
 
-  const { data: enrollmentsData } = useQuery({
-    queryKey: ['enrollments-list'],
-    queryFn: () => api.enrollments.findAll({ limit: 200, status: 'submitted' }),
+  const { data: validationCandidatesData, isLoading: isLoadingValidationCandidates } = useQuery({
+    queryKey: ['validation', 'candidates', { limit: 200 }],
+    queryFn: () => api.validation.findCandidates({ limit: 200 }),
   });
-  const enrollments = enrollmentsData?.data ?? [];
+  const allValidationCandidates = validationCandidatesData?.data ?? [];
 
-  const { data: candidatesData } = useQuery({
-    queryKey: ['candidates-list'],
-    queryFn: () => api.candidates.findAll({ limit: 200 }),
-  });
-  const candidates = candidatesData?.data ?? [];
-
-  const candidateMap = React.useMemo(() => {
-    const map = new Map<string, (typeof candidates)[0]>();
-    for (const c of candidates) {
-      map.set(c.userId, c);
-    }
-    return map;
-  }, [candidates]);
+  const themeCandidates = React.useMemo(() => {
+    if (!activeCandidatesTheme) return [];
+    return allValidationCandidates.filter(
+      c =>
+        c.primaryThemeId === activeCandidatesTheme.id ||
+        c.secondaryThemeId === activeCandidatesTheme.id,
+    );
+  }, [allValidationCandidates, activeCandidatesTheme]);
 
   // Mutations
   const createMutation = useMutation({
@@ -153,29 +148,13 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
   const offeredSlots = themes.reduce((acc, t) => acc + t.vacancies, 0);
 
   // Calculate total enrolled candidates for the professor's themes
-  const enrolledCandidates = React.useMemo(() => {
-    const myThemeIds = new Set(themes.map(t => t.id));
-    return enrollments.filter(
-      e =>
-        (e.primaryThemeId && myThemeIds.has(e.primaryThemeId)) ||
-        (e.secondaryThemeId && myThemeIds.has(e.secondaryThemeId)),
-    ).length;
-  }, [enrollments, themes]);
+  const enrolledCandidates = allValidationCandidates.length;
 
   const getCandidatesCountForTheme = (themeId: string) => {
-    return enrollments.filter(e => e.primaryThemeId === themeId || e.secondaryThemeId === themeId)
-      .length;
+    return allValidationCandidates.filter(
+      c => c.primaryThemeId === themeId || c.secondaryThemeId === themeId,
+    ).length;
   };
-
-  // Filter enrollments for the active selected theme
-  const themeEnrollments = React.useMemo(() => {
-    if (!activeCandidatesTheme) return [];
-    return enrollments.filter(
-      e =>
-        e.primaryThemeId === activeCandidatesTheme.id ||
-        e.secondaryThemeId === activeCandidatesTheme.id,
-    );
-  }, [enrollments, activeCandidatesTheme]);
 
   return (
     <HomeShell>
@@ -230,33 +209,49 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
               </Badge>
             </CardHeader>
             <CardContent className="space-y-4">
-              {themeEnrollments.length > 0 ? (
+              {isLoadingValidationCandidates ? (
+                <div className="py-12 flex items-center justify-center gap-2 text-sm text-slate-500">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  Carregando candidatos...
+                </div>
+              ) : themeCandidates.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left text-sm text-slate-500">
                     <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-700">
                       <tr>
                         <th className="px-6 py-4">Candidato</th>
-                        <th className="px-6 py-4">Opção de Inscrição</th>
+                        <th className="px-6 py-4">Opção</th>
                         <th className="px-6 py-4">IRA</th>
-                        <th className="px-6 py-4 text-center">Pontuação CV</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4 text-center">Pontuação (Decl. / Homol.)</th>
                         <th className="px-6 py-4 text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 border-t border-slate-100 bg-white">
-                      {themeEnrollments.map(enrollment => {
-                        const cand = candidateMap.get(enrollment.candidateId);
-                        const isPrimary = enrollment.primaryThemeId === activeCandidatesTheme.id;
-                        const candName = cand ? `${cand.firstName} ${cand.lastName}` : 'Candidato';
-                        const candEmail = cand?.email || '—';
+                      {themeCandidates.map(candidate => {
+                        const isPrimary = candidate.primaryThemeId === activeCandidatesTheme.id;
+                        let statusText = 'Pendente';
+                        let statusClass = 'border-slate-200 text-slate-700 bg-slate-50/50';
+                        if (candidate.status === 'completed') {
+                          statusText = 'Homologado';
+                          statusClass = 'border-green-200 text-green-700 bg-green-50/50';
+                        } else if (candidate.status === 'in_progress') {
+                          statusText = 'Em Progresso';
+                          statusClass = 'border-amber-200 text-amber-700 bg-amber-50/50';
+                        }
 
                         return (
                           <tr
-                            key={enrollment.id}
+                            key={candidate.enrollmentId}
                             className="hover:bg-slate-50/50 transition-colors"
                           >
                             <td className="px-6 py-4">
-                              <div className="font-medium text-slate-900">{candName}</div>
-                              <div className="text-xs text-slate-500">{candEmail}</div>
+                              <div className="font-medium text-slate-900">
+                                {candidate.candidateName}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {candidate.candidateEmail}
+                              </div>
                             </td>
                             <td className="px-6 py-4">
                               <Badge
@@ -271,16 +266,30 @@ export function ProfessorHome({ user }: ProfessorHomeProps) {
                               </Badge>
                             </td>
                             <td className="px-6 py-4 font-mono font-medium text-slate-700">
-                              {cand?.ira ? parseFloat(cand.ira).toFixed(2) : '—'}
+                              {candidate.ira != null ? candidate.ira.toFixed(2) : '—'}
                             </td>
-                            <td className="px-6 py-4 text-center font-bold text-primary font-label">
-                              {enrollment.scoreDraft
-                                ? parseFloat(enrollment.scoreDraft).toFixed(1)
-                                : '0.0'}
+                            <td className="px-6 py-4">
+                              <Badge variant="outline" className={statusClass}>
+                                {statusText}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 text-center font-mono text-sm">
+                              <span className="font-semibold text-slate-700">
+                                {candidate.declaredScore.toFixed(1)}
+                              </span>
+                              <span className="text-slate-400 mx-1">/</span>
+                              <span className="font-semibold text-primary">
+                                {candidate.validatedScore !== null
+                                  ? candidate.validatedScore.toFixed(1)
+                                  : '—'}
+                              </span>
                             </td>
                             <td className="px-6 py-4 text-right">
                               <Button size="sm" asChild className="rounded-xl">
-                                <Link to="/manage/enrollments/$id" params={{ id: enrollment.id }}>
+                                <Link
+                                  to="/manage/enrollments/$id"
+                                  params={{ id: candidate.enrollmentId }}
+                                >
                                   Avaliar Currículo
                                 </Link>
                               </Button>

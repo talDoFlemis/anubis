@@ -3,13 +3,19 @@ import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import {
+  DOCTORAL_SECTIONS,
+  MASTERS_SECTIONS,
+} from '../../src/cv-scoring/constants/cv-scoring-config';
 import { candidates } from '../../src/database/schema/candidates';
+import { cvItems } from '../../src/database/schema/cv-items';
 import { cvScoringCategories } from '../../src/database/schema/cv-scoring';
 import { enrollmentPeriods } from '../../src/database/schema/enrollment-periods';
+import { enrollments } from '../../src/database/schema/enrollments';
+import { files } from '../../src/database/schema/files';
 import { professors } from '../../src/database/schema/professor';
 import { researchThemeProfessors, researchThemes } from '../../src/database/schema/research-themes';
 import { users } from '../../src/database/schema/users';
-import { MASTERS_SECTIONS, DOCTORAL_SECTIONS } from '../../src/cv-scoring/constants/cv-scoring-config';
 
 // ==========================================
 // Types & Interfaces
@@ -378,14 +384,24 @@ async function seedDefaultUsersAndThemes(db: NodePgDatabase): Promise<void> {
 }
 
 async function seedCvCategories(db: NodePgDatabase): Promise<void> {
-  const openPeriods = await db
+  let openPeriods = await db
     .select()
     .from(enrollmentPeriods)
     .where(eq(enrollmentPeriods.status, 'open'));
 
   if (openPeriods.length === 0) {
-    console.log('[INFO] No open enrollment periods found. Nothing to seed CV categories.');
-    return;
+    const [inserted] = await db
+      .insert(enrollmentPeriods)
+      .values({
+        name: 'Seleção MDCC 2026.1',
+        semester: '2026.1',
+        startDate: new Date('2026-01-01T00:00:00Z'),
+        endDate: new Date('2026-12-31T23:59:59Z'),
+        status: 'open',
+      })
+      .returning();
+    openPeriods = [inserted];
+    console.log(`[SUCCESS] Seeded new open enrollment period: ${inserted.name}`);
   }
 
   for (const period of openPeriods) {
@@ -427,6 +443,235 @@ async function seedCvCategories(db: NodePgDatabase): Promise<void> {
   }
 }
 
+async function seedSampleCandidates(db: NodePgDatabase): Promise<void> {
+  console.log('[INFO] Seeding sample candidates for existing themes...');
+
+  const openPeriods = await db
+    .select()
+    .from(enrollmentPeriods)
+    .where(eq(enrollmentPeriods.status, 'open'))
+    .limit(1);
+
+  if (openPeriods.length === 0) {
+    console.log('[WARN] No open enrollment period found. Skipping sample candidates seed.');
+    return;
+  }
+  const period = openPeriods[0];
+
+  const themes = await db.select().from(researchThemes);
+  if (themes.length === 0) {
+    console.log('[WARN] No research themes found. Skipping sample candidates seed.');
+    return;
+  }
+
+  const hash = await bcrypt.hash('senha123', 10);
+  let fileCount = 1;
+  let cpfCounter = 10000000001;
+
+  for (const theme of themes) {
+    console.log(`[INFO] Seeding 3 candidates for theme: "${theme.title}" (${theme.level})`);
+
+    for (let i = 1; i <= 3; i++) {
+      const email = `candidate.${theme.id.slice(0, 8)}.${i}@anubis.com`;
+
+      // 1. Insert user
+      const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+      let userId = existingUser?.id;
+      if (!userId) {
+        const [insertedUser] = await db
+          .insert(users)
+          .values({
+            authProvider: 'email',
+            providerSubject: email,
+            email,
+            password: hash,
+            cpf: String(cpfCounter++),
+            firstName: `Candidato ${i}`,
+            lastName: `Tema ${theme.id.slice(0, 4)}`,
+            role: 'candidate',
+            status: 'active',
+            onboardingCompleted: true,
+            mustChangePassword: false,
+          })
+          .returning();
+        userId = insertedUser.id;
+      }
+
+      // 2. Insert candidate profile
+      await db.insert(candidates).values({ userId }).onConflictDoNothing();
+
+      // 3. Create dummy file records
+      const undergradProofId = `22222222-2222-2222-2222-${String(fileCount++).padStart(12, '0')}`;
+      await db
+        .insert(files)
+        .values({
+          id: undergradProofId,
+          originalName: `historico_graduacao_${i}.pdf`,
+          mimeType: 'application/pdf',
+          sizeBytes: 204857,
+          bucket: 'anubis-bucket',
+          key: `dummy-undergrad-${userId}`,
+          uploadedBy: userId,
+          purpose: 'proof',
+        })
+        .onConflictDoNothing();
+
+      const sigaaReceiptId = `33333333-3333-3333-3333-${String(fileCount++).padStart(12, '0')}`;
+      await db
+        .insert(files)
+        .values({
+          id: sigaaReceiptId,
+          originalName: `comprovante_sigaa_${i}.pdf`,
+          mimeType: 'application/pdf',
+          sizeBytes: 153041,
+          bucket: 'anubis-bucket',
+          key: `dummy-sigaa-${userId}`,
+          uploadedBy: userId,
+          purpose: 'proof',
+        })
+        .onConflictDoNothing();
+
+      let projectFileId: string | undefined = undefined;
+      if (theme.level === 'doctoral') {
+        projectFileId = `44444444-4444-4444-4444-${String(fileCount++).padStart(12, '0')}`;
+        await db
+          .insert(files)
+          .values({
+            id: projectFileId,
+            originalName: `projeto_pesquisa_${i}.pdf`,
+            mimeType: 'application/pdf',
+            sizeBytes: 1048576,
+            bucket: 'anubis-bucket',
+            key: `dummy-project-${userId}`,
+            uploadedBy: userId,
+            purpose: 'proof',
+          })
+          .onConflictDoNothing();
+      }
+
+      // 4. Create enrollment (if not exists)
+      const [existingEnrollment] = await db
+        .select()
+        .from(enrollments)
+        .where(eq(enrollments.candidateId, userId))
+        .limit(1);
+
+      let enrollmentId = existingEnrollment?.id;
+      if (!enrollmentId) {
+        const [insertedEnrollment] = await db
+          .insert(enrollments)
+          .values({
+            candidateId: userId,
+            enrollmentPeriodId: period.id,
+            level: theme.level,
+            status: 'submitted',
+            undergradUniversity: i === 1 ? 'UFC' : i === 2 ? 'UECE' : 'IFCE',
+            undergradCourse: 'Ciência da Computação',
+            undergradDegreeType: 'bacharelado',
+            ira: (7.5 + i * 0.5).toFixed(2),
+            undergradProofFileId: undergradProofId,
+            phone: '85999999999',
+            justification: 'Quero muito fazer pós-graduação.',
+            sigaaCode: `SIGAA-2026-${theme.id.slice(0, 4)}-${i}`,
+            sigaaReceiptFileId: sigaaReceiptId,
+            declaration: true,
+            primaryThemeId: theme.id,
+            poscomp: {
+              hasPoscomp: i % 2 === 0,
+              year: 2025,
+              mathScore: 10 + i,
+              fundamentalsScore: 15 + i,
+              technologyScore: 20 + i,
+              receiptFileId:
+                i % 2 === 0
+                  ? `55555555-5555-5555-5555-${String(fileCount++).padStart(12, '0')}`
+                  : undefined,
+            },
+            projectTitle:
+              theme.level === 'doctoral' ? `Proposta de Pesquisa em ${theme.title}` : undefined,
+            projectFileId: projectFileId,
+            submittedAt: new Date(),
+          })
+          .returning();
+        enrollmentId = insertedEnrollment.id;
+
+        // Also if we generated a poscomp receipt file, seed it
+        if (insertedEnrollment.poscomp?.receiptFileId) {
+          await db
+            .insert(files)
+            .values({
+              id: insertedEnrollment.poscomp.receiptFileId,
+              originalName: `comprovante_poscomp_${i}.pdf`,
+              mimeType: 'application/pdf',
+              sizeBytes: 102400,
+              bucket: 'anubis-bucket',
+              key: `dummy-poscomp-${userId}`,
+              uploadedBy: userId,
+              purpose: 'proof',
+            })
+            .onConflictDoNothing();
+        }
+      }
+
+      // 5. Seed some CV items
+      const categories = await db
+        .select()
+        .from(cvScoringCategories)
+        .where(eq(cvScoringCategories.enrollmentPeriodId, period.id));
+
+      if (categories.length > 0) {
+        // Let's pick 2 categories to add CV items to
+        const selectedCats = categories.filter(c => c.level === theme.level).slice(0, 2);
+
+        let totalDraftScore = 0;
+        for (const cat of selectedCats) {
+          const itemProofId = `66666666-6666-6666-6666-${String(fileCount++).padStart(12, '0')}`;
+          await db
+            .insert(files)
+            .values({
+              id: itemProofId,
+              originalName: `comprovante_${cat.name.toLowerCase().replace(/ /g, '_')}.pdf`,
+              mimeType: 'application/pdf',
+              sizeBytes: 45023,
+              bucket: 'anubis-bucket',
+              key: `dummy-cvitem-${enrollmentId}`,
+              uploadedBy: userId,
+              purpose: 'proof',
+            })
+            .onConflictDoNothing();
+
+          const ptsPerItem = parseFloat(cat.pointsPerItem) || 1.5;
+          const qty = 2;
+          const score = ptsPerItem * qty;
+          totalDraftScore += score;
+
+          await db
+            .insert(cvItems)
+            .values({
+              enrollmentId,
+              scoringCategoryId: cat.id,
+              description: `Experiência de pesquisa na categoria ${cat.name}`,
+              quantity: qty,
+              proofFileId: itemProofId,
+              score: score.toString(),
+              isVerified: 'pending',
+            })
+            .onConflictDoNothing();
+        }
+
+        // Update total score on the enrollment
+        await db
+          .update(enrollments)
+          .set({ scoreDraft: totalDraftScore.toString() })
+          .where(eq(enrollments.id, enrollmentId));
+      }
+    }
+  }
+
+  console.log('[SUCCESS] Seed of sample candidates completed.');
+}
+
 // ==========================================
 // Main Execution
 // ==========================================
@@ -444,6 +689,9 @@ async function main(): Promise<void> {
 
     // 3. Seed CV Categories
     await seedCvCategories(db);
+
+    // 4. Seed sample candidates for development QoL
+    await seedSampleCandidates(db);
 
     console.log('[SUCCESS] Database seeding completed successfully.');
   } catch (error) {

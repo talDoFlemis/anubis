@@ -39,6 +39,8 @@ export interface UpdateCvItemData {
   correctedClassification?: string | null;
   verificationComment?: string | null;
   updatedAt: Date;
+  score?: number | null;
+  validatedScore?: number | null;
 }
 
 export abstract class CvItemRepository {
@@ -56,5 +58,9 @@ export abstract class CvItemRepository {
 
   abstract findScoringCategoryById(categoryId: string): Promise<CvScoringCategorySelect | null>;
 
-  abstract updateEnrollmentScore(enrollmentId: string, scoreDraft: string): Promise<void>;
+  abstract updateEnrollmentScore(
+    enrollmentId: string,
+    scoreDraft: string,
+    scoreValidated?: string,
+  ): Promise<void>;
 }
