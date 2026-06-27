@@ -159,10 +159,9 @@ services:
     user: root
     ports:
       - '9000:9000'
-      - '9001:9001'
     environment:
       - RUSTFS_VOLUMES=/data/rustfs0
-      - RUSTFS_CONSOLE_ENABLE=true
+      - RUSTFS_CONSOLE_ENABLE=false
       - RUSTFS_ACCESS_KEY=${S3_ACCESS_KEY_ID:-minioadmin}
       - RUSTFS_SECRET_KEY=${S3_SECRET_ACCESS_KEY:-minioadmin}
     volumes:
