@@ -54,4 +54,9 @@ export abstract class EnrollmentRepository {
    * Retorna a quantidade de inscrições afetadas.
    */
   abstract closeDraftsByPeriods(periodIds: string[], now: Date): Promise<number>;
+
+  abstract isProfessorLinkedToEnrollment(
+    enrollmentId: string,
+    professorId: string,
+  ): Promise<boolean>;
 }
