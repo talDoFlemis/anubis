@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, or, sql } from 'drizzle-orm';
 
 import type { PaginatedResult } from '../../../../common/dto/paginated-response.dto';
 import { buildPaginatedResult } from '../../../../common/dto/paginated-response.dto';
@@ -12,6 +12,7 @@ import type { CreateEnrollmentData, FindEnrollmentsFilters } from '../enrollment
 import { EnrollmentRepository } from '../enrollment.repository';
 
 import type { SQL } from 'drizzle-orm';
+import { researchThemeProfessors, researchThemes } from 'src/database/schema/research-themes';
 
 @Injectable()
 export class EnrollmentDrizzleRepository extends EnrollmentRepository {
@@ -146,5 +147,35 @@ export class EnrollmentDrizzleRepository extends EnrollmentRepository {
       .returning({ id: enrollments.id });
 
     return rows.length;
+  }
+
+  async isProfessorLinkedToEnrollment(enrollmentId: string, professorId: string): Promise<boolean> {
+    const enrollment = await this.findById(enrollmentId);
+    if (!enrollment) return false;
+
+    const themeIds = [enrollment.primaryThemeId, enrollment.secondaryThemeId].filter(
+      (id): id is string => id !== null,
+    );
+
+    if (themeIds.length === 0) return false;
+
+    const [result] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(researchThemes)
+      .leftJoin(
+        researchThemeProfessors,
+        eq(researchThemes.id, researchThemeProfessors.researchThemeId),
+      )
+      .where(
+        and(
+          inArray(researchThemes.id, themeIds),
+          or(
+            eq(researchThemes.professorId, professorId), // É o dono do tema
+            eq(researchThemeProfessors.professorId, professorId), // É colaborador
+          ),
+        ),
+      );
+
+    return (result?.count ?? 0) > 0;
   }
 }

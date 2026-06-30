@@ -23,6 +23,7 @@ export class Enrollment {
   projectTitle!: string | null;
   projectFileId!: string | null;
   scoreDraft!: string | null;
+  scoreValidated!: string | null;
   submittedAt!: Date | null;
   createdAt!: Date;
   updatedAt!: Date;

@@ -6,6 +6,9 @@ export { cvScoringApi } from './cv-scoring';
 export { enrollmentPeriodsApi } from './enrollment-periods';
 export { enrollmentsApi } from './enrollments';
 export { universitiesApi } from './universities';
+export { validationApi } from './validation';
+
+export { classification } from './classification';
 
 export type {
   CandidateOnboardingData,
@@ -30,6 +33,7 @@ export type {
   UpdateEnrollmentThemesPayload,
   UpdateMastersDegreesPayload,
 } from './enrollments';
+
 export type { InviteProfessorPayload, PaginatedProfessors, ProfessorItem } from './professors';
 export type {
   CreateResearchThemeOnBehalfPayload,
@@ -47,18 +51,8 @@ export type {
   UniversityOption,
 } from './universities';
 
-/**
- * Composed API object that mirrors the original `api` shape.
- *
- * Usage: `import { api } from '@/lib/api'`
- */
-export { authApi as auth } from './auth';
-export { candidatesApi as candidates } from './candidates';
-export { professorsApi as professors } from './professors';
-export { researchThemesApi as researchThemes } from './research-themes';
-export { validationApi as validation } from './validation';
+export type { Classification } from './classification';
 
-// Re-compose the legacy `api` namespace so existing `api.auth.*` calls keep working.
 import { authApi } from './auth';
 import { candidatesApi } from './candidates';
 import { cvItemsApi } from './cv-items';
@@ -69,6 +63,8 @@ import { professorsApi } from './professors';
 import { researchThemesApi } from './research-themes';
 import { universitiesApi } from './universities';
 import { validationApi } from './validation';
+
+import { classification } from './classification';
 
 export const api = {
   auth: authApi,
@@ -81,4 +77,5 @@ export const api = {
   researchThemes: researchThemesApi,
   universities: universitiesApi,
   validation: validationApi,
+  classification: classification,
 } as const;
