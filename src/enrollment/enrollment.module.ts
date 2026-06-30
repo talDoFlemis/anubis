@@ -36,6 +36,6 @@ import { EnrollmentDrizzlePersistenceModule } from './infrastructure/persistence
     RolesGuard,
     Reflector,
   ],
-  exports: [EnrollmentPeriodService, EnrollmentService],
+  exports: [EnrollmentPeriodService, EnrollmentService, EnrollmentDrizzlePersistenceModule],
 })
 export class EnrollmentModule {}

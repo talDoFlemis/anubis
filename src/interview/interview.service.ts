@@ -1,10 +1,8 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-
 import type { InterviewRepository } from './interview.repository';
 
-import { Inject } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 
 import { UsersService } from '../users/users.service';
 
@@ -25,12 +23,12 @@ const CONCEPT_SCORE_MAP: Record<string, number> = {
 
 @Injectable()
 export class InterviewService {
+  private readonly logger = new Logger(InterviewService.name);
+
   constructor(
     @Inject(INTERVIEW_REPOSITORY) private readonly interviewRepo: InterviewRepository,
     private readonly usersService: UsersService,
     private readonly enrollmentRepository: EnrollmentRepository,
-    @InjectPinoLogger(InterviewService.name)
-    private readonly logger: PinoLogger,
   ) {}
 
   private async assertProfessorIsAuthorized(evaluatorId: string, candidateId: string) {
@@ -85,7 +83,7 @@ export class InterviewService {
     };
 
     const result = await this.interviewRepo.createInterviewEvaluation(evalData);
-    this.logger.info(
+    this.logger.log(
       { evaluationId: result.id, evaluatorId, candidateId },
       'Interview evaluation created',
     );
@@ -124,7 +122,7 @@ export class InterviewService {
     };
 
     const result = await this.interviewRepo.createProjectEvaluation(evalData);
-    this.logger.info(
+    this.logger.log(
       { evaluationId: result.id, evaluatorId, candidateId },
       'Project evaluation created',
     );
