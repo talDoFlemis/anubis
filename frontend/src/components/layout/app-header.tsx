@@ -29,12 +29,17 @@ function getHeaderNavItems(role: string | null): HeaderNavItem[] {
     items.push({ label: 'Gestao de docentes', to: '/manage/professors' });
     items.push({ label: 'Gestao de temas', to: '/manage/research-themes' });
     items.push({ label: 'Períodos de Inscrição', to: '/manage/enrollment-periods' });
+    items.push({ label: 'Classificação Final', to: '/manage/classification' });
   } else {
     items.push({ label: 'Temas de Pesquisa', to: '/research-themes' });
   }
 
   if (role === 'candidate') {
     items.push({ label: 'Minha Inscrição', to: '/enrollment' });
+  }
+
+  if (role === 'professor') {
+    items.push({ label: 'Avaliar Entrevistas', to: '/manage/interviews' });
   }
 
   return items;
