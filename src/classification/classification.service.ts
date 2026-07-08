@@ -152,10 +152,13 @@ export class ClassificationService {
     int: number,
     proj: number,
   ): number {
+    const CV_MAX = 40;
+    const normalizedCv = Math.min(cv / CV_MAX, 1);
+
     const score =
       stage === 'mestrado'
-        ? 0.3 * ira + 0.4 * cv + 0.3 * int
-        : 0.25 * ira + 0.3 * cv + 0.25 * int + 0.2 * proj;
+        ? 0.3 * ira + 0.4 * normalizedCv * 10 + 0.3 * int
+        : 0.25 * ira + 0.3 * normalizedCv * 10 + 0.25 * int + 0.2 * proj;
     return Math.max(0, Math.min(10, score));
   }
 
