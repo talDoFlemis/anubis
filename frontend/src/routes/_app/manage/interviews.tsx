@@ -181,6 +181,7 @@ function ManageInterviewsPage() {
         {/* Evaluation Form */}
         {selectedCandidateId && (
           <EvaluationForm
+            key={selectedCandidateId}
             candidateName={selectedCandidateName || selectedCandidateId}
             candidateLevel={isDoctoral ? 'doutorado' : 'mestrado'}
             isDoctoral={isDoctoral}

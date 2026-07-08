@@ -24,7 +24,6 @@ export function useCandidatesByThemes(themeIds: string[]) {
         return themeSet.has(e.primaryThemeId ?? '') || themeSet.has(e.secondaryThemeId ?? '');
       });
 
-      const candidateIds = [...new Set(filtered.map(e => e.candidateId))];
       const allCandidates = await api.candidates.findAll({ limit: 100 });
       const candidateMap = new Map((allCandidates.data ?? []).map(c => [c.userId, c]));
 

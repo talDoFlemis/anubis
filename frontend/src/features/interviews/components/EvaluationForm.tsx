@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -95,26 +95,6 @@ export function EvaluationForm({
   const [projectObservations, setProjectObservations] = useState(
     initialProjectEvaluation?.observations ?? '',
   );
-
-  // Sincroniza estados quando initialEvaluation muda (ex: troca de candidato)
-  useEffect(() => {
-    setDecisionMaking(initialEvaluation?.decisionMaking ?? DEFAULT_CONCEPT);
-    setProblemAnalysis(initialEvaluation?.problemAnalysis ?? DEFAULT_CONCEPT);
-    setOralCommunication(initialEvaluation?.oralCommunication ?? DEFAULT_CONCEPT);
-    setResearchWork(initialEvaluation?.researchWork ?? DEFAULT_CONCEPT);
-    setTechnicalKnowledge(initialEvaluation?.technicalKnowledge ?? DEFAULT_CONCEPT);
-    setObservations(initialEvaluation?.observations ?? '');
-  }, [initialEvaluation]);
-
-  // Sincroniza estados do projeto quando initialProjectEvaluation muda
-  useEffect(() => {
-    setCriterion1(initialProjectEvaluation?.criterion1 ?? DEFAULT_CONCEPT);
-    setCriterion2(initialProjectEvaluation?.criterion2 ?? DEFAULT_CONCEPT);
-    setCriterion3(initialProjectEvaluation?.criterion3 ?? DEFAULT_CONCEPT);
-    setCriterion4(initialProjectEvaluation?.criterion4 ?? DEFAULT_CONCEPT);
-    setCriterion5(initialProjectEvaluation?.criterion5 ?? DEFAULT_CONCEPT);
-    setProjectObservations(initialProjectEvaluation?.observations ?? '');
-  }, [initialProjectEvaluation]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
