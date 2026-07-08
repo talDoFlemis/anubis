@@ -23,12 +23,15 @@ import { Route as AppResearchThemesRouteImport } from './routes/_app/research-th
 import { Route as AuthOnboardingIndexRouteImport } from './routes/auth/onboarding/index'
 import { Route as AppValidationIndexRouteImport } from './routes/_app/validation/index'
 import { Route as AppEnrollmentIndexRouteImport } from './routes/_app/enrollment/index'
+import { Route as AppClassificationIndexRouteImport } from './routes/_app/classification/index'
 import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboarding/secretary'
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
 import { Route as AppValidationEnrollmentIdRouteImport } from './routes/_app/validation/$enrollmentId'
 import { Route as AppManageResearchThemesRouteImport } from './routes/_app/manage/research-themes'
 import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/professors'
+import { Route as AppManageInterviewsRouteImport } from './routes/_app/manage/interviews'
 import { Route as AppManageEnrollmentPeriodsRouteImport } from './routes/_app/manage/enrollment-periods'
+import { Route as AppManageClassificationRouteImport } from './routes/_app/manage/classification'
 import { Route as AppEnrollmentNewRouteImport } from './routes/_app/enrollment/new'
 import { Route as AppEnrollmentNewIndexRouteImport } from './routes/_app/enrollment/new/index'
 import { Route as AppManageEnrollmentsIdRouteImport } from './routes/_app/manage/enrollments.$id'
@@ -109,6 +112,11 @@ const AppEnrollmentIndexRoute = AppEnrollmentIndexRouteImport.update({
   path: '/enrollment/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppClassificationIndexRoute = AppClassificationIndexRouteImport.update({
+  id: '/classification/',
+  path: '/classification/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AuthOnboardingSecretaryRoute = AuthOnboardingSecretaryRouteImport.update({
   id: '/onboarding/secretary',
   path: '/onboarding/secretary',
@@ -135,12 +143,22 @@ const AppManageProfessorsRoute = AppManageProfessorsRouteImport.update({
   path: '/manage/professors',
   getParentRoute: () => AppRoute,
 } as any)
+const AppManageInterviewsRoute = AppManageInterviewsRouteImport.update({
+  id: '/manage/interviews',
+  path: '/manage/interviews',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppManageEnrollmentPeriodsRoute =
   AppManageEnrollmentPeriodsRouteImport.update({
     id: '/manage/enrollment-periods',
     path: '/manage/enrollment-periods',
     getParentRoute: () => AppRoute,
   } as any)
+const AppManageClassificationRoute = AppManageClassificationRouteImport.update({
+  id: '/manage/classification',
+  path: '/manage/classification',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEnrollmentNewRoute = AppEnrollmentNewRouteImport.update({
   id: '/enrollment/new',
   path: '/enrollment/new',
@@ -205,12 +223,15 @@ export interface FileRoutesByFullPath {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/enrollment/new': typeof AppEnrollmentNewRouteWithChildren
+  '/manage/classification': typeof AppManageClassificationRoute
   '/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
+  '/manage/interviews': typeof AppManageInterviewsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
   '/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
+  '/classification/': typeof AppClassificationIndexRoute
   '/enrollment/': typeof AppEnrollmentIndexRoute
   '/validation/': typeof AppValidationIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -235,12 +256,15 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/': typeof AppIndexRoute
+  '/manage/classification': typeof AppManageClassificationRoute
   '/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
+  '/manage/interviews': typeof AppManageInterviewsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
   '/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
+  '/classification': typeof AppClassificationIndexRoute
   '/enrollment': typeof AppEnrollmentIndexRoute
   '/validation': typeof AppValidationIndexRoute
   '/auth/onboarding': typeof AuthOnboardingIndexRoute
@@ -268,12 +292,15 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/_app/': typeof AppIndexRoute
   '/_app/enrollment/new': typeof AppEnrollmentNewRouteWithChildren
+  '/_app/manage/classification': typeof AppManageClassificationRoute
   '/_app/manage/enrollment-periods': typeof AppManageEnrollmentPeriodsRoute
+  '/_app/manage/interviews': typeof AppManageInterviewsRoute
   '/_app/manage/professors': typeof AppManageProfessorsRoute
   '/_app/manage/research-themes': typeof AppManageResearchThemesRoute
   '/_app/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
+  '/_app/classification/': typeof AppClassificationIndexRoute
   '/_app/enrollment/': typeof AppEnrollmentIndexRoute
   '/_app/validation/': typeof AppValidationIndexRoute
   '/auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -301,12 +328,15 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/enrollment/new'
+    | '/manage/classification'
     | '/manage/enrollment-periods'
+    | '/manage/interviews'
     | '/manage/professors'
     | '/manage/research-themes'
     | '/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
+    | '/classification/'
     | '/enrollment/'
     | '/validation/'
     | '/auth/onboarding/'
@@ -331,12 +361,15 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/'
+    | '/manage/classification'
     | '/manage/enrollment-periods'
+    | '/manage/interviews'
     | '/manage/professors'
     | '/manage/research-themes'
     | '/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
+    | '/classification'
     | '/enrollment'
     | '/validation'
     | '/auth/onboarding'
@@ -363,12 +396,15 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/_app/'
     | '/_app/enrollment/new'
+    | '/_app/manage/classification'
     | '/_app/manage/enrollment-periods'
+    | '/_app/manage/interviews'
     | '/_app/manage/professors'
     | '/_app/manage/research-themes'
     | '/_app/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
+    | '/_app/classification/'
     | '/_app/enrollment/'
     | '/_app/validation/'
     | '/auth/onboarding/'
@@ -488,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEnrollmentIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/classification/': {
+      id: '/_app/classification/'
+      path: '/classification'
+      fullPath: '/classification/'
+      preLoaderRoute: typeof AppClassificationIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/auth/onboarding/secretary': {
       id: '/auth/onboarding/secretary'
       path: '/onboarding/secretary'
@@ -523,11 +566,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppManageProfessorsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/manage/interviews': {
+      id: '/_app/manage/interviews'
+      path: '/manage/interviews'
+      fullPath: '/manage/interviews'
+      preLoaderRoute: typeof AppManageInterviewsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/manage/enrollment-periods': {
       id: '/_app/manage/enrollment-periods'
       path: '/manage/enrollment-periods'
       fullPath: '/manage/enrollment-periods'
       preLoaderRoute: typeof AppManageEnrollmentPeriodsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/manage/classification': {
+      id: '/_app/manage/classification'
+      path: '/manage/classification'
+      fullPath: '/manage/classification'
+      preLoaderRoute: typeof AppManageClassificationRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/enrollment/new': {
@@ -632,10 +689,13 @@ interface AppRouteChildren {
   AppResearchThemesRoute: typeof AppResearchThemesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEnrollmentNewRoute: typeof AppEnrollmentNewRouteWithChildren
+  AppManageClassificationRoute: typeof AppManageClassificationRoute
   AppManageEnrollmentPeriodsRoute: typeof AppManageEnrollmentPeriodsRoute
+  AppManageInterviewsRoute: typeof AppManageInterviewsRoute
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
   AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
   AppValidationEnrollmentIdRoute: typeof AppValidationEnrollmentIdRoute
+  AppClassificationIndexRoute: typeof AppClassificationIndexRoute
   AppEnrollmentIndexRoute: typeof AppEnrollmentIndexRoute
   AppValidationIndexRoute: typeof AppValidationIndexRoute
   AppManageEnrollmentsIdRoute: typeof AppManageEnrollmentsIdRoute
@@ -645,10 +705,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppResearchThemesRoute: AppResearchThemesRoute,
   AppIndexRoute: AppIndexRoute,
   AppEnrollmentNewRoute: AppEnrollmentNewRouteWithChildren,
+  AppManageClassificationRoute: AppManageClassificationRoute,
   AppManageEnrollmentPeriodsRoute: AppManageEnrollmentPeriodsRoute,
+  AppManageInterviewsRoute: AppManageInterviewsRoute,
   AppManageProfessorsRoute: AppManageProfessorsRoute,
   AppManageResearchThemesRoute: AppManageResearchThemesRoute,
   AppValidationEnrollmentIdRoute: AppValidationEnrollmentIdRoute,
+  AppClassificationIndexRoute: AppClassificationIndexRoute,
   AppEnrollmentIndexRoute: AppEnrollmentIndexRoute,
   AppValidationIndexRoute: AppValidationIndexRoute,
   AppManageEnrollmentsIdRoute: AppManageEnrollmentsIdRoute,

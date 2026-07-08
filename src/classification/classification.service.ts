@@ -123,6 +123,7 @@ export class ClassificationService {
       candidateId,
       interviewScore: interview.toFixed(2),
       cvScore: cvScore.toFixed(2),
+      ira: ira.toFixed(2),
       projectScore: sub.level === 'doctoral' ? project.toFixed(2) : null,
       finalScore: finalScore.toFixed(2),
       rank: 0,
@@ -151,10 +152,13 @@ export class ClassificationService {
     int: number,
     proj: number,
   ): number {
+    const CV_MAX = 40;
+    const normalizedCv = Math.min(cv / CV_MAX, 1);
+
     const score =
       stage === 'mestrado'
-        ? 0.3 * ira + 0.4 * cv + 0.3 * int
-        : 0.25 * ira + 0.3 * cv + 0.25 * int + 0.2 * proj;
+        ? 0.3 * ira + 0.4 * normalizedCv * 10 + 0.3 * int
+        : 0.25 * ira + 0.3 * normalizedCv * 10 + 0.25 * int + 0.2 * proj;
     return Math.max(0, Math.min(10, score));
   }
 
@@ -183,16 +187,38 @@ export class ClassificationService {
         .map(e => e.candidateId);
     }
     if (dto?.stage) {
-      ids = all.filter(e => e.level === dto.stage).map(e => e.candidateId);
+      const levelMap: Record<string, string> = {
+        mestrado: 'masters',
+        doutorado: 'doctoral',
+      };
+      ids = all.filter(e => e.level === levelMap[dto.stage!]).map(e => e.candidateId);
     }
 
     return [...new Set(ids)];
   }
 
-  async getRanking(dto?: {
-    researchThemeId?: string;
-    stage?: 'mestrado' | 'doutorado';
-  }): Promise<ClassificationSelect[]> {
-    return this.classificationRepo.getRanking(dto);
+  async getRanking(
+    dto?: {
+      researchThemeId?: string;
+      stage?: 'mestrado' | 'doutorado';
+    },
+    pagination?: { page?: number; limit?: number },
+  ): Promise<{
+    data: ClassificationSelect[];
+    meta: { total: number; page: number; lastPage: number };
+  }> {
+    const allRankings = await this.classificationRepo.getRanking(dto);
+
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 1000;
+    const total = allRankings.length;
+    const lastPage = Math.max(1, Math.ceil(total / limit));
+    const start = (page - 1) * limit;
+    const data = allRankings.slice(start, start + limit);
+
+    return {
+      data,
+      meta: { total, page, lastPage },
+    };
   }
 }

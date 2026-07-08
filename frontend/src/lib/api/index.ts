@@ -5,6 +5,7 @@ export { cvItemsApi } from './cv-items';
 export { cvScoringApi } from './cv-scoring';
 export { enrollmentPeriodsApi } from './enrollment-periods';
 export { enrollmentsApi } from './enrollments';
+export { interviewsApi } from './interviews';
 export { universitiesApi } from './universities';
 export { validationApi } from './validation';
 
@@ -52,6 +53,13 @@ export type {
 } from './universities';
 
 export type { Classification } from './classification';
+export type {
+  Concept,
+  InterviewAverages,
+  InterviewEvaluation,
+  ProjectAverages,
+  ProjectEvaluation,
+} from './interviews';
 
 import { authApi } from './auth';
 import { candidatesApi } from './candidates';
@@ -59,6 +67,7 @@ import { cvItemsApi } from './cv-items';
 import { cvScoringApi } from './cv-scoring';
 import { enrollmentPeriodsApi } from './enrollment-periods';
 import { enrollmentsApi } from './enrollments';
+import { interviewsApi } from './interviews';
 import { professorsApi } from './professors';
 import { researchThemesApi } from './research-themes';
 import { universitiesApi } from './universities';
@@ -73,6 +82,7 @@ export const api = {
   cvScoring: cvScoringApi,
   enrollmentPeriods: enrollmentPeriodsApi,
   enrollments: enrollmentsApi,
+  interviews: interviewsApi,
   professors: professorsApi,
   researchThemes: researchThemesApi,
   universities: universitiesApi,

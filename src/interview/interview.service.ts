@@ -130,11 +130,41 @@ export class InterviewService {
   }
 
   async getInterviewEvaluationsByCandidateId(candidateId: string) {
-    return this.interviewRepo.getInterviewEvaluationsByCandidateId(candidateId);
+    const evaluations = await this.interviewRepo.getInterviewEvaluationsByCandidateId(candidateId);
+
+    // Enriquecer com dados do avaliador
+    const enriched = await Promise.all(
+      evaluations.map(async ev => {
+        const evaluator = await this.usersService.findById(ev.evaluatorId);
+        return {
+          ...ev,
+          evaluatorName: evaluator
+            ? `${evaluator.firstName ?? ''} ${evaluator.lastName ?? ''}`.trim()
+            : null,
+        };
+      }),
+    );
+
+    return enriched;
   }
 
   async getProjectEvaluationsByCandidateId(candidateId: string) {
-    return this.interviewRepo.getProjectEvaluationsByCandidateId(candidateId);
+    const evaluations = await this.interviewRepo.getProjectEvaluationsByCandidateId(candidateId);
+
+    // Enriquecer com dados do avaliador
+    const enriched = await Promise.all(
+      evaluations.map(async ev => {
+        const evaluator = await this.usersService.findById(ev.evaluatorId);
+        return {
+          ...ev,
+          evaluatorName: evaluator
+            ? `${evaluator.firstName ?? ''} ${evaluator.lastName ?? ''}`.trim()
+            : null,
+        };
+      }),
+    );
+
+    return enriched;
   }
 
   async getInterviewEvaluationsByEvaluatorId(evaluatorId: string) {

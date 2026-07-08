@@ -12,6 +12,7 @@ export const classifications = pgTable('classifications', {
   researchThemeId: uuid('research_theme_id')
     .notNull()
     .references(() => researchThemes.id, { onDelete: 'set null' }),
+  ira: numeric('ira', { precision: 5, scale: 2 }).notNull().default('0'),
   interviewScore: numeric('interview_score', { precision: 5, scale: 2 }).notNull(),
   cvScore: numeric('cv_score', { precision: 5, scale: 2 }).notNull(),
   projectScore: numeric('project_score', { precision: 5, scale: 2 }),
