@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export enum StageEnum {
   MESTRADO = 'mestrado',
@@ -7,7 +7,7 @@ export enum StageEnum {
 
 export class TriggerClassificationDto {
   @IsOptional()
-  @IsUUID()
+  @IsString()
   researchThemeId?: string;
 
   @IsOptional()
