@@ -16,7 +16,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 import { User } from '../users/domain/user';
 
-@Controller('interview')
+@Controller({ path: 'interview', version: '1' })
 export class InterviewController {
   constructor(private readonly interviewService: InterviewService) {}
 
