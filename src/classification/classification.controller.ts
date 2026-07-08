@@ -6,7 +6,7 @@ import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ClassificationService } from './classification.service';
 import { TriggerClassificationDto } from './dto/trigger-classification.dto';
 
-@Controller('classification')
+@Controller({ path: 'classification', version: '1' })
 export class ClassificationController {
   constructor(private readonly classificationService: ClassificationService) {}
 
@@ -28,7 +28,18 @@ export class ClassificationController {
     RoleEnum.postGraduateCoordinator,
     RoleEnum.postGraduateViceCoordinator,
   )
-  async getRanking(@Query() dto: TriggerClassificationDto) {
-    return this.classificationService.getRanking(dto);
+  async getRanking(
+    @Query('researchThemeId') researchThemeId?: string,
+    @Query('stage') stage?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.classificationService.getRanking(
+      {
+        researchThemeId,
+        stage: stage as 'mestrado' | 'doutorado' | undefined,
+      },
+      { page, limit },
+    );
   }
 }
