@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -26,7 +27,10 @@ import { SessionLifecycleGuard } from '../auth/guards/session-lifecycle.guard';
 import { Roles } from '../roles/roles.decorator';
 import { RoleEnum } from '../roles/roles.enum';
 import { CreateUniversityDto } from './dto/create-university.dto';
+import { MergeEntitiesDto } from './dto/merge-entities.dto';
 import { SearchUniversitiesDto } from './dto/search-universities.dto';
+import { SetEntityStatusDto } from './dto/set-entity-status.dto';
+import { SetUniversityGradeDto } from './dto/set-university-grade.dto';
 import { UniversityDetailResponseDto, UniversityResponseDto } from './dto/university-response.dto';
 import { UniversityService } from './university.service';
 
@@ -51,6 +55,15 @@ export class UniversityController {
     }));
   }
 
+  @Get('pending')
+  @Roles(RoleEnum.professor)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'List universities pending review (Professor only)' })
+  @ApiOkResponse({ type: [UniversityDetailResponseDto] })
+  async getPending(): Promise<UniversityDetailResponseDto[]> {
+    return this.universityService.findPendingUniversities();
+  }
+
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get university detail by ID' })
@@ -72,5 +85,51 @@ export class UniversityController {
   @ApiForbiddenResponse({ description: 'Only candidates can create manual entries' })
   async create(@Body() dto: CreateUniversityDto): Promise<UniversityDetailResponseDto> {
     return this.universityService.createUniversity(dto);
+  }
+
+  @Patch(':id/grade')
+  @Roles(RoleEnum.professor)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set MEC grade for a university (Professor only)' })
+  @ApiOkResponse({ type: UniversityDetailResponseDto })
+  async setGrade(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: SetUniversityGradeDto,
+  ): Promise<UniversityDetailResponseDto> {
+    return this.universityService.setUniversityGrade(id, dto.mecGrade);
+  }
+
+  @Patch(':id/status')
+  @Roles(RoleEnum.professor)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve or invalidate a university (Professor only)' })
+  @ApiOkResponse({ type: UniversityDetailResponseDto })
+  async setStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: SetEntityStatusDto,
+  ): Promise<UniversityDetailResponseDto> {
+    return this.universityService.setUniversityStatus(id, dto.status);
+  }
+
+  @Get(':id/similar')
+  @Roles(RoleEnum.professor)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Find similar universities for deduplication (Professor only)' })
+  @ApiOkResponse({ type: [UniversityDetailResponseDto] })
+  async getSimilar(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<UniversityDetailResponseDto[]> {
+    return this.universityService.findSimilarUniversities(id);
+  }
+
+  @Post(':id/merge')
+  @Roles(RoleEnum.professor)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Merge a source university into a target university (Professor only)' })
+  async merge(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: MergeEntitiesDto,
+  ): Promise<void> {
+    return this.universityService.mergeUniversities(id, dto.targetId);
   }
 }

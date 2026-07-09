@@ -7,7 +7,9 @@ export class Enrollment {
   level!: string;
   status!: string;
   undergradUniversity!: string | null;
+  undergradUniversityId!: string | null;
   undergradCourse!: string | null;
+  undergradCourseId!: string | null;
   undergradDegreeType!: string | null;
   ira!: string | null;
   undergradProofFileId!: string | null;

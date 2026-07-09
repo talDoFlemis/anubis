@@ -28,4 +28,18 @@ export abstract class UniversityRepository {
   abstract createUniversity(data: CreateUniversityData): Promise<UniversitySelect>;
 
   abstract createCourse(data: CreateCourseData): Promise<CourseSelect>;
+
+  abstract setUniversityGrade(id: string, mecGrade: number | null): Promise<UniversitySelect>;
+
+  abstract setUniversityStatus(id: string, status: string): Promise<UniversitySelect>;
+
+  abstract findPendingUniversities(): Promise<UniversitySelect[]>;
+
+  abstract mergeUniversities(sourceId: string, targetId: string): Promise<void>;
+
+  abstract setCourseStatus(id: string, status: string): Promise<CourseSelect>;
+
+  abstract findPendingCourses(): Promise<CourseSelect[]>;
+
+  abstract mergeCourses(sourceId: string, targetId: string): Promise<void>;
 }

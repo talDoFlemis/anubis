@@ -75,4 +75,84 @@ export class UniversityDrizzleRepository extends UniversityRepository {
 
     return row;
   }
+
+  async setUniversityGrade(id: string, mecGrade: number | null): Promise<UniversitySelect> {
+    const [row] = await this.db
+      .update(universities)
+      .set({ mecGrade })
+      .where(eq(universities.id, id))
+      .returning();
+
+    return row;
+  }
+
+  async setUniversityStatus(id: string, status: string): Promise<UniversitySelect> {
+    const [row] = await this.db
+      .update(universities)
+      .set({ status })
+      .where(eq(universities.id, id))
+      .returning();
+
+    return row;
+  }
+
+  async findPendingUniversities(): Promise<UniversitySelect[]> {
+    return this.db
+      .select()
+      .from(universities)
+      .where(eq(universities.status, 'pending'))
+      .orderBy(universities.name);
+  }
+
+  async mergeUniversities(sourceId: string, targetId: string): Promise<void> {
+    const enrollmentsSchema = await import('../../../../database/schema/enrollments.js');
+    await this.db.transaction(async tx => {
+      // 1. Redirect enrollments to target
+      await tx
+        .update(enrollmentsSchema.enrollments)
+        .set({ undergradUniversityId: targetId })
+        .where(eq(enrollmentsSchema.enrollments.undergradUniversityId, sourceId));
+
+      // 2. Redirect courses to target
+      await tx
+        .update(courses)
+        .set({ universityId: targetId })
+        .where(eq(courses.universityId, sourceId));
+
+      // 3. Delete source university
+      await tx.delete(universities).where(eq(universities.id, sourceId));
+    });
+  }
+
+  async setCourseStatus(id: string, status: string): Promise<CourseSelect> {
+    const [row] = await this.db
+      .update(courses)
+      .set({ status })
+      .where(eq(courses.id, id))
+      .returning();
+
+    return row;
+  }
+
+  async findPendingCourses(): Promise<CourseSelect[]> {
+    return this.db
+      .select()
+      .from(courses)
+      .where(eq(courses.status, 'pending'))
+      .orderBy(courses.name);
+  }
+
+  async mergeCourses(sourceId: string, targetId: string): Promise<void> {
+    const enrollmentsSchema = await import('../../../../database/schema/enrollments.js');
+    await this.db.transaction(async tx => {
+      // 1. Redirect enrollments to target
+      await tx
+        .update(enrollmentsSchema.enrollments)
+        .set({ undergradCourseId: targetId })
+        .where(eq(enrollmentsSchema.enrollments.undergradCourseId, sourceId));
+
+      // 2. Delete source course
+      await tx.delete(courses).where(eq(courses.id, sourceId));
+    });
+  }
 }

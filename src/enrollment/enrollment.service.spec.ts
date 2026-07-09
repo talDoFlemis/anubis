@@ -10,6 +10,7 @@ import { FileStorageService } from '../file-storage/file-storage.service';
 import { MailService } from '../mail/mail.service';
 import { ResearchThemeService } from '../research-theme/research-theme.service';
 import { RoleEnum } from '../roles/roles.enum';
+import { UniversityService } from '../university/university.service';
 import { UsersService } from '../users/users.service';
 import { EnrollmentLevel } from './dto/enrollment-level.enum';
 import { EnrollmentStatusUpdate } from './dto/update-enrollment-status.dto';
@@ -25,6 +26,7 @@ describe('EnrollmentService', () => {
   let mockFileStorageService: Record<string, jest.Mock>;
   let mockResearchThemeService: Record<string, jest.Mock>;
   let mockMailService: Record<string, jest.Mock>;
+  let mockUniversityService: Record<string, jest.Mock>;
 
   const mockUser = {
     id: 'user-uuid',
@@ -111,6 +113,15 @@ describe('EnrollmentService', () => {
       send: jest.fn().mockResolvedValue(undefined),
     };
 
+    mockUniversityService = {
+      findUniversityById: jest
+        .fn()
+        .mockResolvedValue({ id: 'uni-1', name: 'Mocks University', status: 'approved' }),
+      findCourseById: jest
+        .fn()
+        .mockResolvedValue({ id: 'course-1', name: 'Mock Course', status: 'approved' }),
+    };
+
     const module = await Test.createTestingModule({
       providers: [
         EnrollmentService,
@@ -131,6 +142,10 @@ describe('EnrollmentService', () => {
         {
           provide: MailService,
           useValue: mockMailService,
+        },
+        {
+          provide: UniversityService,
+          useValue: mockUniversityService,
         },
         {
           provide: getLoggerToken(EnrollmentService.name),

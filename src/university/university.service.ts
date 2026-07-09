@@ -43,4 +43,51 @@ export class UniversityService {
   async createCourse(dto: CreateCourseDto): Promise<CourseSelect> {
     return this.universityRepository.createCourse(dto);
   }
+
+  async setUniversityGrade(id: string, mecGrade: number | null): Promise<UniversitySelect> {
+    await this.findUniversityById(id);
+    return this.universityRepository.setUniversityGrade(id, mecGrade);
+  }
+
+  async setUniversityStatus(id: string, status: string): Promise<UniversitySelect> {
+    await this.findUniversityById(id);
+    return this.universityRepository.setUniversityStatus(id, status);
+  }
+
+  async findPendingUniversities(): Promise<UniversitySelect[]> {
+    return this.universityRepository.findPendingUniversities();
+  }
+
+  async findSimilarUniversities(id: string): Promise<UniversitySelect[]> {
+    const target = await this.findUniversityById(id);
+    const results = await this.searchUniversities(target.name, 10);
+    return results.filter(u => u.id !== id);
+  }
+
+  async mergeUniversities(sourceId: string, targetId: string): Promise<void> {
+    await this.findUniversityById(sourceId);
+    await this.findUniversityById(targetId);
+    return this.universityRepository.mergeUniversities(sourceId, targetId);
+  }
+
+  async setCourseStatus(id: string, status: string): Promise<CourseSelect> {
+    await this.findCourseById(id);
+    return this.universityRepository.setCourseStatus(id, status);
+  }
+
+  async findPendingCourses(): Promise<CourseSelect[]> {
+    return this.universityRepository.findPendingCourses();
+  }
+
+  async findSimilarCourses(id: string): Promise<CourseSelect[]> {
+    const target = await this.findCourseById(id);
+    const results = await this.searchCourses(target.name, target.universityId || undefined, 10);
+    return results.filter(c => c.id !== id);
+  }
+
+  async mergeCourses(sourceId: string, targetId: string): Promise<void> {
+    await this.findCourseById(sourceId);
+    await this.findCourseById(targetId);
+    return this.universityRepository.mergeCourses(sourceId, targetId);
+  }
 }

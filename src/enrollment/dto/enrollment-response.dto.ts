@@ -8,7 +8,9 @@ export class EnrollmentResponseDto {
   @ApiProperty() level!: string;
   @ApiProperty() status!: string;
   @ApiPropertyOptional() undergradUniversity!: string | null;
+  @ApiPropertyOptional() undergradUniversityId!: string | null;
   @ApiPropertyOptional() undergradCourse!: string | null;
+  @ApiPropertyOptional() undergradCourseId!: string | null;
   @ApiPropertyOptional() undergradDegreeType!: string | null;
   @ApiPropertyOptional() ira!: string | null;
   @ApiPropertyOptional() undergradProofFileId!: string | null;

@@ -8,6 +8,7 @@ import { FileStorageModule } from '../file-storage/file-storage.module';
 import { MailModule } from '../mail/mail.module';
 import { ResearchThemeModule } from '../research-theme/research-theme.module';
 import { RolesGuard } from '../roles/roles.guard';
+import { UniversityModule } from '../university/university.module';
 import { UsersModule } from '../users/users.module';
 import { EnrollmentPeriodController } from './enrollment-period.controller';
 import { EnrollmentPeriodScheduler } from './enrollment-period.scheduler';
@@ -25,6 +26,7 @@ import { EnrollmentDrizzlePersistenceModule } from './infrastructure/persistence
     ResearchThemeModule,
     MailModule,
     CvScoringModule,
+    UniversityModule,
   ],
   controllers: [EnrollmentPeriodController, EnrollmentController],
   providers: [

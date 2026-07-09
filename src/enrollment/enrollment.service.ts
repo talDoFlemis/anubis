@@ -12,6 +12,7 @@ import { FileStorageService } from '../file-storage/file-storage.service';
 import { MailService } from '../mail/mail.service';
 import { ResearchThemeService } from '../research-theme/research-theme.service';
 import { RoleEnum } from '../roles/roles.enum';
+import { UniversityService } from '../university/university.service';
 import { User } from '../users/domain/user';
 import { UsersService } from '../users/users.service';
 import { ENROLLMENT_STATUS, PERIOD_STATUS } from './constants/enrollment-status';
@@ -44,6 +45,7 @@ export class EnrollmentService {
     private readonly fileStorageService: FileStorageService,
     private readonly researchThemeService: ResearchThemeService,
     private readonly mailService: MailService,
+    private readonly universityService: UniversityService,
   ) {}
 
   async create(userId: string, dto: CreateEnrollmentDto): Promise<Enrollment> {
@@ -131,9 +133,38 @@ export class EnrollmentService {
     }
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
-    if (dto.undergradUniversity !== undefined)
+    if (dto.undergradUniversityId !== undefined) {
+      if (dto.undergradUniversityId !== null) {
+        const uni = await this.universityService.findUniversityById(dto.undergradUniversityId);
+        if (uni.status === 'invalidated') {
+          throw new BadRequestException('A universidade selecionada foi invalidada.');
+        }
+        updateData.undergradUniversityId = dto.undergradUniversityId;
+        updateData.undergradUniversity = uni.name;
+      } else {
+        updateData.undergradUniversityId = null;
+        updateData.undergradUniversity = null;
+      }
+    } else if (dto.undergradUniversity !== undefined) {
       updateData.undergradUniversity = dto.undergradUniversity;
-    if (dto.undergradCourse !== undefined) updateData.undergradCourse = dto.undergradCourse;
+    }
+
+    if (dto.undergradCourseId !== undefined) {
+      if (dto.undergradCourseId !== null) {
+        const course = await this.universityService.findCourseById(dto.undergradCourseId);
+        if (course.status === 'invalidated') {
+          throw new BadRequestException('O curso selecionado foi invalidado.');
+        }
+        updateData.undergradCourseId = dto.undergradCourseId;
+        updateData.undergradCourse = course.name;
+      } else {
+        updateData.undergradCourseId = null;
+        updateData.undergradCourse = null;
+      }
+    } else if (dto.undergradCourse !== undefined) {
+      updateData.undergradCourse = dto.undergradCourse;
+    }
+
     if (dto.undergradDegreeType !== undefined)
       updateData.undergradDegreeType = dto.undergradDegreeType;
     if (dto.ira !== undefined) updateData.ira = dto.ira;
