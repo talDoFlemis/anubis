@@ -27,6 +27,7 @@ import { Route as AppClassificationIndexRouteImport } from './routes/_app/classi
 import { Route as AuthOnboardingSecretaryRouteImport } from './routes/auth/onboarding/secretary'
 import { Route as AuthOnboardingProfessorRouteImport } from './routes/auth/onboarding/professor'
 import { Route as AppValidationEnrollmentIdRouteImport } from './routes/_app/validation/$enrollmentId'
+import { Route as AppManageUniversitiesRouteImport } from './routes/_app/manage/universities'
 import { Route as AppManageResearchThemesRouteImport } from './routes/_app/manage/research-themes'
 import { Route as AppManageProfessorsRouteImport } from './routes/_app/manage/professors'
 import { Route as AppManageInterviewsRouteImport } from './routes/_app/manage/interviews'
@@ -133,6 +134,11 @@ const AppValidationEnrollmentIdRoute =
     path: '/validation/$enrollmentId',
     getParentRoute: () => AppRoute,
   } as any)
+const AppManageUniversitiesRoute = AppManageUniversitiesRouteImport.update({
+  id: '/manage/universities',
+  path: '/manage/universities',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppManageResearchThemesRoute = AppManageResearchThemesRouteImport.update({
   id: '/manage/research-themes',
   path: '/manage/research-themes',
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/manage/interviews': typeof AppManageInterviewsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
+  '/manage/universities': typeof AppManageUniversitiesRoute
   '/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
@@ -261,6 +268,7 @@ export interface FileRoutesByTo {
   '/manage/interviews': typeof AppManageInterviewsRoute
   '/manage/professors': typeof AppManageProfessorsRoute
   '/manage/research-themes': typeof AppManageResearchThemesRoute
+  '/manage/universities': typeof AppManageUniversitiesRoute
   '/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
@@ -297,6 +305,7 @@ export interface FileRoutesById {
   '/_app/manage/interviews': typeof AppManageInterviewsRoute
   '/_app/manage/professors': typeof AppManageProfessorsRoute
   '/_app/manage/research-themes': typeof AppManageResearchThemesRoute
+  '/_app/manage/universities': typeof AppManageUniversitiesRoute
   '/_app/validation/$enrollmentId': typeof AppValidationEnrollmentIdRoute
   '/auth/onboarding/professor': typeof AuthOnboardingProfessorRoute
   '/auth/onboarding/secretary': typeof AuthOnboardingSecretaryRoute
@@ -333,6 +342,7 @@ export interface FileRouteTypes {
     | '/manage/interviews'
     | '/manage/professors'
     | '/manage/research-themes'
+    | '/manage/universities'
     | '/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/manage/interviews'
     | '/manage/professors'
     | '/manage/research-themes'
+    | '/manage/universities'
     | '/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/_app/manage/interviews'
     | '/_app/manage/professors'
     | '/_app/manage/research-themes'
+    | '/_app/manage/universities'
     | '/_app/validation/$enrollmentId'
     | '/auth/onboarding/professor'
     | '/auth/onboarding/secretary'
@@ -552,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppValidationEnrollmentIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/manage/universities': {
+      id: '/_app/manage/universities'
+      path: '/manage/universities'
+      fullPath: '/manage/universities'
+      preLoaderRoute: typeof AppManageUniversitiesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/manage/research-themes': {
       id: '/_app/manage/research-themes'
       path: '/manage/research-themes'
@@ -694,6 +713,7 @@ interface AppRouteChildren {
   AppManageInterviewsRoute: typeof AppManageInterviewsRoute
   AppManageProfessorsRoute: typeof AppManageProfessorsRoute
   AppManageResearchThemesRoute: typeof AppManageResearchThemesRoute
+  AppManageUniversitiesRoute: typeof AppManageUniversitiesRoute
   AppValidationEnrollmentIdRoute: typeof AppValidationEnrollmentIdRoute
   AppClassificationIndexRoute: typeof AppClassificationIndexRoute
   AppEnrollmentIndexRoute: typeof AppEnrollmentIndexRoute
@@ -710,6 +730,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppManageInterviewsRoute: AppManageInterviewsRoute,
   AppManageProfessorsRoute: AppManageProfessorsRoute,
   AppManageResearchThemesRoute: AppManageResearchThemesRoute,
+  AppManageUniversitiesRoute: AppManageUniversitiesRoute,
   AppValidationEnrollmentIdRoute: AppValidationEnrollmentIdRoute,
   AppClassificationIndexRoute: AppClassificationIndexRoute,
   AppEnrollmentIndexRoute: AppEnrollmentIndexRoute,

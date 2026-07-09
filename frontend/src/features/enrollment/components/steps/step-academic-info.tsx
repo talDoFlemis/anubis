@@ -14,7 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CourseCombobox } from '@/features/enrollment/components/CourseCombobox';
 import { FileUploadField } from '@/features/enrollment/components/file-upload-field';
+import { UniversityCombobox } from '@/features/enrollment/components/UniversityCombobox';
 import {
   useUpdateEnrollment,
   useUpdateMastersDegrees,
@@ -84,10 +86,18 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
   const isDoctoralLevel = enrollment?.level === 'doctoral';
 
   // ── Local state ──────────────────────────────────────────────────
-  const [undergradUniversity, setUndergradUniversity] = useState(
-    enrollment?.undergradUniversity ?? '',
+  const [undergradUniversityId, setUndergradUniversityId] = useState<string | null>(
+    enrollment?.undergradUniversityId ?? null,
   );
-  const [undergradCourse, setUndergradCourse] = useState(enrollment?.undergradCourse ?? '');
+  const [undergradUniversityLabel, setUndergradUniversityLabel] = useState<string | null>(
+    enrollment?.undergradUniversity ?? null,
+  );
+  const [undergradCourseId, setUndergradCourseId] = useState<string | null>(
+    enrollment?.undergradCourseId ?? null,
+  );
+  const [undergradCourseLabel, setUndergradCourseLabel] = useState<string | null>(
+    enrollment?.undergradCourse ?? null,
+  );
   const [undergradDegreeType, setUndergradDegreeType] = useState<UndergradDegreeType | ''>(
     enrollment?.undergradDegreeType ?? '',
   );
@@ -182,11 +192,11 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
 
-    if (!undergradUniversity.trim()) {
+    if (!undergradUniversityId) {
       newErrors.undergradUniversity = 'A universidade de graduação é obrigatória.';
     }
 
-    if (!undergradCourse.trim()) {
+    if (!undergradCourseId) {
       newErrors.undergradCourse = 'O curso de graduação é obrigatório.';
     }
 
@@ -269,8 +279,8 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
       await updateEnrollment.mutateAsync({
         id: enrollment.id,
         payload: {
-          undergradUniversity: undergradUniversity.trim(),
-          undergradCourse: undergradCourse.trim(),
+          undergradUniversityId,
+          undergradCourseId,
           undergradDegreeType: undergradDegreeType || undefined,
           ira: ira.trim(),
           phone: phone.trim(),
@@ -341,18 +351,20 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
           <Field data-invalid={!!errors.undergradUniversity} className="space-y-2">
             <FieldLabel htmlFor="undergrad-university">Universidade de graduação</FieldLabel>
             <FieldContent>
-              <Input
-                id="undergrad-university"
-                value={undergradUniversity}
-                onChange={e => {
-                  setUndergradUniversity(e.target.value);
+              <UniversityCombobox
+                selectedId={undergradUniversityId}
+                selectedLabel={undergradUniversityLabel}
+                onSelect={(id, label) => {
+                  setUndergradUniversityId(id);
+                  setUndergradUniversityLabel(label);
+                  setUndergradCourseId(null);
+                  setUndergradCourseLabel(null);
                   setErrors(prev => {
                     const { undergradUniversity: _, ...rest } = prev;
                     return rest;
                   });
                 }}
-                placeholder="Ex.: UFC"
-                aria-invalid={!!errors.undergradUniversity}
+                error={errors.undergradUniversity}
               />
               {errors.undergradUniversity && <FieldError>{errors.undergradUniversity}</FieldError>}
             </FieldContent>
@@ -361,18 +373,19 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
           <Field data-invalid={!!errors.undergradCourse} className="space-y-2">
             <FieldLabel htmlFor="undergrad-course">Curso de graduação</FieldLabel>
             <FieldContent>
-              <Input
-                id="undergrad-course"
-                value={undergradCourse}
-                onChange={e => {
-                  setUndergradCourse(e.target.value);
+              <CourseCombobox
+                selectedId={undergradCourseId}
+                selectedLabel={undergradCourseLabel}
+                universityId={undergradUniversityId}
+                onSelect={(id, label) => {
+                  setUndergradCourseId(id);
+                  setUndergradCourseLabel(label);
                   setErrors(prev => {
                     const { undergradCourse: _, ...rest } = prev;
                     return rest;
                   });
                 }}
-                placeholder="Ex.: Ciência da Computação"
-                aria-invalid={!!errors.undergradCourse}
+                error={errors.undergradCourse}
               />
               {errors.undergradCourse && <FieldError>{errors.undergradCourse}</FieldError>}
             </FieldContent>

@@ -14,10 +14,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useEnrollment } from '@/features/enrollment/hooks/use-enrollment';
+import { ScoreAdjustmentPanel } from '@/features/validation/components/ScoreAdjustmentPanel';
 import { ValidationForm } from '@/features/validation/components/ValidationForm';
 
 export function ValidationWorkspace() {
   const { enrollmentId } = useParams({ strict: false });
+  const { data: enrollment } = useEnrollment(enrollmentId as string);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
 
   // Controle do modal de confirmação
@@ -68,6 +71,7 @@ export function ValidationWorkspace() {
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.2fr_0.8fr] xl:grid-cols-[1.5fr_1fr]">
           <div className="space-y-6">
             <ValidationForm enrollmentId={enrollmentId as string} onSelectPdf={setSelectedPdfUrl} />
+            {enrollment && <ScoreAdjustmentPanel enrollment={enrollment} />}
           </div>
 
           <div className="sticky top-8 flex h-[calc(100vh-8rem)] flex-col gap-4">
