@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useDebounce } from '@/hooks/use-debounce';
 import { useState } from 'react';
@@ -45,5 +45,94 @@ export function useCreateUniversity() {
 export function useCreateCourse() {
   return useMutation({
     mutationFn: api.universities.createCourse,
+  });
+}
+
+// ── Professor Management Hooks ───────────────────────────────────────
+
+export function usePendingUniversities() {
+  return useQuery({
+    queryKey: ['universities', 'pending'],
+    queryFn: () => api.universities.getPending(),
+  });
+}
+
+export function useSetUniversityGrade() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, mecGrade }: { id: string; mecGrade: number }) =>
+      api.universities.setGrade(id, mecGrade),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['universities'] });
+    },
+  });
+}
+
+export function useSetUniversityStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'approved' | 'invalidated' }) =>
+      api.universities.setStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['universities'] });
+    },
+  });
+}
+
+export function useSimilarUniversities(id: string) {
+  return useQuery({
+    queryKey: ['universities', id, 'similar'],
+    queryFn: () => api.universities.getSimilar(id),
+    enabled: !!id,
+  });
+}
+
+export function useMergeUniversities() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, targetId }: { id: string; targetId: string }) =>
+      api.universities.merge(id, targetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['universities'] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] });
+    },
+  });
+}
+
+export function usePendingCourses() {
+  return useQuery({
+    queryKey: ['courses', 'pending'],
+    queryFn: () => api.universities.getPendingCourses(),
+  });
+}
+
+export function useSetCourseStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'approved' | 'invalidated' }) =>
+      api.universities.setCourseStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+}
+
+export function useSimilarCourses(id: string) {
+  return useQuery({
+    queryKey: ['courses', id, 'similar'],
+    queryFn: () => api.universities.getSimilarCourses(id),
+    enabled: !!id,
+  });
+}
+
+export function useMergeCourses() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, targetId }: { id: string; targetId: string }) =>
+      api.universities.mergeCourses(id, targetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] });
+    },
   });
 }

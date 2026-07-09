@@ -26,9 +26,11 @@ export type { ScoringCategory } from './cv-scoring';
 export type { CreateEnrollmentPeriodPayload, EnrollmentPeriod } from './enrollment-periods';
 export type {
   CreateEnrollmentPayload,
+  CreateScoreAdjustmentPayload,
   Enrollment,
   MastersDegreeData,
   PoscompData,
+  ScoreAdjustment,
   UndergradDegreeType,
   UpdateEnrollmentPayload,
   UpdateEnrollmentThemesPayload,
@@ -46,9 +48,11 @@ export type {
   UpdateResearchThemePayload,
 } from './research-themes';
 export type {
+  Course,
   CourseOption,
   CreateCoursePayload,
   CreateUniversityPayload,
+  University,
   UniversityOption,
 } from './universities';
 

@@ -29,7 +29,9 @@ export interface Enrollment {
   level: string;
   status: string;
   undergradUniversity: string | null;
+  undergradUniversityId: string | null;
   undergradCourse: string | null;
+  undergradCourseId: string | null;
   undergradDegreeType: UndergradDegreeType | null;
   ira: string | null;
   undergradProofFileId: string | null;
@@ -57,7 +59,9 @@ export interface CreateEnrollmentPayload {
 
 export interface UpdateEnrollmentPayload {
   undergradUniversity?: string;
+  undergradUniversityId?: string | null;
   undergradCourse?: string;
+  undergradCourseId?: string | null;
   undergradDegreeType?: UndergradDegreeType;
   ira?: string;
   projectTitle?: string;
@@ -88,7 +92,9 @@ function normalizeEnrollment(data: unknown): Enrollment {
     level: asString(r.level),
     status: asString(r.status),
     undergradUniversity: asNullableString(r.undergradUniversity),
+    undergradUniversityId: asNullableString(r.undergradUniversityId),
     undergradCourse: asNullableString(r.undergradCourse),
+    undergradCourseId: asNullableString(r.undergradCourseId),
     undergradDegreeType:
       (asNullableString(r.undergradDegreeType) as UndergradDegreeType | null) ?? null,
     ira: asNullableString(r.ira),
@@ -232,4 +238,68 @@ export const enrollmentsApi = {
 
   getMastersDegreeProofInfo: (id: string, index: number): Promise<FileInfo> =>
     getFileInfo(`/enrollments/${id}/masters-degrees/${index}/proof`),
+
+  getScoreAdjustments: async (enrollmentId: string): Promise<ScoreAdjustment[]> => {
+    const { data } = await apiClient.get(`/enrollments/${enrollmentId}/score-adjustments`);
+    return (data as unknown[]).map(normalizeScoreAdjustment);
+  },
+
+  createScoreAdjustment: async (
+    enrollmentId: string,
+    payload: CreateScoreAdjustmentPayload,
+  ): Promise<ScoreAdjustment> => {
+    const { data } = await apiClient.post(
+      `/enrollments/${enrollmentId}/score-adjustments`,
+      payload,
+    );
+    return normalizeScoreAdjustment(data);
+  },
+
+  deleteScoreAdjustment: async (
+    enrollmentId: string,
+    scoreType: 'cv_score' | 'ira' | 'final',
+  ): Promise<void> => {
+    await apiClient.delete(`/enrollments/${enrollmentId}/score-adjustments/${scoreType}`);
+  },
+
+  lockScoreAdjustments: async (enrollmentId: string): Promise<void> => {
+    await apiClient.post(`/enrollments/${enrollmentId}/score-adjustments/lock`);
+  },
 };
+
+// ── Score Adjustment Types & Normalizers ─────────────────────────────
+
+export interface ScoreAdjustment {
+  id: string;
+  enrollmentId: string;
+  adjustedBy: string;
+  scoreType: 'cv_score' | 'ira' | 'final';
+  originalValue: string;
+  adjustedValue: string;
+  justification: string;
+  isLocked: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateScoreAdjustmentPayload {
+  scoreType: 'cv_score' | 'ira' | 'final';
+  adjustedValue: number;
+  justification: string;
+}
+
+function normalizeScoreAdjustment(data: unknown): ScoreAdjustment {
+  const r = asRecord(data);
+  return {
+    id: asString(r.id),
+    enrollmentId: asString(r.enrollmentId),
+    adjustedBy: asString(r.adjustedBy),
+    scoreType: asString(r.scoreType) as 'cv_score' | 'ira' | 'final',
+    originalValue: asString(r.originalValue),
+    adjustedValue: asString(r.adjustedValue),
+    justification: asString(r.justification),
+    isLocked: Boolean(r.isLocked),
+    createdAt: asString(r.createdAt),
+    updatedAt: asString(r.updatedAt),
+  };
+}
