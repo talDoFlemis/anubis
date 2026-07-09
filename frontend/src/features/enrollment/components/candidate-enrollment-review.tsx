@@ -163,6 +163,12 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
     enabled: !!enrollment?.candidateId,
   });
 
+  const { data: university } = useQuery({
+    queryKey: ['universities', enrollment?.undergradUniversityId],
+    queryFn: () => api.universities.findById(enrollment?.undergradUniversityId || ''),
+    enabled: !!enrollment?.undergradUniversityId,
+  });
+
   const { data: themesData } = useQuery({
     queryKey: ['research-themes-all'],
     queryFn: () => api.researchThemes.findAll({ limit: 100 }),
@@ -182,6 +188,27 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
   const [verificationComment, setVerificationComment] = React.useState<string>('');
 
   // ── Computed Values ───────────────────────────────────────────────
+
+  const MEC_IRA_FACTORS: Record<number, number> = {
+    5: 1.0,
+    4: 0.9,
+    3: 0.8,
+    2: 0.7,
+    1: 0.6,
+  };
+
+  const mecGrade = university?.mecGrade;
+  const mecFactor =
+    mecGrade !== null && mecGrade !== undefined ? (MEC_IRA_FACTORS[mecGrade] ?? 1.0) : 1.0;
+
+  const rawIra = React.useMemo(() => {
+    const val = enrollment?.ira || candidate?.ira;
+    return val ? parseFloat(val) : 0;
+  }, [enrollment, candidate]);
+
+  const finalIra = React.useMemo(() => {
+    return rawIra * mecFactor;
+  }, [rawIra, mecFactor]);
 
   const sortedCategories = React.useMemo(
     () => [...(categories ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
@@ -527,16 +554,43 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
 
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                  IRA do Candidato
+                  IRA Declarado
                 </span>
                 <p className="font-semibold text-slate-800 text-lg">
-                  {enrollment?.ira
-                    ? parseFloat(enrollment.ira).toFixed(2)
-                    : candidate?.ira
-                      ? parseFloat(candidate.ira).toFixed(2)
-                      : '—'}
+                  {rawIra ? rawIra.toFixed(2) : '—'}
                 </p>
               </div>
+
+              {enrollment?.undergradUniversityId && (
+                <>
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                      Conceito MEC da Instituição
+                    </span>
+                    <p className="font-semibold text-slate-800">
+                      {mecGrade !== null && mecGrade !== undefined ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="font-mono text-sm">{mecGrade}</span>
+                          <span className="text-xs text-muted-foreground">
+                            (Redutor MEC: x{mecFactor.toFixed(1)})
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 text-xs italic">Pendente de revisão</span>
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                      IRA Final (com redutor MEC)
+                    </span>
+                    <p className="font-bold text-primary text-xl">
+                      {finalIra ? finalIra.toFixed(2) : '—'}
+                    </p>
+                  </div>
+                </>
+              )}
 
               {/* Comprovante de Graduação / Histórico */}
               <div className="pt-3 border-t border-slate-100 space-y-2">
@@ -734,8 +788,6 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
               </CardContent>
             </Card>
           )}
-
-          <ScoreAdjustmentPanel enrollment={enrollment} />
         </div>
 
         {/* Right Column: CV Items Grouped by Category */}
@@ -1055,6 +1107,7 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
                   Nenhuma categoria de pontuação encontrada.
                 </div>
               )}
+              <ScoreAdjustmentPanel enrollment={enrollment} noCard={true} />
             </CardContent>
           </Card>
         </div>

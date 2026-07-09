@@ -13,6 +13,7 @@ import { useCvItems, useScoringCategories } from '@/features/enrollment/hooks/us
 import { useEnrollment } from '@/features/enrollment/hooks/use-enrollment';
 import { useUpdateValidationScore } from '@/features/validation/hooks/use-validation';
 import { api, type CvItem, type ScoringCategory } from '@/lib/api';
+import { ScoreAdjustmentPanel } from './ScoreAdjustmentPanel';
 
 interface ValidationFormProps {
   enrollmentId: string;
@@ -252,6 +253,12 @@ export function ValidationForm({ enrollmentId, onSelectPdf }: ValidationFormProp
           </Card>
         );
       })}
+
+      {enrollment && (
+        <Card className="overflow-hidden rounded-2xl shadow-sm bg-white p-6">
+          <ScoreAdjustmentPanel enrollment={enrollment} noCard={true} />
+        </Card>
+      )}
     </div>
   );
 }

@@ -16,9 +16,10 @@ import {
 
 interface ScoreAdjustmentPanelProps {
   enrollment: Enrollment;
+  noCard?: boolean;
 }
 
-export function ScoreAdjustmentPanel({ enrollment }: ScoreAdjustmentPanelProps) {
+export function ScoreAdjustmentPanel({ enrollment, noCard = false }: ScoreAdjustmentPanelProps) {
   const { data: adjustments = [], isLoading } = useScoreAdjustments(enrollment.id);
   const createMutation = useCreateScoreAdjustment();
   const deleteMutation = useDeleteScoreAdjustment();
@@ -125,6 +126,192 @@ export function ScoreAdjustmentPanel({ enrollment }: ScoreAdjustmentPanelProps) 
       adjustment: finalAdj,
     },
   ];
+
+  if (noCard) {
+    return (
+      <div className="pt-6 border-t border-slate-100 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-serif font-bold text-slate-800">
+              Ajustes Granulares de Notas
+            </h3>
+            <p className="text-muted-foreground text-xs mt-1">
+              Override manual de notas com justificativa de acordo com a validação.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isLocked ? (
+              <Badge
+                variant="secondary"
+                className="bg-amber-50 text-amber-700 hover:bg-amber-50 font-medium rounded-lg px-2.5 py-1 text-xs gap-1.5 border border-amber-200"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                Bloqueado
+              </Badge>
+            ) : (
+              <Badge
+                variant="secondary"
+                className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 font-medium rounded-lg px-2.5 py-1 text-xs gap-1.5 border border-emerald-200"
+              >
+                <Unlock className="h-3.5 w-3.5" />
+                Edição Ativa
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <div className="divide-y divide-slate-100/80">
+          {rows.map(({ type, label, original, adjustment }) => {
+            const isEditing = editingType === type;
+            const hasAdj = !!adjustment;
+
+            return (
+              <div key={type} className="py-5 first:pt-0 last:pb-0 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-semibold text-slate-800">{label}</h4>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground font-medium">
+                      <span>
+                        Original: <span className="font-mono text-slate-600">{original}</span>
+                      </span>
+                      {hasAdj && (
+                        <span className="text-primary bg-primary/5 px-2 py-0.5 rounded">
+                          Ajustado para:{' '}
+                          <span className="font-mono font-bold">
+                            {Number(adjustment.adjustedValue).toFixed(2)}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {!isLocked && !isEditing && (
+                      <>
+                        {hasAdj && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(type)}
+                            disabled={deleteMutation.isPending}
+                            className="h-8 w-8 text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-xl"
+                            title="Remover ajuste"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            handleEditClick(
+                              type,
+                              hasAdj ? adjustment.adjustedValue : '',
+                              hasAdj ? adjustment.justification : '',
+                            )
+                          }
+                          className="rounded-xl h-8 text-xs font-semibold gap-1.5"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                          {hasAdj ? 'Editar' : 'Ajustar'}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {hasAdj && !isEditing && (
+                  <div className="bg-slate-50/50 rounded-xl p-3.5 text-xs border border-slate-100 text-slate-600 space-y-1">
+                    <p className="font-semibold text-slate-700">Justificativa do ajuste:</p>
+                    <p className="leading-relaxed font-normal">{adjustment.justification}</p>
+                  </div>
+                )}
+
+                {isEditing && (
+                  <div className="bg-slate-50/40 border border-slate-100 rounded-2xl p-4 space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-[1fr_2.5fr]">
+                      <Field className="space-y-1">
+                        <FieldLabel htmlFor={`val-${type}`} className="text-xs">
+                          Nova Nota
+                        </FieldLabel>
+                        <FieldContent>
+                          <Input
+                            id={`val-${type}`}
+                            type="number"
+                            step="0.01"
+                            placeholder="Ex.: 9.25"
+                            value={valInput}
+                            onChange={e => setValInput(e.target.value)}
+                            className="h-9 font-mono"
+                          />
+                        </FieldContent>
+                      </Field>
+
+                      <Field className="space-y-1">
+                        <FieldLabel htmlFor={`just-${type}`} className="text-xs">
+                          Justificativa
+                        </FieldLabel>
+                        <FieldContent>
+                          <Input
+                            id={`just-${type}`}
+                            placeholder="Justifique a alteração da nota..."
+                            value={justInput}
+                            onChange={e => setJustInput(e.target.value)}
+                            className="h-9"
+                          />
+                        </FieldContent>
+                      </Field>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingType(null)}
+                        className="rounded-xl h-8 text-xs"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSave(type)}
+                        disabled={createMutation.isPending}
+                        className="rounded-xl h-8 text-xs gap-1"
+                      >
+                        {createMutation.isPending ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Save className="h-3 w-3" />
+                        )}
+                        Salvar Ajuste
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {!isLocked && adjustments.length > 0 && (
+          <div className="pt-4 flex justify-end">
+            <Button
+              onClick={handleLock}
+              disabled={lockMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl h-9 text-xs font-semibold gap-1.5"
+            >
+              {lockMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Lock className="h-4 w-4" />
+              )}
+              Bloquear e Consolidar Ajustes
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden bg-white mt-8">
