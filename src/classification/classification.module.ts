@@ -8,6 +8,9 @@ import { ClassificationController } from './classification.controller';
 import { ClassificationService } from './classification.service';
 import { ClassificationDrizzlePersistenceModule } from './infrastructure/persistence/drizzle/drizzle-persistence.module';
 
+import { ScoreAdjustmentModule } from '@/score-adjustment/score-adjustment.module';
+import { UniversityModule } from '@/university/university.module';
+
 @Module({
   imports: [
     UsersModule,
@@ -16,6 +19,8 @@ import { ClassificationDrizzlePersistenceModule } from './infrastructure/persist
     InterviewModule,
     ResearchThemeModule,
     ClassificationDrizzlePersistenceModule,
+    UniversityModule,
+    ScoreAdjustmentModule,
   ],
   providers: [ClassificationService],
   controllers: [ClassificationController],

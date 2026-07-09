@@ -20,6 +20,7 @@ import { InterviewModule } from './interview/interview.module';
 import { MailModule } from './mail/mail.module';
 import { ProfessorModule } from './professor/professor.module';
 import { ResearchThemeModule } from './research-theme/research-theme.module';
+import { ScoreAdjustmentModule } from './score-adjustment/score-adjustment.module';
 import { SecretaryModule } from './secretary/secretary.module';
 import { SessionModule } from './session/session.module';
 import { SystemModule } from './system/system.module';
@@ -61,6 +62,7 @@ import { ValidationModule } from './validation/validation.module';
     EnrollmentModule,
     CvScoringModule,
     ValidationModule,
+    ScoreAdjustmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,6 +7,9 @@ import { ENROLLMENT_STATUS } from '@/enrollment/constants/enrollment-status';
 import { EnrollmentService } from '@/enrollment/enrollment.service';
 import { InterviewService } from '@/interview/interview.service';
 import { ResearchThemeService } from '@/research-theme/research-theme.service';
+import { ScoreAdjustmentService } from '@/score-adjustment/score-adjustment.service';
+import { DEFAULT_MEC_FACTOR, MEC_IRA_FACTORS } from '@/university/constants/mec-factors';
+import { UniversityService } from '@/university/university.service';
 import { UsersService } from '@/users/users.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
@@ -25,6 +28,8 @@ export class ClassificationService {
     private readonly cvScoringService: CvScoringService,
     private readonly interviewService: InterviewService,
     private readonly researchThemeService: ResearchThemeService,
+    private readonly universityService: UniversityService,
+    private readonly scoreAdjustmentService: ScoreAdjustmentService,
   ) {}
 
   async triggerClassification(dto?: TriggerClassificationDto): Promise<ClassificationSelect[]> {
@@ -36,6 +41,15 @@ export class ClassificationService {
     const insertedClassifications: ClassificationSelect[] = [];
 
     for (const candidateId of candidateIds) {
+      // Auto-lock all adjustments for the candidates' latest submitted enrollment
+      const enrollments = await this.enrollmentService.findMine(candidateId);
+      const sub = enrollments
+        .filter(e => e.status === ENROLLMENT_STATUS.SUBMITTED)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+      if (sub) {
+        await this.scoreAdjustmentService.lockAll(sub.id);
+      }
+
       const candidateDataArray = await this.calculateCandidateData(candidateId);
       if (!candidateDataArray || candidateDataArray.length === 0) continue;
 
@@ -82,7 +96,21 @@ export class ClassificationService {
 
     if (!sub || !sub.primaryThemeId) return [];
 
-    const ira = Number(sub.ira) || 0;
+    const rawIra = Number(sub.ira) || 0;
+    let mecFactor = DEFAULT_MEC_FACTOR;
+    if (sub.undergradUniversityId) {
+      try {
+        const uni = await this.universityService.findUniversityById(sub.undergradUniversityId);
+        if (uni && uni.mecGrade !== null) {
+          mecFactor = MEC_IRA_FACTORS[uni.mecGrade] ?? DEFAULT_MEC_FACTOR;
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Failed to fetch university mecGrade for enrollment ${sub.id}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+    const ira = rawIra * mecFactor;
     let cvScore = 0;
     try {
       if (sub.scoreValidated !== null) {
@@ -109,21 +137,35 @@ export class ClassificationService {
       project = Number(projAvg?.overall) || 0;
     }
 
-    const finalScore = this.computeFormula(
+    const adjustments = await this.scoreAdjustmentService.findByEnrollment(sub.id);
+
+    // Apply manual overrides
+    const adjustedIra = adjustments.find(a => a.scoreType === 'ira')?.adjustedValue;
+    const finalIra = adjustedIra !== undefined ? parseFloat(adjustedIra) : ira;
+
+    const adjustedCv = adjustments.find(a => a.scoreType === 'cv_score')?.adjustedValue;
+    const finalCv = adjustedCv !== undefined ? parseFloat(adjustedCv) : cvScore;
+
+    let finalScore = this.computeFormula(
       sub.level as 'mestrado' | 'doutorado',
-      ira,
-      cvScore,
+      finalIra,
+      finalCv,
       interview,
       project,
     );
+
+    const adjustedFinal = adjustments.find(a => a.scoreType === 'final')?.adjustedValue;
+    if (adjustedFinal !== undefined) {
+      finalScore = parseFloat(adjustedFinal);
+    }
 
     const inserts: ClassificationInsert[] = [];
 
     const baseData = {
       candidateId,
       interviewScore: interview.toFixed(2),
-      cvScore: cvScore.toFixed(2),
-      ira: ira.toFixed(2),
+      cvScore: finalCv.toFixed(2),
+      ira: finalIra.toFixed(2),
       projectScore: sub.level === 'doctoral' ? project.toFixed(2) : null,
       finalScore: finalScore.toFixed(2),
       rank: 0,
