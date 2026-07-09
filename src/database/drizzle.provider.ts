@@ -14,6 +14,7 @@ import * as enrollmentPeriodsSchema from './schema/enrollment-periods';
 import * as enrollmentsSchema from './schema/enrollments';
 import * as filesSchema from './schema/files';
 import * as researchThemesSchema from './schema/research-themes';
+import * as scoreAdjustmentsSchema from './schema/score-adjustments';
 import * as sessionsSchema from './schema/sessions';
 import * as universitiesSchema from './schema/universities';
 import * as usersSchema from './schema/users';
@@ -30,6 +31,7 @@ const schema = {
   ...cvScoringSchema,
   ...cvItemsSchema,
   ...classificationsSchema,
+  ...scoreAdjustmentsSchema,
 };
 
 export type DrizzleSchema = typeof schema;

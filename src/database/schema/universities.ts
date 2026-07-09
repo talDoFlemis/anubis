@@ -1,5 +1,14 @@
 import { sql } from 'drizzle-orm';
-import { boolean, customType, index, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  customType,
+  index,
+  integer,
+  pgTable,
+  timestamp,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 const tsvector = customType<{ data: string }>({
   dataType() {
@@ -16,6 +25,8 @@ export const universities = pgTable(
     state: varchar('state', { length: 2 }),
     city: varchar('city', { length: 255 }),
     isManual: boolean('is_manual').notNull().default(false),
+    mecGrade: integer('mec_grade'),
+    status: varchar('status', { length: 20 }).notNull().default('pending'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 
     searchVector: tsvector('search_vector').generatedAlwaysAs(
@@ -32,6 +43,7 @@ export const courses = pgTable(
     name: varchar('name', { length: 500 }).notNull(),
     universityId: uuid('university_id').references(() => universities.id, { onDelete: 'cascade' }),
     isManual: boolean('is_manual').notNull().default(false),
+    status: varchar('status', { length: 20 }).notNull().default('pending'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 
     searchVector: tsvector('search_vector').generatedAlwaysAs(
