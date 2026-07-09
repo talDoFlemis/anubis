@@ -31,6 +31,7 @@ import {
   useScoringCategories,
   useVerifyCvItem,
 } from '@/features/enrollment/hooks/use-cv-scoring';
+import { ScoreAdjustmentPanel } from '@/features/validation/components/ScoreAdjustmentPanel';
 import type { CvItem, ScoringCategory } from '@/lib/api';
 import { api } from '@/lib/api';
 
@@ -733,6 +734,8 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
               </CardContent>
             </Card>
           )}
+
+          <ScoreAdjustmentPanel enrollment={enrollment} />
         </div>
 
         {/* Right Column: CV Items Grouped by Category */}
