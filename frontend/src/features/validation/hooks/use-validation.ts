@@ -79,18 +79,23 @@ export function useUpdateValidationScore() {
     mutationFn: ({
       enrollmentId,
       itemId,
-      score,
+      status,
+      adjustedScore,
+      justification,
     }: {
       enrollmentId: string;
       itemId: string;
-      score: number | null;
-    }) => validationApi.updateScore(enrollmentId, itemId, score),
+      status: 'accepted' | 'partial' | 'rejected';
+      adjustedScore?: number;
+      justification?: string;
+    }) => validationApi.updateScore(enrollmentId, itemId, { status, adjustedScore, justification }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: ['validation', 'enrollment', variables.enrollmentId],
       });
       queryClient.invalidateQueries({ queryKey: ['validation', 'candidates'] });
       queryClient.invalidateQueries({ queryKey: ['validation', 'secretary'] });
+      queryClient.invalidateQueries({ queryKey: ['cv-items', variables.enrollmentId] });
     },
   });
 }

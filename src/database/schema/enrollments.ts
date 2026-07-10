@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { enrollmentLevelEnum, enrollmentPeriods } from './enrollment-periods';
 import { researchThemes } from './research-themes';
+import { courses, universities } from './universities';
 import { users } from './users';
 
 export const enrollmentStatusEnum = pgEnum('enrollment_status', [
@@ -57,10 +58,12 @@ export const enrollments = pgTable(
       .references(() => enrollmentPeriods.id, { onDelete: 'restrict' }),
     level: enrollmentLevelEnum('level').notNull(),
     status: enrollmentStatusEnum('status').notNull().default('draft'),
-    undergradUniversity: varchar('undergrad_university', { length: 255 }),
-    undergradCourse: varchar('undergrad_course', { length: 255 }),
+    undergradUniversityId: uuid('undergrad_university_id').references(() => universities.id, { onDelete: 'set null' }),
+    undergradCourseId: uuid('undergrad_course_id').references(() => courses.id, { onDelete: 'set null' }),
     undergradDegreeType: undergradDegreeTypeEnum('undergrad_degree_type'),
     ira: numeric('ira', { precision: 5, scale: 2 }),
+    mecFactor: numeric('mec_factor', { precision: 3, scale: 2 }),
+    iraAdjusted: numeric('ira_adjusted', { precision: 5, scale: 2 }),
     undergradProofFileId: varchar('undergrad_proof_file_id', { length: 255 }),
     phone: varchar('phone', { length: 20 }),
     justification: text('justification'),

@@ -1,4 +1,4 @@
-import type { CreateCvItemPayload, UpdateCvItemPayload } from '@/lib/api';
+import type { CreateCvItemPayload, UpdateCvItemPayload, VerifyCvItemPayload } from '@/lib/api';
 import { api } from '@/lib/api';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -114,11 +114,7 @@ export function useVerifyCvItem() {
     }: {
       enrollmentId: string;
       itemId: string;
-      payload: {
-        isVerified: 'verified' | 'incorrect';
-        correctedClassification?: string;
-        verificationComment?: string;
-      };
+      payload: VerifyCvItemPayload;
     }) => api.cvItems.verify(enrollmentId, itemId, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['cv-items', variables.enrollmentId] });

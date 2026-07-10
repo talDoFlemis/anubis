@@ -22,6 +22,7 @@ export interface Course {
   id: string;
   name: string;
   universityId: string | null;
+  mecScore: number | null;
   isManual: boolean;
   createdAt: string;
 }
@@ -80,6 +81,7 @@ function normalizeCourse(data: unknown): Course {
     id: asString(r.id),
     name: asString(r.name),
     universityId: asNullableString(r.universityId),
+    mecScore: r.mecScore != null ? Number(r.mecScore) : null,
     isManual: asBool(r.isManual),
     createdAt: asString(r.createdAt),
   };
@@ -114,5 +116,14 @@ export const universitiesApi = {
 
   createCourse: async (payload: CreateCoursePayload): Promise<Course> => {
     return normalizeCourse((await apiClient.post('/courses', payload)).data);
+  },
+
+  findCourseById: async (id: string): Promise<Course> => {
+    return normalizeCourse((await apiClient.get(`/courses/${id}`)).data);
+  },
+
+  updateMecScore: async (courseId: string, mecScore: number): Promise<Course> => {
+    const { data } = await apiClient.patch(`/courses/${courseId}/mec-score`, { mecScore });
+    return normalizeCourse(data);
   },
 };

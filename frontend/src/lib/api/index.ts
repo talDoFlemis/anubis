@@ -21,7 +21,7 @@ export type {
 } from './auth';
 
 export type { CandidateProfile } from './candidates';
-export type { CreateCvItemPayload, CvItem, UpdateCvItemPayload } from './cv-items';
+export type { CreateCvItemPayload, CvItem, UpdateCvItemPayload, VerificationStatus, VerifyCvItemPayload } from './cv-items';
 export type { ScoringCategory } from './cv-scoring';
 export type { CreateEnrollmentPeriodPayload, EnrollmentPeriod } from './enrollment-periods';
 export type {

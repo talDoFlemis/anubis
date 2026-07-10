@@ -11,6 +11,7 @@ import {
 import { cvScoringCategories } from './cv-scoring';
 import { enrollments } from './enrollments';
 import { files } from './files';
+import { users } from './users';
 
 export const cvItems = pgTable('cv_items', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -37,9 +38,12 @@ export const cvItems = pgTable('cv_items', {
   isInArea: boolean('is_in_area').default(false),
   docenciaType: varchar('docencia_type', { length: 50 }),
   eventoType: varchar('evento_type', { length: 50 }),
-  isVerified: varchar('is_verified', { length: 50 }).notNull().default('pending'),
-  correctedClassification: varchar('corrected_classification', { length: 50 }),
-  verificationComment: text('verification_comment'),
+  verificationStatus: varchar('verification_status', { length: 50 }).notNull().default('pending'),
+  // Values: 'pending' | 'accepted' | 'partial' | 'rejected'
+  adjustedScore: numeric('adjusted_score', { precision: 5, scale: 2 }),
+  verificationJustification: text('verification_justification'),
+  verifiedBy: uuid('verified_by').references(() => users.id, { onDelete: 'set null' }),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

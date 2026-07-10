@@ -20,8 +20,8 @@ interface ValidationFormProps {
 }
 
 function computeItemScores(item: CvItem, category: ScoringCategory) {
-  const declared = item.quantity * parseFloat(category.pointsPerItem);
-  const validated = item.score !== null ? parseFloat(item.score) : null;
+  const declared = item.score !== null ? parseFloat(item.score) : item.quantity * parseFloat(category.pointsPerItem);
+  const validated = item.adjustedScore !== null ? parseFloat(item.adjustedScore) : null;
   return { declared, validated };
 }
 
@@ -35,7 +35,9 @@ export function ValidationForm({ enrollmentId, onSelectPdf }: ValidationFormProp
 
   const updateScoreMutation = useUpdateValidationScore();
 
+  const [draftStatuses, setDraftStatuses] = useState<Record<string, 'accepted' | 'partial' | 'rejected' | ''>>({});
   const [draftScores, setDraftScores] = useState<Record<string, string>>({});
+  const [draftJustifications, setDraftJustifications] = useState<Record<string, string>>({});
   const [savingItems, setSavingItems] = useState<Record<string, boolean>>({});
 
   const itemsByCategory = useMemo(() => {
@@ -66,17 +68,38 @@ export function ValidationForm({ enrollmentId, onSelectPdf }: ValidationFormProp
   );
 
   const handleSaveScore = useCallback(
-    (itemId: string, scoreValue: number | null) => {
+    (
+      itemId: string,
+      status: 'accepted' | 'partial' | 'rejected',
+      adjustedScore?: number,
+      justification?: string,
+    ) => {
       setSavingItems(prev => ({ ...prev, [itemId]: true }));
       updateScoreMutation.mutate(
-        { enrollmentId, itemId, score: scoreValue },
+        { enrollmentId, itemId, status, adjustedScore, justification },
         {
           onSuccess: () => {
-            toast.success('Nota salva com sucesso.');
+            toast.success('Avaliação salva com sucesso.');
             setSavingItems(prev => ({ ...prev, [itemId]: false }));
+            // Clear draft state for this item since it's saved
+            setDraftStatuses(prev => {
+              const copy = { ...prev };
+              delete copy[itemId];
+              return copy;
+            });
+            setDraftScores(prev => {
+              const copy = { ...prev };
+              delete copy[itemId];
+              return copy;
+            });
+            setDraftJustifications(prev => {
+              const copy = { ...prev };
+              delete copy[itemId];
+              return copy;
+            });
           },
           onError: () => {
-            toast.error('Erro ao salvar a nota.');
+            toast.error('Erro ao salvar a avaliação.');
             setSavingItems(prev => ({ ...prev, [itemId]: false }));
           },
         },
@@ -88,10 +111,8 @@ export function ValidationForm({ enrollmentId, onSelectPdf }: ValidationFormProp
   const handleBulkAccept = useCallback(
     (category: ScoringCategory, items: CvItem[]) => {
       items.forEach(item => {
-        const { declared, validated } = computeItemScores(item, category);
-        if (validated !== declared) {
-          handleSaveScore(item.id, declared);
-          setDraftScores(prev => ({ ...prev, [item.id]: declared.toString() }));
+        if (item.verificationStatus !== 'accepted') {
+          handleSaveScore(item.id, 'accepted');
         }
       });
       toast.success(`Todos os itens de "${category.name}" foram aceitos.`);
@@ -144,15 +165,28 @@ export function ValidationForm({ enrollmentId, onSelectPdf }: ValidationFormProp
             <CardContent className="p-0 divide-y divide-slate-100">
               {items.map(item => {
                 const { declared, validated } = computeItemScores(item, category);
-                const currentDraft =
-                  draftScores[item.id] ?? (validated !== null ? validated.toString() : '');
                 const isSaving = savingItems[item.id];
-                const isPending = validated === null;
-                const isDiff = validated !== null && validated !== declared;
+
+                // Local states for this item if modified
+                const currentStatus = draftStatuses[item.id] ?? (item.verificationStatus !== 'pending' ? item.verificationStatus : '');
+                const currentScore = draftScores[item.id] ?? (item.adjustedScore !== null ? item.adjustedScore : declared.toString());
+                const currentJustification = draftJustifications[item.id] ?? (item.verificationJustification ?? '');
+
+                const isPending = item.verificationStatus === 'pending';
+                const hasLocalChanges =
+                  currentStatus !== (item.verificationStatus !== 'pending' ? item.verificationStatus : '') ||
+                  (currentStatus === 'partial' && currentScore !== (item.adjustedScore ?? '')) ||
+                  currentJustification !== (item.verificationJustification ?? '');
+
+                // Validation
+                const isScoreValid = currentStatus === 'partial' ? !isNaN(parseFloat(currentScore)) && parseFloat(currentScore) >= 0 : true;
+                const isJustificationRequired = (currentStatus === 'partial' || currentStatus === 'rejected') && parseFloat(currentScore) !== declared;
+                const isJustificationValid = isJustificationRequired ? currentJustification.trim().length > 0 : true;
+                const isValid = currentStatus !== '' && isScoreValid && isJustificationValid;
 
                 return (
-                  <div key={item.id} className="p-4 hover:bg-slate-50/50 transition-colors">
-                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                  <div key={item.id} className="p-5 hover:bg-slate-50/50 transition-colors space-y-4">
+                    <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
                       {/* Lado Esquerdo do Item: Descrição e Status */}
                       <div className="flex-1 space-y-2">
                         <div className="flex items-start justify-between gap-2">
@@ -176,18 +210,25 @@ export function ValidationForm({ enrollmentId, onSelectPdf }: ValidationFormProp
                             {item.proofFileId ? 'Ver Comprovante' : 'Sem Comprovante'}
                           </Button>
 
-                          {/* Visual Diff Badge */}
-                          {!isPending && (
+                          {/* Badge de status atual */}
+                          {item.verificationStatus !== 'pending' && (
                             <div className="flex items-center gap-1 text-xs font-medium">
-                              {isDiff ? (
-                                <span className="text-rose-600 flex items-center bg-rose-50 px-2 py-0.5 rounded">
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                  Nota Alterada
-                                </span>
-                              ) : (
-                                <span className="text-emerald-600 flex items-center bg-emerald-50 px-2 py-0.5 rounded">
+                              {item.verificationStatus === 'accepted' && (
+                                <span className="text-emerald-600 flex items-center bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
                                   <Check className="h-3 w-3 mr-1" />
-                                  Nota Aceita
+                                  Aceito ({declared.toFixed(1)} pts)
+                                </span>
+                              )}
+                              {item.verificationStatus === 'partial' && (
+                                <span className="text-amber-600 flex items-center bg-amber-50 px-2 py-0.5 rounded-full text-[11px]">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  Ajustado ({parseFloat(item.adjustedScore || '0').toFixed(1)} / {declared.toFixed(1)} pts)
+                                </span>
+                              )}
+                              {item.verificationStatus === 'rejected' && (
+                                <span className="text-rose-600 flex items-center bg-rose-50 px-2 py-0.5 rounded-full text-[11px]">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  Rejeitado (0.0 pts)
                                 </span>
                               )}
                             </div>
@@ -195,55 +236,159 @@ export function ValidationForm({ enrollmentId, onSelectPdf }: ValidationFormProp
                         </div>
                       </div>
 
-                      {/* Lado Direito do Item: Campos de Nota */}
-                      <div className="flex items-center gap-4 shrink-0 bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-                        <div className="text-right">
-                          <p className="text-[10px] font-label text-slate-400 uppercase">
-                            Declarado
-                          </p>
-                          <p className="text-sm font-semibold text-slate-600">
-                            {declared.toFixed(1)}
-                          </p>
-                        </div>
-
-                        <div className="w-px h-8 bg-slate-200" />
-
-                        <div className="flex flex-col items-end gap-1">
-                          <p className="text-[10px] font-label text-primary uppercase">Validado</p>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              step="0.1"
-                              className={`h-8 w-20 text-right font-mono text-sm ${
-                                isDiff ? 'border-rose-300 focus-visible:ring-rose-500' : ''
-                              }`}
-                              placeholder={declared.toString()}
-                              value={currentDraft}
-                              onChange={e =>
-                                setDraftScores(prev => ({ ...prev, [item.id]: e.target.value }))
-                              }
-                            />
-                            <Button
-                              size="icon"
-                              variant={
-                                currentDraft !== (validated?.toString() || '') ? 'default' : 'ghost'
-                              }
-                              className={`h-8 w-8 ${currentDraft !== (validated?.toString() || '') ? 'bg-primary' : 'text-slate-400'}`}
-                              disabled={isSaving || currentDraft === (validated?.toString() || '')}
-                              onClick={() => {
-                                const val = parseFloat(currentDraft);
-                                handleSaveScore(item.id, isNaN(val) ? null : val);
-                              }}
-                            >
-                              {isSaving ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Check className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
+                      {/* Lado Direito: Nota Declarada */}
+                      <div className="shrink-0 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 text-center">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Declarado
+                        </p>
+                        <p className="text-base font-bold text-slate-700 font-mono">
+                          {declared.toFixed(1)}
+                        </p>
                       </div>
+                    </div>
+
+                    {/* Formulário de Verificação Granular */}
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold text-slate-500 mr-2">Avaliação:</span>
+                        <Button
+                          type="button"
+                          variant={currentStatus === 'accepted' ? 'default' : 'outline'}
+                          size="sm"
+                          className={`h-8 text-xs ${
+                            currentStatus === 'accepted'
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                              : 'text-slate-600 hover:bg-slate-100'
+                          }`}
+                          onClick={() => {
+                            setDraftStatuses(prev => ({ ...prev, [item.id]: 'accepted' }));
+                            setDraftScores(prev => ({ ...prev, [item.id]: declared.toString() }));
+                          }}
+                        >
+                          Aceitar Nota
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={currentStatus === 'partial' ? 'default' : 'outline'}
+                          size="sm"
+                          className={`h-8 text-xs ${
+                            currentStatus === 'partial'
+                              ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
+                              : 'text-slate-600 hover:bg-slate-100'
+                          }`}
+                          onClick={() => {
+                            setDraftStatuses(prev => ({ ...prev, [item.id]: 'partial' }));
+                          }}
+                        >
+                          Ajustar Nota
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={currentStatus === 'rejected' ? 'default' : 'outline'}
+                          size="sm"
+                          className={`h-8 text-xs ${
+                            currentStatus === 'rejected'
+                              ? 'bg-rose-600 hover:bg-rose-700 text-white border-rose-600'
+                              : 'text-slate-600 hover:bg-slate-100'
+                          }`}
+                          onClick={() => {
+                            setDraftStatuses(prev => ({ ...prev, [item.id]: 'rejected' }));
+                            setDraftScores(prev => ({ ...prev, [item.id]: '0' }));
+                          }}
+                        >
+                          Rejeitar Item
+                        </Button>
+                      </div>
+
+                      {/* Campo de Nota Ajustada (se status for partial) */}
+                      {currentStatus === 'partial' && (
+                        <div className="flex flex-col gap-1.5 max-w-[200px]">
+                          <label className="text-xs font-semibold text-slate-600">Nota Validada:</label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max={declared}
+                            className="h-9 font-mono text-sm border-slate-200"
+                            value={currentScore}
+                            onChange={e => setDraftScores(prev => ({ ...prev, [item.id]: e.target.value }))}
+                          />
+                        </div>
+                      )}
+
+                      {/* Justificativa Obrigatória (se status for partial ou rejected) */}
+                      {(currentStatus === 'partial' || currentStatus === 'rejected') && (
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600 flex items-center justify-between">
+                            <span>Justificativa da Alteração:</span>
+                            <span className="text-[10px] text-rose-500 font-normal">* Obrigatória</span>
+                          </label>
+                          <textarea
+                            rows={2}
+                            placeholder="Descreva o motivo do ajuste ou rejeição da nota..."
+                            className={`flex min-h-16 w-full rounded-md border bg-white px-3 py-2 text-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary ${
+                              isJustificationRequired && !currentJustification.trim()
+                                ? 'border-rose-300 focus-visible:ring-rose-500'
+                                : 'border-slate-200'
+                            }`}
+                            value={currentJustification}
+                            onChange={e => setDraftJustifications(prev => ({ ...prev, [item.id]: e.target.value }))}
+                          />
+                        </div>
+                      )}
+
+                      {/* Botão de Salvar Alterações para este item */}
+                      {hasLocalChanges && (
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                          <Button
+                            size="sm"
+                            className="bg-primary text-white text-xs gap-1.5 h-8"
+                            disabled={isSaving || !isValid}
+                            onClick={() => {
+                              const scoreVal = currentStatus === 'partial' ? parseFloat(currentScore) : currentStatus === 'rejected' ? 0 : declared;
+                              handleSaveScore(
+                                item.id,
+                                currentStatus as 'accepted' | 'partial' | 'rejected',
+                                scoreVal,
+                                currentJustification
+                              );
+                            }}
+                          >
+                            {isSaving ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Check className="h-3.5 w-3.5" />
+                            )}
+                            Salvar Avaliação
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs text-slate-500"
+                            disabled={isSaving}
+                            onClick={() => {
+                              // Reset local state to item values
+                              setDraftStatuses(prev => {
+                                const copy = { ...prev };
+                                delete copy[item.id];
+                                return copy;
+                              });
+                              setDraftScores(prev => {
+                                const copy = { ...prev };
+                                delete copy[item.id];
+                                return copy;
+                              });
+                              setDraftJustifications(prev => {
+                                const copy = { ...prev };
+                                delete copy[item.id];
+                                return copy;
+                              });
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

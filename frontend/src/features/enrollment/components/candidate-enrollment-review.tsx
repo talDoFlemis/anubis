@@ -31,8 +31,10 @@ import {
   useScoringCategories,
   useVerifyCvItem,
 } from '@/features/enrollment/hooks/use-cv-scoring';
-import type { CvItem, ScoringCategory } from '@/lib/api';
+import type { CvItem, ScoringCategory, VerifyCvItemPayload } from '@/lib/api';
 import { api } from '@/lib/api';
+import { useAuth } from '@/hooks/use-auth';
+import { useUpdateEnrollment } from '@/features/enrollment/hooks/use-enrollment';
 
 interface CandidateEnrollmentReviewProps {
   id: string;
@@ -174,11 +176,18 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
   );
 
   const verifyCvItem = useVerifyCvItem();
+  const { data: user } = useAuth();
+  const updateEnrollment = useUpdateEnrollment();
 
-  // ── Local Form State for correction ────────────────────────────────
-  const [correctingItemId, setCorrectingItemId] = React.useState<string | null>(null);
-  const [correctedClassification, setCorrectedClassification] = React.useState<string>('none');
-  const [verificationComment, setVerificationComment] = React.useState<string>('');
+  // ── Local states for verification ──────────────────────────────────
+  const [draftStatuses, setDraftStatuses] = React.useState<Record<string, 'accepted' | 'partial' | 'rejected' | ''>>({});
+  const [draftScores, setDraftScores] = React.useState<Record<string, string>>({});
+  const [draftJustifications, setDraftJustifications] = React.useState<Record<string, string>>({});
+  const [savingItems, setSavingItems] = React.useState<Record<string, boolean>>({});
+
+  // MEC Factor override states
+  const [isEditingMec, setIsEditingMec] = React.useState(false);
+  const [mecFactorInput, setMecFactorInput] = React.useState('');
 
   // ── Computed Values ───────────────────────────────────────────────
 
@@ -262,51 +271,43 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
     }
   };
 
-  const handleVerifyItem = (itemId: string, isVerified: 'verified' | 'incorrect') => {
-    if (isVerified === 'verified') {
-      verifyCvItem.mutate(
-        {
-          enrollmentId: id,
-          itemId,
-          payload: { isVerified: 'verified' },
-        },
-        {
-          onSuccess: () => {
-            toast.success('Item validado com sucesso.');
-          },
-          onError: err => {
-            toast.error(err.message || 'Erro ao validar item.');
-          },
-        },
-      );
-    } else {
-      const currentItem = cvItems?.find(i => i.id === itemId);
-      setCorrectingItemId(itemId);
-      setCorrectedClassification(currentItem?.classification || 'none');
-      setVerificationComment(currentItem?.verificationComment || '');
-    }
-  };
-
-  const handleSaveCorrection = () => {
-    if (!correctingItemId) return;
-
+  const handleSaveItemVerification = (
+    itemId: string,
+    status: 'accepted' | 'partial' | 'rejected',
+    adjustedScore?: number,
+    justification?: string,
+  ) => {
+    setSavingItems(prev => ({ ...prev, [itemId]: true }));
     verifyCvItem.mutate(
       {
         enrollmentId: id,
-        itemId: correctingItemId,
-        payload: {
-          isVerified: 'incorrect',
-          correctedClassification,
-          verificationComment: verificationComment.trim() || undefined,
-        },
+        itemId,
+        payload: { status, adjustedScore, justification },
       },
       {
         onSuccess: () => {
-          toast.success('Correção registrada com sucesso.');
-          setCorrectingItemId(null);
+          toast.success('Avaliação de item salva com sucesso.');
+          setSavingItems(prev => ({ ...prev, [itemId]: false }));
+          // Clear draft states
+          setDraftStatuses(prev => {
+            const copy = { ...prev };
+            delete copy[itemId];
+            return copy;
+          });
+          setDraftScores(prev => {
+            const copy = { ...prev };
+            delete copy[itemId];
+            return copy;
+          });
+          setDraftJustifications(prev => {
+            const copy = { ...prev };
+            delete copy[itemId];
+            return copy;
+          });
         },
         onError: err => {
-          toast.error(err.message || 'Erro ao registrar correção.');
+          toast.error(err.message || 'Erro ao salvar avaliação.');
+          setSavingItems(prev => ({ ...prev, [itemId]: false }));
         },
       },
     );
@@ -535,6 +536,131 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
                       ? parseFloat(candidate.ira).toFixed(2)
                       : '—'}
                 </p>
+              </div>
+
+              <div className="space-y-1 pt-2 border-t border-slate-50">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                  Nota MEC do Curso
+                </span>
+                <p className="font-medium text-slate-800">
+                  {enrollment?.mecScore !== null && enrollment?.mecScore !== undefined ? (
+                    <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                      Nota {enrollment.mecScore}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                      Sem Nota Cadastrada (Usa Fator Padrão)
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="space-y-1.5 pt-2 border-t border-slate-50">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                  Fator MEC
+                </span>
+                {isEditingMec ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <select
+                      className="flex h-8 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-hidden"
+                      value={mecFactorInput}
+                      onChange={e => setMecFactorInput(e.target.value)}
+                    >
+                      <option value="1.00">1.00 (Nota MEC 5)</option>
+                      <option value="0.80">0.80 (Nota MEC 4)</option>
+                      <option value="0.60">0.60 (Nota MEC 3 / Sem Nota)</option>
+                      <option value="0.40">0.40 (Nota MEC 2)</option>
+                      <option value="0.20">0.20 (Nota MEC 1)</option>
+                      <option value="custom">Outro valor...</option>
+                    </select>
+
+                    {mecFactorInput === 'custom' || !['1.00', '0.80', '0.60', '0.40', '0.20'].includes(mecFactorInput) ? (
+                      <input
+                        type="number"
+                        step="0.05"
+                        min="0.1"
+                        max="1.0"
+                        placeholder="Ex: 0.75"
+                        className="flex h-8 w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs focus:outline-hidden font-mono"
+                        value={mecFactorInput === 'custom' ? '' : mecFactorInput}
+                        onChange={e => setMecFactorInput(e.target.value)}
+                      />
+                    ) : null}
+
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                      disabled={updateEnrollment.isPending}
+                      onClick={() => {
+                        const factorNum = parseFloat(mecFactorInput);
+                        if (isNaN(factorNum) || factorNum < 0.1 || factorNum > 1.0) {
+                          toast.error('O fator deve ser um número entre 0.1 e 1.0.');
+                          return;
+                        }
+                        updateEnrollment.mutate(
+                          { id, payload: { mecFactor: factorNum.toFixed(2) } },
+                          {
+                            onSuccess: () => {
+                              toast.success('Fator MEC atualizado com sucesso.');
+                              setIsEditingMec(false);
+                            },
+                            onError: () => {
+                              toast.error('Erro ao atualizar o Fator MEC.');
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      Salvar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs border border-slate-100"
+                      disabled={updateEnrollment.isPending}
+                      onClick={() => setIsEditingMec(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-slate-800 text-base font-mono">
+                      {enrollment?.mecFactor
+                        ? parseFloat(enrollment.mecFactor).toFixed(2)
+                        : '0.60'}
+                    </p>
+                    {user && user.role !== 'candidate' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-primary hover:bg-primary/5 px-2"
+                        onClick={() => {
+                          setMecFactorInput(enrollment?.mecFactor ? parseFloat(enrollment.mecFactor).toFixed(2) : '0.60');
+                          setIsEditingMec(true);
+                        }}
+                      >
+                        Ajustar Fator
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1 pt-2 border-t border-slate-50">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                  IRA Ajustado (Fator MEC aplicado)
+                </span>
+                <p className="font-bold text-primary text-xl font-mono">
+                  {enrollment?.iraAdjusted
+                    ? parseFloat(enrollment.iraAdjusted).toFixed(2)
+                    : enrollment?.ira
+                      ? (parseFloat(enrollment.ira) * parseFloat(enrollment.mecFactor || '0.60')).toFixed(2)
+                      : '—'}
+                </p>
+                <span className="text-[10px] text-slate-400 block leading-none">
+                  Fórmula: IRA Declarado × Fator MEC
+                </span>
               </div>
 
               {/* Comprovante de Graduação / Histórico */}
@@ -781,10 +907,27 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
                       <div className="space-y-4">
                         {items.length > 0 ? (
                           items.map(item => {
-                            const isCorrecting = correctingItemId === item.id;
-                            const isItemPending = item.isVerified === 'pending';
-                            const isItemVerified = item.isVerified === 'verified';
-                            const isItemIncorrect = item.isVerified === 'incorrect';
+                            const isItemPending = item.verificationStatus === 'pending';
+                            const isItemVerified = item.verificationStatus === 'accepted';
+                            const isItemAdjusted = item.verificationStatus === 'partial';
+                            const isItemRejected = item.verificationStatus === 'rejected';
+
+                            const isSaving = savingItems[item.id];
+                            const currentStatus = draftStatuses[item.id] ?? (item.verificationStatus !== 'pending' ? item.verificationStatus : '');
+                            const currentScore = draftScores[item.id] ?? (item.adjustedScore !== null ? item.adjustedScore : (item.score ?? '0'));
+                            const currentJustification = draftJustifications[item.id] ?? (item.verificationJustification ?? '');
+
+                            const hasLocalChanges =
+                              currentStatus !== (item.verificationStatus !== 'pending' ? item.verificationStatus : '') ||
+                              (currentStatus === 'partial' && currentScore !== (item.adjustedScore ?? '')) ||
+                              currentJustification !== (item.verificationJustification ?? '');
+
+                            const declared = item.score !== null ? parseFloat(item.score) : item.quantity * parseFloat(category.pointsPerItem);
+
+                            const isScoreValid = currentStatus === 'partial' ? !isNaN(parseFloat(currentScore)) && parseFloat(currentScore) >= 0 : true;
+                            const isJustificationRequired = (currentStatus === 'partial' || currentStatus === 'rejected') && parseFloat(currentScore) !== declared;
+                            const isJustificationValid = isJustificationRequired ? currentJustification.trim().length > 0 : true;
+                            const isValid = currentStatus !== '' && isScoreValid && isJustificationValid;
 
                             return (
                               <div
@@ -867,30 +1010,15 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
                                       )}
                                     </div>
 
-                                    {/* Correction Details if Incorrect */}
-                                    {isItemIncorrect && (
-                                      <div className="mt-2 bg-red-50/50 border border-red-100 rounded-xl p-3 text-xs space-y-1">
-                                        <p className="font-semibold text-red-800">
-                                          Motivo de erro anotado:
+                                    {/* Correction Details if Incorrect/Adjusted/Rejected */}
+                                    {(isItemAdjusted || isItemRejected) && (
+                                      <div className="mt-2 bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs space-y-1">
+                                        <p className="font-semibold text-slate-800">
+                                          Justificativa do ajuste/rejeição:
                                         </p>
-                                        <p className="text-red-700 leading-normal italic">
-                                          "
-                                          {item.verificationComment ||
-                                            'Sem comentários adicionais.'}
-                                          "
+                                        <p className="text-slate-600 leading-normal italic">
+                                          "{item.verificationJustification || 'Sem justificativa.'}"
                                         </p>
-                                        {item.correctedClassification &&
-                                          item.correctedClassification !== 'none' && (
-                                            <p className="text-red-700 font-medium pt-1">
-                                              Classificação corrigida pelo docente:{' '}
-                                              <Badge
-                                                variant="outline"
-                                                className="border-red-200 bg-red-100/50 text-red-700 text-[10px] font-bold py-0"
-                                              >
-                                                {item.correctedClassification}
-                                              </Badge>
-                                            </p>
-                                          )}
                                       </div>
                                     )}
                                   </div>
@@ -914,125 +1042,180 @@ export function CandidateEnrollmentReview({ id }: CandidateEnrollmentReviewProps
                                     )}
 
                                     {/* Status Badge */}
-                                    {isItemPending && (
+                                    {item.verificationStatus !== 'pending' && (
+                                      <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+                                        {item.verificationStatus === 'accepted' && (
+                                          <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 flex items-center">
+                                            <Check className="h-3 w-3 mr-1" />
+                                            Aceito ({declared.toFixed(1)} pts)
+                                          </span>
+                                        )}
+                                        {item.verificationStatus === 'partial' && (
+                                          <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 flex items-center">
+                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                            Ajustado ({parseFloat(item.adjustedScore || '0').toFixed(1)} pts)
+                                          </span>
+                                        )}
+                                        {item.verificationStatus === 'rejected' && (
+                                          <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 flex items-center">
+                                            <AlertCircle className="h-3 w-3 mr-1" />
+                                            Rejeitado
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {item.verificationStatus === 'pending' && (
                                       <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
                                         <Clock className="h-3 w-3" />
                                         Pendente
                                       </span>
                                     )}
-                                    {isItemVerified && (
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                                        <CheckCircle2 className="h-3 w-3" />
-                                        Validado
-                                      </span>
-                                    )}
-                                    {isItemIncorrect && (
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
-                                        <XCircle className="h-3 w-3" />
-                                        Incorreto
-                                      </span>
-                                    )}
                                   </div>
                                 </div>
 
-                                {/* Verification form drawer/container */}
-                                {isCorrecting ? (
-                                  <div className="mt-3 bg-slate-50/50 border border-slate-100 rounded-xl p-4 space-y-4">
-                                    <h4 className="text-xs font-bold text-slate-700">
-                                      Registrar Inconsistência no Item
-                                    </h4>
+                                {/* Verification form drawer/container (Staff Only) */}
+                                {user && user.role !== 'candidate' && (
+                                  <div className="mt-3 bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-4">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="text-xs font-semibold text-slate-500 mr-2">Avaliação do Item:</span>
+                                      <Button
+                                        type="button"
+                                        variant={currentStatus === 'accepted' ? 'default' : 'outline'}
+                                        size="xs"
+                                        className={`h-7 text-[10px] px-2.5 ${
+                                          currentStatus === 'accepted'
+                                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                                            : 'text-slate-600 hover:bg-slate-100'
+                                        }`}
+                                        onClick={() => {
+                                          setDraftStatuses(prev => ({ ...prev, [item.id]: 'accepted' }));
+                                          setDraftScores(prev => ({ ...prev, [item.id]: declared.toString() }));
+                                        }}
+                                      >
+                                        Aceitar Nota
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant={currentStatus === 'partial' ? 'default' : 'outline'}
+                                        size="xs"
+                                        className={`h-7 text-[10px] px-2.5 ${
+                                          currentStatus === 'partial'
+                                            ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
+                                            : 'text-slate-600 hover:bg-slate-100'
+                                        }`}
+                                        onClick={() => {
+                                          setDraftStatuses(prev => ({ ...prev, [item.id]: 'partial' }));
+                                        }}
+                                      >
+                                        Ajustar Nota
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant={currentStatus === 'rejected' ? 'default' : 'outline'}
+                                        size="xs"
+                                        className={`h-7 text-[10px] px-2.5 ${
+                                          currentStatus === 'rejected'
+                                            ? 'bg-rose-600 hover:bg-rose-700 text-white border-rose-600'
+                                            : 'text-slate-600 hover:bg-slate-100'
+                                        }`}
+                                        onClick={() => {
+                                          setDraftStatuses(prev => ({ ...prev, [item.id]: 'rejected' }));
+                                          setDraftScores(prev => ({ ...prev, [item.id]: '0' }));
+                                        }}
+                                      >
+                                        Rejeitar Item
+                                      </Button>
+                                    </div>
 
-                                    {getCategoryKey(category.name) === 'PRODUCTION' && (
-                                      <div className="space-y-1.5">
-                                        <Label
-                                          htmlFor="corrected-classification"
-                                          className="text-xs font-semibold text-slate-600"
-                                        >
-                                          Classificação CAPES Correta (Caso queira re-pontuar)
-                                        </Label>
-                                        <select
-                                          id="corrected-classification"
-                                          className="flex h-9 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs focus:outline-hidden"
-                                          value={correctedClassification}
-                                          onChange={e => setCorrectedClassification(e.target.value)}
-                                        >
-                                          <option value="none">Nenhum / Zerar pontuação</option>
-                                          <option value="A1">A1</option>
-                                          <option value="A2">A2</option>
-                                          <option value="A3">A3</option>
-                                          <option value="A4">A4</option>
-                                          <option value="A5">A5</option>
-                                          <option value="A6">A6</option>
-                                          <option value="A7">A7</option>
-                                          <option value="A8">A8</option>
-                                        </select>
+                                    {/* Adjusted Score Input (if partial status selected) */}
+                                    {currentStatus === 'partial' && (
+                                      <div className="flex flex-col gap-1 max-w-[150px]">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase">Nota Validada:</label>
+                                        <Input
+                                          type="number"
+                                          step="0.1"
+                                          min="0"
+                                          max={declared}
+                                          className="h-8 font-mono text-xs border-slate-200"
+                                          value={currentScore}
+                                          onChange={e => setDraftScores(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                        />
                                       </div>
                                     )}
 
-                                    <div className="space-y-1.5">
-                                      <Label
-                                        htmlFor="verification-comment"
-                                        className="text-xs font-semibold text-slate-600"
-                                      >
-                                        Comentário / Justificativa para o candidato
-                                      </Label>
-                                      <textarea
-                                        id="verification-comment"
-                                        rows={3}
-                                        placeholder="Descreva o motivo pelo qual este item está incorreto (ex: comprovante inválido, classificação errada)"
-                                        className="flex min-h-16 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
-                                        value={verificationComment}
-                                        onChange={e => setVerificationComment(e.target.value)}
-                                      />
-                                    </div>
+                                    {/* Justification Textarea (if partial or rejected selected) */}
+                                    {(currentStatus === 'partial' || currentStatus === 'rejected') && (
+                                      <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase flex items-center justify-between">
+                                          <span>Justificativa da Alteração:</span>
+                                          <span className="text-[9px] text-rose-500 font-normal">* Obrigatória</span>
+                                        </label>
+                                        <textarea
+                                          rows={2}
+                                          placeholder="Descreva a razão de ajustar ou rejeitar a pontuação..."
+                                          className={`flex min-h-12 w-full rounded-md border bg-white px-3 py-1.5 text-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary ${
+                                            isJustificationRequired && !currentJustification.trim()
+                                              ? 'border-rose-300 focus-visible:ring-rose-500'
+                                              : 'border-slate-200'
+                                          }`}
+                                          value={currentJustification}
+                                          onChange={e => setDraftJustifications(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                        />
+                                      </div>
+                                    )}
 
-                                    <div className="flex items-center gap-2">
-                                      <Button
-                                        onClick={handleSaveCorrection}
-                                        size="sm"
-                                        className="h-8 text-xs gap-1"
-                                        disabled={verifyCvItem.isPending}
-                                      >
-                                        {verifyCvItem.isPending ? (
-                                          <Loader2 className="h-3 w-3 animate-spin" />
-                                        ) : (
-                                          <Check className="h-3.5 w-3.5" />
-                                        )}
-                                        Confirmar Erro
-                                      </Button>
-                                      <Button
-                                        onClick={() => setCorrectingItemId(null)}
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 text-xs border border-slate-100 hover:bg-slate-50"
-                                      >
-                                        Cancelar
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  /* Verification actions buttons */
-                                  <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-50 pt-2.5">
-                                    <Button
-                                      onClick={() => handleVerifyItem(item.id, 'verified')}
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 text-xs rounded-lg gap-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 border border-transparent hover:border-green-100"
-                                      disabled={verifyCvItem.isPending}
-                                    >
-                                      <Check className="h-3.5 w-3.5" />
-                                      Validar
-                                    </Button>
-                                    <Button
-                                      onClick={() => handleVerifyItem(item.id, 'incorrect')}
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 text-xs rounded-lg gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 border border-transparent hover:border-red-100"
-                                      disabled={verifyCvItem.isPending}
-                                    >
-                                      <X className="h-3.5 w-3.5" />
-                                      Incorreto
-                                    </Button>
+                                    {/* Action buttons if changes exist */}
+                                    {hasLocalChanges && (
+                                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                                        <Button
+                                          size="sm"
+                                          className="bg-primary text-white text-[10px] h-7 gap-1"
+                                          disabled={isSaving || !isValid}
+                                          onClick={() => {
+                                            const scoreVal = currentStatus === 'partial' ? parseFloat(currentScore) : currentStatus === 'rejected' ? 0 : declared;
+                                            handleSaveItemVerification(
+                                              item.id,
+                                              currentStatus as 'accepted' | 'partial' | 'rejected',
+                                              scoreVal,
+                                              currentJustification
+                                            );
+                                          }}
+                                        >
+                                          {isSaving ? (
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                          ) : (
+                                            <Check className="h-3.5 w-3.5" />
+                                          )}
+                                          Salvar
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 text-[10px] text-slate-500"
+                                          disabled={isSaving}
+                                          onClick={() => {
+                                            // Reset local state to item values
+                                            setDraftStatuses(prev => {
+                                              const copy = { ...prev };
+                                              delete copy[item.id];
+                                              return copy;
+                                            });
+                                            setDraftScores(prev => {
+                                              const copy = { ...prev };
+                                              delete copy[item.id];
+                                              return copy;
+                                            });
+                                            setDraftJustifications(prev => {
+                                              const copy = { ...prev };
+                                              delete copy[item.id];
+                                              return copy;
+                                            });
+                                          }}
+                                        >
+                                          Cancelar
+                                        </Button>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>

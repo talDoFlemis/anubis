@@ -3,6 +3,8 @@ import { asNullableString, asRecord, asString } from './normalizers';
 
 // ── Types ────────────────────────────────────────────────────────────
 
+export type VerificationStatus = 'pending' | 'accepted' | 'partial' | 'rejected';
+
 export interface CvItem {
   id: string;
   enrollmentId: string;
@@ -22,11 +24,20 @@ export interface CvItem {
   isInArea: boolean;
   docenciaType: string | null;
   eventoType: string | null;
-  isVerified: string;
+  verificationStatus: VerificationStatus;
+  adjustedScore: string | null;
+  verificationJustification: string | null;
+  verifiedBy: string | null;
+  verifiedAt: string | null;
   correctedClassification: string | null;
-  verificationComment: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface VerifyCvItemPayload {
+  status: 'accepted' | 'partial' | 'rejected';
+  adjustedScore?: number;
+  justification?: string;
 }
 
 export interface CreateCvItemPayload {
@@ -59,9 +70,6 @@ export interface UpdateCvItemPayload {
   isInArea?: boolean;
   docenciaType?: string | null;
   eventoType?: string | null;
-  isVerified?: string;
-  correctedClassification?: string | null;
-  verificationComment?: string | null;
 }
 
 // ── Normalizers ──────────────────────────────────────────────────────
@@ -87,9 +95,12 @@ function normalizeCvItem(data: unknown): CvItem {
     isInArea: !!r.isInArea,
     docenciaType: asNullableString(r.docenciaType),
     eventoType: asNullableString(r.eventoType),
-    isVerified: asString(r.isVerified || 'pending'),
+    verificationStatus: (asString(r.verificationStatus || r.isVerified || 'pending') as CvItem['verificationStatus']),
+    adjustedScore: asNullableString(r.adjustedScore),
+    verificationJustification: asNullableString(r.verificationJustification || r.verificationComment),
+    verifiedBy: asNullableString(r.verifiedBy),
+    verifiedAt: asNullableString(r.verifiedAt),
     correctedClassification: asNullableString(r.correctedClassification),
-    verificationComment: asNullableString(r.verificationComment),
     createdAt: asString(r.createdAt),
     updatedAt: asString(r.updatedAt),
   };
@@ -138,15 +149,7 @@ function buildFormData(payload: CreateCvItemPayload | UpdateCvItemPayload, file?
   if (payload.eventoType !== undefined) {
     formData.append('eventoType', payload.eventoType || '');
   }
-  if ('isVerified' in payload && payload.isVerified !== undefined) {
-    formData.append('isVerified', payload.isVerified || '');
-  }
-  if ('correctedClassification' in payload && payload.correctedClassification !== undefined) {
-    formData.append('correctedClassification', payload.correctedClassification || '');
-  }
-  if ('verificationComment' in payload && payload.verificationComment !== undefined) {
-    formData.append('verificationComment', payload.verificationComment || '');
-  }
+
   if (file) {
     formData.append('file', file);
   }
@@ -195,11 +198,7 @@ export const cvItemsApi = {
   verify: async (
     enrollmentId: string,
     itemId: string,
-    payload: {
-      isVerified: 'verified' | 'incorrect';
-      correctedClassification?: string;
-      verificationComment?: string;
-    },
+    payload: VerifyCvItemPayload,
   ): Promise<CvItem> => {
     const { data } = await apiClient.patch(
       `/enrollments/${enrollmentId}/cv-items/${itemId}/verify`,

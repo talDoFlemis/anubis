@@ -136,7 +136,19 @@ export const validationApi = {
     return { id: enrollmentId };
   },
 
-  updateScore: async (enrollmentId: string, itemId: string, score: number | null) => {
-    return { enrollmentId, itemId, score };
+  updateScore: async (
+    enrollmentId: string,
+    itemId: string,
+    payload: {
+      status: 'accepted' | 'partial' | 'rejected';
+      adjustedScore?: number;
+      justification?: string;
+    },
+  ) => {
+    const { data } = await apiClient.patch(
+      `/enrollments/${enrollmentId}/cv-items/${itemId}/verify`,
+      payload,
+    );
+    return data;
   },
 };

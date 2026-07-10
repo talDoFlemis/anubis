@@ -19,6 +19,21 @@ import {
   useUpdateEnrollment,
   useUpdateMastersDegrees,
 } from '@/features/enrollment/hooks/use-enrollment';
+import {
+  useUniversitySearch,
+  useCourseSearch,
+  useCreateUniversity,
+  useCreateCourse,
+} from '@/features/enrollment/hooks/use-universities';
+import { SearchableSelect } from '@/features/enrollment/components/searchable-select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type {
   Enrollment,
   EnrollmentPeriod,
@@ -84,10 +99,44 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
   const isDoctoralLevel = enrollment?.level === 'doctoral';
 
   // ── Local state ──────────────────────────────────────────────────
-  const [undergradUniversity, setUndergradUniversity] = useState(
-    enrollment?.undergradUniversity ?? '',
-  );
-  const [undergradCourse, setUndergradCourse] = useState(enrollment?.undergradCourse ?? '');
+  const [undergradUniversityId, setUndergradUniversityId] = useState<string | null>(enrollment?.undergradUniversityId ?? null);
+  const [undergradCourseId, setUndergradCourseId] = useState<string | null>(enrollment?.undergradCourseId ?? null);
+
+  const [undergradUniversityText, setUndergradUniversityText] = useState(enrollment?.undergradUniversity ?? '');
+  const [undergradCourseText, setUndergradCourseText] = useState(enrollment?.undergradCourse ?? '');
+
+  // Search queries
+  const {
+    query: uniSearchQuery,
+    setQuery: setUniSearchQuery,
+    results: uniOptions,
+    isLoading: isUniLoading,
+  } = useUniversitySearch();
+
+  const {
+    query: courseSearchQuery,
+    setQuery: setCourseSearchQuery,
+    results: courseOptions,
+    isLoading: isCourseLoading,
+  } = useCourseSearch(undergradUniversityId || undefined);
+
+  // Creation mutations
+  const createUniversityMutation = useCreateUniversity();
+  const createCourseMutation = useCreateCourse();
+
+  // Modal control states
+  const [isUniModalOpen, setIsUniModalOpen] = useState(false);
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+
+  // New university form
+  const [newUniName, setNewUniName] = useState('');
+  const [newUniAbbr, setNewUniAbbr] = useState('');
+  const [newUniState, setNewUniState] = useState('');
+  const [newUniCity, setNewUniCity] = useState('');
+
+  // New course form
+  const [newCourseName, setNewCourseName] = useState('');
+
   const [undergradDegreeType, setUndergradDegreeType] = useState<UndergradDegreeType | ''>(
     enrollment?.undergradDegreeType ?? '',
   );
@@ -182,11 +231,11 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
 
-    if (!undergradUniversity.trim()) {
+    if (!undergradUniversityId) {
       newErrors.undergradUniversity = 'A universidade de graduação é obrigatória.';
     }
 
-    if (!undergradCourse.trim()) {
+    if (!undergradCourseId) {
       newErrors.undergradCourse = 'O curso de graduação é obrigatório.';
     }
 
@@ -269,8 +318,10 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
       await updateEnrollment.mutateAsync({
         id: enrollment.id,
         payload: {
-          undergradUniversity: undergradUniversity.trim(),
-          undergradCourse: undergradCourse.trim(),
+          undergradUniversityId,
+          undergradCourseId,
+          undergradUniversity: undergradUniversityText,
+          undergradCourse: undergradCourseText,
           undergradDegreeType: undergradDegreeType || undefined,
           ira: ira.trim(),
           phone: phone.trim(),
@@ -338,45 +389,62 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field data-invalid={!!errors.undergradUniversity} className="space-y-2">
-            <FieldLabel htmlFor="undergrad-university">Universidade de graduação</FieldLabel>
-            <FieldContent>
-              <Input
-                id="undergrad-university"
-                value={undergradUniversity}
-                onChange={e => {
-                  setUndergradUniversity(e.target.value);
-                  setErrors(prev => {
-                    const { undergradUniversity: _, ...rest } = prev;
-                    return rest;
-                  });
-                }}
-                placeholder="Ex.: UFC"
-                aria-invalid={!!errors.undergradUniversity}
-              />
-              {errors.undergradUniversity && <FieldError>{errors.undergradUniversity}</FieldError>}
-            </FieldContent>
-          </Field>
+          <div className="space-y-1">
+            <SearchableSelect
+              label="Universidade de graduação"
+              placeholder="Pesquise por nome ou sigla (ex: UFC)..."
+              searchQuery={uniSearchQuery}
+              onSearchChange={setUniSearchQuery}
+              options={uniOptions}
+              value={undergradUniversityId}
+              onChange={id => {
+                setUndergradUniversityId(id);
+                const option = uniOptions.find(o => o.id === id);
+                setUndergradUniversityText(option ? option.label : '');
+                setUndergradCourseId(null);
+                setUndergradCourseText('');
+                setErrors(prev => {
+                  const { undergradUniversity: _, undergradCourse: __, ...rest } = prev;
+                  return rest;
+                });
+              }}
+              isLoading={isUniLoading}
+              allowCustom={true}
+              onCustomSelect={() => {
+                setNewUniName(uniSearchQuery);
+                setIsUniModalOpen(true);
+              }}
+              error={errors.undergradUniversity}
+            />
+          </div>
 
-          <Field data-invalid={!!errors.undergradCourse} className="space-y-2">
-            <FieldLabel htmlFor="undergrad-course">Curso de graduação</FieldLabel>
-            <FieldContent>
-              <Input
-                id="undergrad-course"
-                value={undergradCourse}
-                onChange={e => {
-                  setUndergradCourse(e.target.value);
-                  setErrors(prev => {
-                    const { undergradCourse: _, ...rest } = prev;
-                    return rest;
-                  });
-                }}
-                placeholder="Ex.: Ciência da Computação"
-                aria-invalid={!!errors.undergradCourse}
-              />
-              {errors.undergradCourse && <FieldError>{errors.undergradCourse}</FieldError>}
-            </FieldContent>
-          </Field>
+          <div className="space-y-1">
+            <SearchableSelect
+              label="Curso de graduação"
+              placeholder={undergradUniversityId ? "Pesquise o curso..." : "Selecione uma universidade primeiro"}
+              searchQuery={courseSearchQuery}
+              onSearchChange={setCourseSearchQuery}
+              options={courseOptions}
+              value={undergradCourseId}
+              onChange={id => {
+                setUndergradCourseId(id);
+                const option = courseOptions.find(o => o.id === id);
+                setUndergradCourseText(option ? option.label : '');
+                setErrors(prev => {
+                  const { undergradCourse: _, ...rest } = prev;
+                  return rest;
+                });
+              }}
+              isLoading={isCourseLoading}
+              allowCustom={!!undergradUniversityId}
+              onCustomSelect={() => {
+                setNewCourseName(courseSearchQuery);
+                setIsCourseModalOpen(true);
+              }}
+              disabled={!undergradUniversityId}
+              error={errors.undergradCourse}
+            />
+          </div>
 
           <Field data-invalid={!!errors.undergradDegreeType} className="space-y-2">
             <FieldLabel htmlFor="undergrad-degree-type">Tipo de graduação</FieldLabel>
@@ -715,6 +783,148 @@ export function StepAcademicInfo({ enrollment, onNext, onBack }: StepAcademicInf
           )}
         </Button>
       </div>
+
+      {/* Modal para adicionar nova universidade */}
+      <Dialog open={isUniModalOpen} onOpenChange={setIsUniModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Nova Instituição</DialogTitle>
+            <DialogDescription>
+              Insira os detalhes da instituição de ensino superior para adicioná-la.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-600">Nome Completo</label>
+              <Input
+                placeholder="Ex: Universidade Federal do Ceará"
+                value={newUniName}
+                onChange={e => setNewUniName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-600">Sigla / Abreviação</label>
+              <Input
+                placeholder="Ex: UFC"
+                value={newUniAbbr}
+                onChange={e => setNewUniAbbr(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-600">Cidade</label>
+                <Input
+                  placeholder="Ex: Fortaleza"
+                  value={newUniCity}
+                  onChange={e => setNewUniCity(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-600">Estado (UF)</label>
+                <Input
+                  placeholder="Ex: CE"
+                  maxLength={2}
+                  value={newUniState}
+                  onChange={e => setNewUniState(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsUniModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={createUniversityMutation.isPending || !newUniName.trim()}
+              onClick={() => {
+                createUniversityMutation.mutate(
+                  {
+                    name: newUniName.trim(),
+                    abbreviation: newUniAbbr.trim() || undefined,
+                    city: newUniCity.trim() || undefined,
+                    state: newUniState.trim() || undefined,
+                  },
+                  {
+                    onSuccess: data => {
+                      toast.success('Instituição cadastrada com sucesso.');
+                      setUndergradUniversityId(data.id);
+                      setUndergradUniversityText(data.name);
+                      setIsUniModalOpen(false);
+                      // Clear form
+                      setNewUniName('');
+                      setNewUniAbbr('');
+                      setNewUniCity('');
+                      setNewUniState('');
+                    },
+                    onError: () => {
+                      toast.error('Erro ao cadastrar instituição.');
+                    },
+                  }
+                );
+              }}
+            >
+              {createUniversityMutation.isPending ? 'Salvando...' : 'Cadastrar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para adicionar novo curso */}
+      <Dialog open={isCourseModalOpen} onOpenChange={setIsCourseModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Novo Curso</DialogTitle>
+            <DialogDescription>
+              Cadastre um novo curso de graduação associado à instituição selecionada: <span className="font-semibold">{undergradUniversityText}</span>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-600">Nome do Curso</label>
+              <Input
+                placeholder="Ex: Ciência da Computação"
+                value={newCourseName}
+                onChange={e => setNewCourseName(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsCourseModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={createCourseMutation.isPending || !newCourseName.trim() || !undergradUniversityId}
+              onClick={() => {
+                createCourseMutation.mutate(
+                  {
+                    name: newCourseName.trim(),
+                    universityId: undergradUniversityId!,
+                  },
+                  {
+                    onSuccess: data => {
+                      toast.success('Curso cadastrado com sucesso.');
+                      setUndergradCourseId(data.id);
+                      setUndergradCourseText(data.name);
+                      setIsCourseModalOpen(false);
+                      // Clear form
+                      setNewCourseName('');
+                    },
+                    onError: () => {
+                      toast.error('Erro ao cadastrar o curso.');
+                    },
+                  }
+                );
+              }}
+            >
+              {createCourseMutation.isPending ? 'Salvando...' : 'Cadastrar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

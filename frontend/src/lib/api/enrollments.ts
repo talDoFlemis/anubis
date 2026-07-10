@@ -30,8 +30,13 @@ export interface Enrollment {
   status: string;
   undergradUniversity: string | null;
   undergradCourse: string | null;
+  undergradUniversityId: string | null;
+  undergradCourseId: string | null;
   undergradDegreeType: UndergradDegreeType | null;
   ira: string | null;
+  mecScore: number | null;
+  mecFactor: string | null;
+  iraAdjusted: string | null;
   undergradProofFileId: string | null;
   phone: string | null;
   justification: string | null;
@@ -58,8 +63,11 @@ export interface CreateEnrollmentPayload {
 export interface UpdateEnrollmentPayload {
   undergradUniversity?: string;
   undergradCourse?: string;
+  undergradUniversityId?: string | null;
+  undergradCourseId?: string | null;
   undergradDegreeType?: UndergradDegreeType;
   ira?: string;
+  mecFactor?: string;
   projectTitle?: string;
   phone?: string;
   justification?: string;
@@ -89,9 +97,14 @@ function normalizeEnrollment(data: unknown): Enrollment {
     status: asString(r.status),
     undergradUniversity: asNullableString(r.undergradUniversity),
     undergradCourse: asNullableString(r.undergradCourse),
+    undergradUniversityId: asNullableString(r.undergradUniversityId),
+    undergradCourseId: asNullableString(r.undergradCourseId),
     undergradDegreeType:
       (asNullableString(r.undergradDegreeType) as UndergradDegreeType | null) ?? null,
     ira: asNullableString(r.ira),
+    mecScore: r.mecScore != null ? Number(r.mecScore) : null,
+    mecFactor: asNullableString(r.mecFactor),
+    iraAdjusted: asNullableString(r.iraAdjusted),
     undergradProofFileId: asNullableString(r.undergradProofFileId),
     phone: asNullableString(r.phone),
     justification: asNullableString(r.justification),
