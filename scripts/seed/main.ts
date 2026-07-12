@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import * as bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import {
@@ -14,6 +14,12 @@ import { enrollmentPeriods } from '../../src/database/schema/enrollment-periods'
 import { enrollments } from '../../src/database/schema/enrollments';
 import { files } from '../../src/database/schema/files';
 import { professors } from '../../src/database/schema/professor';
+
+import { interviewEvaluations } from '../../src/database/schema/interview-evaluations';
+
+import { projectEvaluations } from '../../src/database/schema/project-evaluations';
+
+import { classifications } from '../../src/database/schema/classifications';
 import { researchThemeProfessors, researchThemes } from '../../src/database/schema/research-themes';
 import { users } from '../../src/database/schema/users';
 
@@ -49,6 +55,14 @@ interface DefaultUserData {
     | 'post-graduate-vice-coordinator';
   firstName: string;
   lastName: string;
+}
+
+interface InterviewScoreItem {
+  decisionMaking: string;
+  problemAnalysis: string;
+  oralCommunication: string;
+  researchWork: string;
+  technicalKnowledge: string;
 }
 
 // ==========================================
@@ -529,6 +543,7 @@ async function seedSampleCandidates(db: NodePgDatabase): Promise<void> {
           key: `dummy-sigaa-${userId}`,
           uploadedBy: userId,
           purpose: 'proof',
+          // eslint-disable-next-line prettier/prettier
         })
         .onConflictDoNothing();
 
@@ -672,6 +687,230 @@ async function seedSampleCandidates(db: NodePgDatabase): Promise<void> {
   console.log('[SUCCESS] Seed of sample candidates completed.');
 }
 
+async function seedEvaluationsAndClassifications(db: NodePgDatabase): Promise<void> {
+  console.log('[INFO] Seeding evaluations and classifications...');
+
+  const profUsers = await db
+    .select({ id: users.id, email: users.email })
+    .from(users)
+    .where(eq(users.role, 'professor'))
+    .limit(3);
+
+  if (profUsers.length === 0) {
+    console.log('[WARN] No professors found. Skipping evaluations.');
+    return;
+  }
+
+  const submittedEnrollments = await db
+    .select({
+      enrollmentId: enrollments.id,
+      candidateId: enrollments.candidateId,
+      level: enrollments.level,
+      ira: enrollments.ira,
+      primaryThemeId: enrollments.primaryThemeId,
+      secondaryThemeId: enrollments.secondaryThemeId,
+    })
+    .from(enrollments)
+    .where(eq(enrollments.status, 'submitted'));
+
+  if (submittedEnrollments.length === 0) {
+    console.log('[WARN] No submitted enrollments found. Skipping evaluations.');
+    return;
+  }
+
+  console.log('[INFO] Found ' + submittedEnrollments.length + ' enrollments.');
+
+  let interviewCount = 0;
+  let projectCount = 0;
+  let classificationCount = 0;
+
+  for (const enrollment of submittedEnrollments) {
+    const ira = parseFloat(enrollment.ira || '7.5');
+
+    await db
+      .update(enrollments)
+      .set({ scoreValidated: '30.00' })
+      .where(eq(enrollments.id, enrollment.enrollmentId));
+
+    const evaluators = profUsers.slice(0, Math.min(2, profUsers.length));
+    const interviewScores: InterviewScoreItem[] = [];
+
+    for (const evaluator of evaluators) {
+      const scores = {
+        decisionMaking: (6 + Math.random() * 4).toFixed(2),
+        problemAnalysis: (7 + Math.random() * 3).toFixed(2),
+        oralCommunication: (7 + Math.random() * 3).toFixed(2),
+        researchWork: (6 + Math.random() * 4).toFixed(2),
+        technicalKnowledge: (7 + Math.random() * 3).toFixed(2),
+      };
+
+      await db
+        .insert(interviewEvaluations)
+        .values({
+          candidateId: enrollment.candidateId,
+          evaluatorId: evaluator.id,
+          ...scores,
+          observations: 'Avaliacao gerada automaticamente pelo seed.',
+        })
+        .onConflictDoNothing();
+
+      interviewScores.push(scores);
+      interviewCount++;
+    }
+
+    const avgInterview =
+      interviewScores.length > 0
+        ? (
+            interviewScores.reduce(function (sum, s) {
+              const vals = [
+                s.decisionMaking,
+                s.problemAnalysis,
+                s.oralCommunication,
+                s.researchWork,
+                s.technicalKnowledge,
+              ];
+              const avg =
+                vals.reduce(function (a, b) {
+                  return a + parseFloat(b);
+                }, 0) / vals.length;
+              return sum + avg;
+            }, 0) / interviewScores.length
+          ).toFixed(2)
+        : '0.00';
+
+    let projectScore = '0.00';
+    if (enrollment.level === 'doctoral') {
+      for (const evaluator of evaluators) {
+        const projScores = {
+          criterion1: (7 + Math.random() * 3).toFixed(2),
+          criterion2: (6 + Math.random() * 4).toFixed(2),
+          criterion3: (7 + Math.random() * 3).toFixed(2),
+          criterion4: (6 + Math.random() * 4).toFixed(2),
+          criterion5: (7 + Math.random() * 3).toFixed(2),
+        };
+
+        await db
+          .insert(projectEvaluations)
+          .values({
+            candidateId: enrollment.candidateId,
+            evaluatorId: evaluator.id,
+            ...projScores,
+            observations: 'Projeto avaliado automaticamente pelo seed.',
+          })
+          .onConflictDoNothing();
+
+        projectScore = (
+          (parseFloat(projScores.criterion1) +
+            parseFloat(projScores.criterion2) +
+            parseFloat(projScores.criterion3) +
+            parseFloat(projScores.criterion4) +
+            parseFloat(projScores.criterion5)) /
+          5
+        ).toFixed(2);
+        projectCount++;
+      }
+    }
+
+    // Calculate final score using formula
+    const CV_MAX = 40;
+    const cvScore = 30;
+    const normalizedCv = Math.min(cvScore / CV_MAX, 1);
+    const interviewNum = parseFloat(avgInterview);
+    const projectNum = parseFloat(projectScore);
+
+    let finalScore;
+    if (enrollment.level === 'masters') {
+      finalScore = 0.3 * ira + 0.4 * normalizedCv * 10 + 0.3 * interviewNum;
+    } else {
+      finalScore = 0.25 * ira + 0.3 * normalizedCv * 10 + 0.25 * interviewNum + 0.2 * projectNum;
+    }
+    finalScore = Math.max(0, Math.min(10, Number(finalScore.toFixed(2))));
+
+    const stage = enrollment.level === 'masters' ? 'mestrado' : 'doutorado';
+
+    // Create classification for primary theme
+    if (enrollment.primaryThemeId) {
+      await db
+        .insert(classifications)
+        .values({
+          candidateId: enrollment.candidateId,
+          researchThemeId: enrollment.primaryThemeId,
+          ira: ira.toFixed(2),
+          interviewScore: avgInterview,
+          cvScore: cvScore.toFixed(2),
+          projectScore: enrollment.level === 'doctoral' ? projectScore : null,
+          finalScore: finalScore.toFixed(2),
+          rank: 0,
+          stage,
+        })
+        .onConflictDoNothing();
+      classificationCount++;
+    }
+
+    // Create classification for secondary theme (if any)
+    if (enrollment.secondaryThemeId) {
+      await db
+        .insert(classifications)
+        .values({
+          candidateId: enrollment.candidateId,
+          researchThemeId: enrollment.secondaryThemeId,
+          ira: ira.toFixed(2),
+          interviewScore: avgInterview,
+          cvScore: cvScore.toFixed(2),
+          projectScore: enrollment.level === 'doctoral' ? projectScore : null,
+          finalScore: finalScore.toFixed(2),
+          rank: 0,
+          stage,
+          // eslint-disable-next-line prettier/prettier
+        })
+        .onConflictDoNothing();
+      classificationCount++;
+    }
+  }
+
+  const allClassifications = await db
+    .select()
+    .from(classifications)
+    .where(
+      inArray(
+        classifications.candidateId,
+        submittedEnrollments.map(function (e) {
+          return e.candidateId;
+        }),
+      ),
+    );
+
+  const groups = new Map<string, typeof allClassifications>();
+  for (const cls of allClassifications) {
+    const _key = cls.researchThemeId + '-' + cls.stage;
+    if (!groups.has(_key)) groups.set(_key, []);
+    groups.get(_key)!.push(cls);
+  }
+
+  for (const [, group] of groups) {
+    const sorted = group.sort(function (a, b) {
+      const finalDiff = Number(b.finalScore) - Number(a.finalScore);
+      if (finalDiff !== 0) return finalDiff;
+      const interviewDiff = Number(b.interviewScore) - Number(a.interviewScore);
+      if (interviewDiff !== 0) return interviewDiff;
+      const projectDiff = Number(b.projectScore || 0) - Number(a.projectScore || 0);
+      if (projectDiff !== 0) return projectDiff;
+      return Number(b.cvScore) - Number(a.cvScore);
+    });
+
+    for (let idx = 0; idx < sorted.length; idx++) {
+      await db
+        .update(classifications)
+        .set({ rank: idx + 1 })
+        .where(eq(classifications.id, sorted[idx].id));
+    }
+  }
+
+  console.log(
+    `[SUCCESS] Seeded ${interviewCount} interviews, ${projectCount} project evals, ${classificationCount} classifications.`,
+  );
+}
+
 // ==========================================
 // Main Execution
 // ==========================================
@@ -692,6 +931,9 @@ async function main(): Promise<void> {
 
     // 4. Seed sample candidates for development QoL
     await seedSampleCandidates(db);
+
+    // 5. Seed evaluations and classifications
+    await seedEvaluationsAndClassifications(db);
 
     console.log('[SUCCESS] Database seeding completed successfully.');
   } catch (error) {
