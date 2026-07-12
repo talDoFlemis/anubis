@@ -1,7 +1,6 @@
 export { EvaluationForm } from './components/EvaluationForm';
-
-export { ConceptSelector } from './components/ConceptSelector';
 export { OtherEvaluations } from './components/OtherEvaluations';
+export { ScoreInput } from './components/ScoreInput';
 export {
   useCandidatesByThemes,
   useCreateEvaluation,

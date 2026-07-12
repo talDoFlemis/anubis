@@ -25,7 +25,7 @@ import {
   useProjectEvaluationsByCandidate,
 } from '@/features/interviews';
 import { useAuth } from '@/hooks/use-auth';
-import type { Concept } from '@/lib/api';
+import { CONCEPT_LABELS, scoreToConcept } from '@/lib/api/interviews';
 
 export const Route = createFileRoute('/_app/manage/interviews')({
   component: ManageInterviewsPage,
@@ -62,11 +62,11 @@ function ManageInterviewsPage() {
   const createProjectEval = useCreateProjectEvaluation(selectedCandidateId ?? '');
 
   const handleSubmitEvaluation = (data: {
-    decisionMaking: Concept;
-    problemAnalysis: Concept;
-    oralCommunication: Concept;
-    researchWork: Concept;
-    technicalKnowledge: Concept;
+    decisionMaking: number;
+    problemAnalysis: number;
+    oralCommunication: number;
+    researchWork: number;
+    technicalKnowledge: number;
     observations?: string;
   }) => {
     if (selectedCandidateId) {
@@ -75,11 +75,11 @@ function ManageInterviewsPage() {
   };
 
   const handleSubmitProjectEvaluation = (data: {
-    criterion1: Concept;
-    criterion2: Concept;
-    criterion3: Concept;
-    criterion4: Concept;
-    criterion5: Concept;
+    criterion1: number;
+    criterion2: number;
+    criterion3: number;
+    criterion4: number;
+    criterion5: number;
     observations?: string;
   }) => {
     if (selectedCandidateId) {
@@ -171,8 +171,25 @@ function ManageInterviewsPage() {
                   Média aritmética calculada a partir de todos os avaliadores
                 </p>
               </div>
-              <div className="text-2xl font-bold text-emerald-700">
-                {average.overall?.toFixed(2) ?? '-'}
+              <div className="flex items-center gap-3">
+                <div className="text-2xl font-bold text-emerald-700">
+                  {average.overall?.toFixed(2) ?? '-'}
+                </div>
+                {average.perAspectConcepts && (
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${
+                      average.overall >= 8
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : average.overall >= 6
+                          ? 'bg-blue-100 text-blue-700'
+                          : average.overall >= 4
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {CONCEPT_LABELS[scoreToConcept(average.overall)]}
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -14,11 +14,19 @@ import { ProjectEvaluationDto } from './dto/project-evaluation.dto';
 
 import { EnrollmentRepository } from 'src/enrollment/infrastructure/persistence/enrollment.repository';
 
-const CONCEPT_SCORE_MAP: Record<string, number> = {
-  FRACO: 4,
-  REGULAR: 6,
-  BOM: 8,
-  OTIMO: 10,
+function scoreToConcept(score: number): string {
+  if (score >= 8) return 'OTIMO';
+  if (score >= 6) return 'BOM';
+  if (score >= 4) return 'REGULAR';
+  return 'FRACO';
+}
+
+const ASPECT_LABELS: Record<string, string> = {
+  decisionMaking: 'Tomada de decisão',
+  problemAnalysis: 'Análise de problemas e raciocínio lógico',
+  oralCommunication: 'Comunicação oral',
+  researchWork: 'Trabalho de pesquisa científica',
+  technicalKnowledge: 'Conhecimentos teóricos e técnicos',
 };
 
 @Injectable()
@@ -74,11 +82,11 @@ export class InterviewService {
     const evalData = {
       candidateId,
       evaluatorId,
-      decisionMaking: dto.decisionMaking,
-      problemAnalysis: dto.problemAnalysis,
-      oralCommunication: dto.oralCommunication,
-      researchWork: dto.researchWork,
-      technicalKnowledge: dto.technicalKnowledge,
+      decisionMaking: dto.decisionMaking.toFixed(2),
+      problemAnalysis: dto.problemAnalysis.toFixed(2),
+      oralCommunication: dto.oralCommunication.toFixed(2),
+      researchWork: dto.researchWork.toFixed(2),
+      technicalKnowledge: dto.technicalKnowledge.toFixed(2),
       observations: dto.observations ?? null,
     };
 
@@ -113,11 +121,11 @@ export class InterviewService {
     const evalData = {
       candidateId,
       evaluatorId,
-      criterion1: dto.criterion1,
-      criterion2: dto.criterion2,
-      criterion3: dto.criterion3,
-      criterion4: dto.criterion4,
-      criterion5: dto.criterion5,
+      criterion1: dto.criterion1.toFixed(2),
+      criterion2: dto.criterion2.toFixed(2),
+      criterion3: dto.criterion3.toFixed(2),
+      criterion4: dto.criterion4.toFixed(2),
+      criterion5: dto.criterion5.toFixed(2),
       observations: dto.observations ?? null,
     };
 
@@ -182,21 +190,11 @@ export class InterviewService {
     }
     const sum = evals.reduce(
       (acc, cur) => ({
-        decisionMaking:
-          acc.decisionMaking +
-          (CONCEPT_SCORE_MAP[cur.decisionMaking as keyof typeof CONCEPT_SCORE_MAP] || 0),
-        problemAnalysis:
-          acc.problemAnalysis +
-          (CONCEPT_SCORE_MAP[cur.problemAnalysis as keyof typeof CONCEPT_SCORE_MAP] || 0),
-        oralCommunication:
-          acc.oralCommunication +
-          (CONCEPT_SCORE_MAP[cur.oralCommunication as keyof typeof CONCEPT_SCORE_MAP] || 0),
-        researchWork:
-          acc.researchWork +
-          (CONCEPT_SCORE_MAP[cur.researchWork as keyof typeof CONCEPT_SCORE_MAP] || 0),
-        technicalKnowledge:
-          acc.technicalKnowledge +
-          (CONCEPT_SCORE_MAP[cur.technicalKnowledge as keyof typeof CONCEPT_SCORE_MAP] || 0),
+        decisionMaking: acc.decisionMaking + Number(cur.decisionMaking),
+        problemAnalysis: acc.problemAnalysis + Number(cur.problemAnalysis),
+        oralCommunication: acc.oralCommunication + Number(cur.oralCommunication),
+        researchWork: acc.researchWork + Number(cur.researchWork),
+        technicalKnowledge: acc.technicalKnowledge + Number(cur.technicalKnowledge),
       }),
       {
         decisionMaking: 0,
@@ -208,7 +206,7 @@ export class InterviewService {
     );
 
     const count = evals.length;
-    const avg = {
+    const perAspect = {
       decisionMaking: sum.decisionMaking / count,
       problemAnalysis: sum.problemAnalysis / count,
       oralCommunication: sum.oralCommunication / count,
@@ -217,14 +215,14 @@ export class InterviewService {
     };
 
     const overall =
-      (avg.decisionMaking +
-        avg.problemAnalysis +
-        avg.oralCommunication +
-        avg.researchWork +
-        avg.technicalKnowledge) /
+      (perAspect.decisionMaking +
+        perAspect.problemAnalysis +
+        perAspect.oralCommunication +
+        perAspect.researchWork +
+        perAspect.technicalKnowledge) /
       5;
 
-    return { perAspect: avg, overall };
+    return { perAspect, overall, perAspectConcepts: this.aspectsToConcepts(perAspect) };
   }
 
   async calculateProjectAverages(candidateId: string) {
@@ -234,11 +232,11 @@ export class InterviewService {
     }
     const sum = evals.reduce(
       (acc, cur) => ({
-        c1: acc.c1 + (CONCEPT_SCORE_MAP[cur.criterion1 as keyof typeof CONCEPT_SCORE_MAP] || 0),
-        c2: acc.c2 + (CONCEPT_SCORE_MAP[cur.criterion2 as keyof typeof CONCEPT_SCORE_MAP] || 0),
-        c3: acc.c3 + (CONCEPT_SCORE_MAP[cur.criterion3 as keyof typeof CONCEPT_SCORE_MAP] || 0),
-        c4: acc.c4 + (CONCEPT_SCORE_MAP[cur.criterion4 as keyof typeof CONCEPT_SCORE_MAP] || 0),
-        c5: acc.c5 + (CONCEPT_SCORE_MAP[cur.criterion5 as keyof typeof CONCEPT_SCORE_MAP] || 0),
+        c1: acc.c1 + Number(cur.criterion1),
+        c2: acc.c2 + Number(cur.criterion2),
+        c3: acc.c3 + Number(cur.criterion3),
+        c4: acc.c4 + Number(cur.criterion4),
+        c5: acc.c5 + Number(cur.criterion5),
       }),
       {
         c1: 0,
@@ -250,7 +248,7 @@ export class InterviewService {
     );
 
     const count = evals.length;
-    const avg = {
+    const perAspect = {
       c1: sum.c1 / count,
       c2: sum.c2 / count,
       c3: sum.c3 / count,
@@ -258,7 +256,42 @@ export class InterviewService {
       c5: sum.c5 / count,
     };
 
-    const overall = (avg.c1 + avg.c2 + avg.c3 + avg.c4 + avg.c5) / 5;
-    return { perAspect: avg, overall };
+    const overall = (perAspect.c1 + perAspect.c2 + perAspect.c3 + perAspect.c4 + perAspect.c5) / 5;
+    return { perAspect, overall, perAspectConcepts: this.projectAspectsToConcepts(perAspect) };
+  }
+
+  private aspectsToConcepts(
+    averages: Record<string, number>,
+  ): Record<string, { score: number; concept: string; label: string }> {
+    const result: Record<string, { score: number; concept: string; label: string }> = {};
+    for (const [key, value] of Object.entries(averages)) {
+      result[key] = {
+        score: Math.round(value * 100) / 100,
+        concept: scoreToConcept(value),
+        label: ASPECT_LABELS[key] ?? key,
+      };
+    }
+    return result;
+  }
+
+  private projectAspectsToConcepts(
+    averages: Record<string, number>,
+  ): Record<string, { score: number; concept: string; label: string }> {
+    const labels: Record<string, string> = {
+      c1: 'Critério 1',
+      c2: 'Critério 2',
+      c3: 'Critério 3',
+      c4: 'Critério 4',
+      c5: 'Critério 5',
+    };
+    const result: Record<string, { score: number; concept: string; label: string }> = {};
+    for (const [key, value] of Object.entries(averages)) {
+      result[key] = {
+        score: Math.round(value * 100) / 100,
+        concept: scoreToConcept(value),
+        label: labels[key] ?? key,
+      };
+    }
+    return result;
   }
 }

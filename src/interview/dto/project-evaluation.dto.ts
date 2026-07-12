@@ -1,27 +1,30 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-
-export enum ConceptEnum {
-  FRACO = 'FRACO',
-  REGULAR = 'REGULAR',
-  BOM = 'BOM',
-  OTIMO = 'OTIMO',
-}
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class ProjectEvaluationDto {
-  @IsEnum(ConceptEnum)
-  criterion1!: ConceptEnum;
+  @IsNumber()
+  @Min(0)
+  @Max(10)
+  criterion1!: number;
 
-  @IsEnum(ConceptEnum)
-  criterion2!: ConceptEnum;
+  @IsNumber()
+  @Min(0)
+  @Max(10)
+  criterion2!: number;
 
-  @IsEnum(ConceptEnum)
-  criterion3!: ConceptEnum;
+  @IsNumber()
+  @Min(0)
+  @Max(10)
+  criterion3!: number;
 
-  @IsEnum(ConceptEnum)
-  criterion4!: ConceptEnum;
+  @IsNumber()
+  @Min(0)
+  @Max(10)
+  criterion4!: number;
 
-  @IsEnum(ConceptEnum)
-  criterion5!: ConceptEnum;
+  @IsNumber()
+  @Min(0)
+  @Max(10)
+  criterion5!: number;
 
   @IsOptional()
   @IsString()

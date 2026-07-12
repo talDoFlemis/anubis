@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 
-import { asNullableString, asRecord, asString } from './normalizers';
+import { asNullableString, asNumber, asRecord, asString } from './normalizers';
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -20,16 +20,23 @@ export const CONCEPT_LABELS: Record<Concept, string> = {
   OTIMO: 'Ótimo',
 };
 
+export function scoreToConcept(score: number): Concept {
+  if (score >= 8) return 'OTIMO';
+  if (score >= 6) return 'BOM';
+  if (score >= 4) return 'REGULAR';
+  return 'FRACO';
+}
+
 export interface InterviewEvaluation {
   id: string;
   candidateId: string;
   evaluatorId: string;
   evaluatorName: string | null;
-  decisionMaking: Concept;
-  problemAnalysis: Concept;
-  oralCommunication: Concept;
-  researchWork: Concept;
-  technicalKnowledge: Concept;
+  decisionMaking: number;
+  problemAnalysis: number;
+  oralCommunication: number;
+  researchWork: number;
+  technicalKnowledge: number;
   observations: string | null;
   createdAt: string;
 }
@@ -39,11 +46,11 @@ export interface ProjectEvaluation {
   candidateId: string;
   evaluatorId: string;
   evaluatorName: string | null;
-  criterion1: Concept;
-  criterion2: Concept;
-  criterion3: Concept;
-  criterion4: Concept;
-  criterion5: Concept;
+  criterion1: number;
+  criterion2: number;
+  criterion3: number;
+  criterion4: number;
+  criterion5: number;
   observations: string | null;
   createdAt: string;
 }
@@ -57,6 +64,7 @@ export interface InterviewAverages {
     technicalKnowledge: number;
   };
   overall: number;
+  perAspectConcepts?: Record<string, { score: number; concept: Concept; label: string }>;
 }
 
 export interface ProjectAverages {
@@ -68,6 +76,7 @@ export interface ProjectAverages {
     c5: number;
   };
   overall: number;
+  perAspectConcepts?: Record<string, { score: number; concept: Concept; label: string }>;
 }
 
 // ── Normalizers ───────────────────────────────────────────────────────
@@ -79,11 +88,11 @@ function normalizeInterviewEvaluation(data: unknown): InterviewEvaluation {
     candidateId: asString(r.candidateId),
     evaluatorId: asString(r.evaluatorId),
     evaluatorName: asNullableString(r.evaluatorName),
-    decisionMaking: asString(r.decisionMaking) as Concept,
-    problemAnalysis: asString(r.problemAnalysis) as Concept,
-    oralCommunication: asString(r.oralCommunication) as Concept,
-    researchWork: asString(r.researchWork) as Concept,
-    technicalKnowledge: asString(r.technicalKnowledge) as Concept,
+    decisionMaking: asNumber(r.decisionMaking),
+    problemAnalysis: asNumber(r.problemAnalysis),
+    oralCommunication: asNumber(r.oralCommunication),
+    researchWork: asNumber(r.researchWork),
+    technicalKnowledge: asNumber(r.technicalKnowledge),
     observations: asNullableString(r.observations),
     createdAt: asString(r.createdAt),
   };
@@ -96,11 +105,11 @@ function normalizeProjectEvaluation(data: unknown): ProjectEvaluation {
     candidateId: asString(r.candidateId),
     evaluatorId: asString(r.evaluatorId),
     evaluatorName: asNullableString(r.evaluatorName),
-    criterion1: asString(r.criterion1) as Concept,
-    criterion2: asString(r.criterion2) as Concept,
-    criterion3: asString(r.criterion3) as Concept,
-    criterion4: asString(r.criterion4) as Concept,
-    criterion5: asString(r.criterion5) as Concept,
+    criterion1: asNumber(r.criterion1),
+    criterion2: asNumber(r.criterion2),
+    criterion3: asNumber(r.criterion3),
+    criterion4: asNumber(r.criterion4),
+    criterion5: asNumber(r.criterion5),
     observations: asNullableString(r.observations),
     createdAt: asString(r.createdAt),
   };
@@ -114,11 +123,11 @@ export const interviewsApi = {
   createEvaluation: async (
     candidateId: string,
     data: {
-      decisionMaking: Concept;
-      problemAnalysis: Concept;
-      oralCommunication: Concept;
-      researchWork: Concept;
-      technicalKnowledge: Concept;
+      decisionMaking: number;
+      problemAnalysis: number;
+      oralCommunication: number;
+      researchWork: number;
+      technicalKnowledge: number;
       observations?: string;
     },
   ): Promise<InterviewEvaluation> => {
@@ -141,11 +150,11 @@ export const interviewsApi = {
   createProjectEvaluation: async (
     candidateId: string,
     data: {
-      criterion1: Concept;
-      criterion2: Concept;
-      criterion3: Concept;
-      criterion4: Concept;
-      criterion5: Concept;
+      criterion1: number;
+      criterion2: number;
+      criterion3: number;
+      criterion4: number;
+      criterion5: number;
       observations?: string;
     },
   ): Promise<ProjectEvaluation> => {
