@@ -1,5 +1,5 @@
 import type { InterviewEvaluation } from '@/lib/api';
-import { CONCEPT_LABELS, CONCEPT_SCORE } from '@/lib/api/interviews';
+import { CONCEPT_LABELS, scoreToConcept } from '@/lib/api/interviews';
 
 interface OtherEvaluationsProps {
   evaluations: InterviewEvaluation[];
@@ -23,9 +23,9 @@ const ASPECT_LABELS: Record<string, string> = {
   technicalKnowledge: 'Conhecimentos teóricos e técnicos',
 };
 
-function getConceptValue(e: InterviewEvaluation, key: string): string {
+function getScoreValue(e: InterviewEvaluation, key: string): number {
   const value = (e as any)[key];
-  return typeof value === 'string' ? value : 'REGULAR';
+  return typeof value === 'number' ? value : Number(value) || 0;
 }
 
 export function OtherEvaluations({
@@ -45,10 +45,7 @@ export function OtherEvaluations({
   // Calcula médias por aspecto
   const averages = ASPECT_KEYS.reduce(
     (acc, key) => {
-      const values = sortedEvals.map(e => {
-        const concept = getConceptValue(e, key);
-        return CONCEPT_SCORE[concept as keyof typeof CONCEPT_SCORE] || 0;
-      });
+      const values = sortedEvals.map(e => getScoreValue(e, key));
       acc[key] = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
       return acc;
     },
@@ -85,11 +82,10 @@ export function OtherEvaluations({
                 )}
               </div>
 
-              {/* Grid de conceitos */}
+              {/* Grid de notas numéricas */}
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
                 {ASPECT_KEYS.map(key => {
-                  const concept = getConceptValue(e, key);
-                  const score = CONCEPT_SCORE[concept as keyof typeof CONCEPT_SCORE] || 0;
+                  const score = getScoreValue(e, key);
                   return (
                     <div
                       key={key}
@@ -98,11 +94,7 @@ export function OtherEvaluations({
                       <p className="text-[11px] font-medium text-slate-500 leading-tight mb-1">
                         {ASPECT_LABELS[key]}
                       </p>
-                      <p
-                        className={`text-sm font-bold ${score >= 8 ? 'text-emerald-600' : score >= 6 ? 'text-amber-600' : 'text-red-500'}`}
-                      >
-                        {CONCEPT_LABELS[concept as keyof typeof CONCEPT_LABELS] ?? concept}
-                      </p>
+                      <p className="text-sm font-bold text-slate-800">{score.toFixed(1)}</p>
                     </div>
                   );
                 })}
@@ -119,22 +111,40 @@ export function OtherEvaluations({
         })}
       </div>
 
-      {/* Média geral */}
+      {/* Média geral por aspecto - AQUI mostramos os conceitos */}
       {sortedEvals.length > 0 && (
         <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
           <h4 className="mb-2 text-sm font-semibold text-indigo-800">Média geral por aspecto</h4>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
-            {ASPECT_KEYS.map(key => (
-              <div
-                key={key}
-                className="rounded-lg border border-indigo-100 bg-white p-2 text-center"
-              >
-                <p className="text-[11px] font-medium text-indigo-500 leading-tight mb-1">
-                  {ASPECT_LABELS[key]}
-                </p>
-                <p className="text-sm font-bold text-indigo-700">{averages[key].toFixed(2)}</p>
-              </div>
-            ))}
+            {ASPECT_KEYS.map(key => {
+              const avgScore = averages[key];
+              const concept = scoreToConcept(avgScore);
+              const conceptLabel = CONCEPT_LABELS[concept];
+              return (
+                <div
+                  key={key}
+                  className="rounded-lg border border-indigo-100 bg-white p-2 text-center"
+                >
+                  <p className="text-[11px] font-medium text-indigo-500 leading-tight mb-1">
+                    {ASPECT_LABELS[key]}
+                  </p>
+                  <p className="text-sm font-bold text-indigo-700">{avgScore.toFixed(2)}</p>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold mt-1 ${
+                      concept === 'OTIMO'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : concept === 'BOM'
+                          ? 'bg-blue-100 text-blue-700'
+                          : concept === 'REGULAR'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {conceptLabel}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

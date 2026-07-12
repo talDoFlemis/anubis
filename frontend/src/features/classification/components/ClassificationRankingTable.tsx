@@ -38,7 +38,7 @@ function createColumns(
   themeMap: Map<string, string>,
   activeStage: 'mestrado' | 'doutorado',
 ): ColumnDef<Classification>[] {
-  return [
+  const columns: ColumnDef<Classification>[] = [
     {
       accessorKey: 'candidateId',
       header: 'CANDIDATO',
@@ -78,15 +78,19 @@ function createColumns(
         <span className="text-sm text-slate-600">{formatScore(row.original.interviewScore)}</span>
       ),
     },
-    {
+  ];
+
+  if (activeStage === 'doutorado') {
+    columns.push({
       accessorKey: 'projectScore',
       header: 'PROJETO',
       cell: ({ row }) => (
-        <span className="text-sm text-slate-600">
-          {activeStage === 'mestrado' ? '-' : formatScore(row.original.projectScore)}
-        </span>
+        <span className="text-sm text-slate-600">{formatScore(row.original.projectScore)}</span>
       ),
-    },
+    });
+  }
+
+  columns.push(
     {
       accessorKey: 'finalScore',
       header: 'NOTA FINAL',
@@ -105,7 +109,9 @@ function createColumns(
         </span>
       ),
     },
-  ];
+  );
+
+  return columns;
 }
 
 export function ClassificationRankingTable() {

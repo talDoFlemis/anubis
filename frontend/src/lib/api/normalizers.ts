@@ -13,6 +13,14 @@ export function asBool(value: unknown): boolean {
   return Boolean(value);
 }
 
+/** Coerce unknown to a number, defaulting to `fallback` (0). */
+export function asNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number') return value;
+  if (value == null) return fallback;
+  const num = Number(value);
+  return isNaN(num) ? fallback : num;
+}
+
 /** Coerce unknown to nullable number. */
 export function asNullableNumber(value: unknown): number | null {
   if (typeof value === 'number') {

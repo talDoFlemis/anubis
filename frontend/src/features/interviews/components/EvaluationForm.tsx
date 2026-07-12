@@ -2,51 +2,48 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import type { Concept } from '@/lib/api';
 
-import { ConceptSelector } from './ConceptSelector';
+import { ScoreInput } from './ScoreInput';
 
 interface EvaluationFormProps {
   candidateName: string;
   candidateLevel: 'mestrado' | 'doutorado';
   isDoctoral: boolean;
   initialEvaluation?: {
-    decisionMaking: Concept;
-    problemAnalysis: Concept;
-    oralCommunication: Concept;
-    researchWork: Concept;
-    technicalKnowledge: Concept;
+    decisionMaking: number;
+    problemAnalysis: number;
+    oralCommunication: number;
+    researchWork: number;
+    technicalKnowledge: number;
     observations?: string | null;
   };
   initialProjectEvaluation?: {
-    criterion1: Concept;
-    criterion2: Concept;
-    criterion3: Concept;
-    criterion4: Concept;
-    criterion5: Concept;
+    criterion1: number;
+    criterion2: number;
+    criterion3: number;
+    criterion4: number;
+    criterion5: number;
     observations?: string | null;
   };
   onSubmitEvaluation: (data: {
-    decisionMaking: Concept;
-    problemAnalysis: Concept;
-    oralCommunication: Concept;
-    researchWork: Concept;
-    technicalKnowledge: Concept;
+    decisionMaking: number;
+    problemAnalysis: number;
+    oralCommunication: number;
+    researchWork: number;
+    technicalKnowledge: number;
     observations?: string;
   }) => void;
   onSubmitProjectEvaluation?: (data: {
-    criterion1: Concept;
-    criterion2: Concept;
-    criterion3: Concept;
-    criterion4: Concept;
-    criterion5: Concept;
+    criterion1: number;
+    criterion2: number;
+    criterion3: number;
+    criterion4: number;
+    criterion5: number;
     observations?: string;
   }) => void;
   isSubmitting: boolean;
   isSubmittingProject?: boolean;
 }
-
-const DEFAULT_CONCEPT: Concept = 'REGULAR';
 
 export function EvaluationForm({
   candidateName,
@@ -59,39 +56,27 @@ export function EvaluationForm({
   isSubmitting,
   isSubmittingProject,
 }: EvaluationFormProps) {
-  const [decisionMaking, setDecisionMaking] = useState<Concept>(
-    initialEvaluation?.decisionMaking ?? DEFAULT_CONCEPT,
+  const [decisionMaking, setDecisionMaking] = useState<number>(
+    initialEvaluation?.decisionMaking ?? 0,
   );
-  const [problemAnalysis, setProblemAnalysis] = useState<Concept>(
-    initialEvaluation?.problemAnalysis ?? DEFAULT_CONCEPT,
+  const [problemAnalysis, setProblemAnalysis] = useState<number>(
+    initialEvaluation?.problemAnalysis ?? 0,
   );
-  const [oralCommunication, setOralCommunication] = useState<Concept>(
-    initialEvaluation?.oralCommunication ?? DEFAULT_CONCEPT,
+  const [oralCommunication, setOralCommunication] = useState<number>(
+    initialEvaluation?.oralCommunication ?? 0,
   );
-  const [researchWork, setResearchWork] = useState<Concept>(
-    initialEvaluation?.researchWork ?? DEFAULT_CONCEPT,
-  );
-  const [technicalKnowledge, setTechnicalKnowledge] = useState<Concept>(
-    initialEvaluation?.technicalKnowledge ?? DEFAULT_CONCEPT,
+  const [researchWork, setResearchWork] = useState<number>(initialEvaluation?.researchWork ?? 0);
+  const [technicalKnowledge, setTechnicalKnowledge] = useState<number>(
+    initialEvaluation?.technicalKnowledge ?? 0,
   );
   const [observations, setObservations] = useState(initialEvaluation?.observations ?? '');
 
   // Project evaluation state (doutorado)
-  const [criterion1, setCriterion1] = useState<Concept>(
-    initialProjectEvaluation?.criterion1 ?? DEFAULT_CONCEPT,
-  );
-  const [criterion2, setCriterion2] = useState<Concept>(
-    initialProjectEvaluation?.criterion2 ?? DEFAULT_CONCEPT,
-  );
-  const [criterion3, setCriterion3] = useState<Concept>(
-    initialProjectEvaluation?.criterion3 ?? DEFAULT_CONCEPT,
-  );
-  const [criterion4, setCriterion4] = useState<Concept>(
-    initialProjectEvaluation?.criterion4 ?? DEFAULT_CONCEPT,
-  );
-  const [criterion5, setCriterion5] = useState<Concept>(
-    initialProjectEvaluation?.criterion5 ?? DEFAULT_CONCEPT,
-  );
+  const [criterion1, setCriterion1] = useState<number>(initialProjectEvaluation?.criterion1 ?? 0);
+  const [criterion2, setCriterion2] = useState<number>(initialProjectEvaluation?.criterion2 ?? 0);
+  const [criterion3, setCriterion3] = useState<number>(initialProjectEvaluation?.criterion3 ?? 0);
+  const [criterion4, setCriterion4] = useState<number>(initialProjectEvaluation?.criterion4 ?? 0);
+  const [criterion5, setCriterion5] = useState<number>(initialProjectEvaluation?.criterion5 ?? 0);
   const [projectObservations, setProjectObservations] = useState(
     initialProjectEvaluation?.observations ?? '',
   );
@@ -137,27 +122,27 @@ export function EvaluationForm({
           </div>
 
           <div className="space-y-3">
-            <ConceptSelector
+            <ScoreInput
               label="Tomada de decisão"
               value={decisionMaking}
               onChange={setDecisionMaking}
             />
-            <ConceptSelector
+            <ScoreInput
               label="Análise de problemas e raciocínio lógico"
               value={problemAnalysis}
               onChange={setProblemAnalysis}
             />
-            <ConceptSelector
+            <ScoreInput
               label="Comunicação oral"
               value={oralCommunication}
               onChange={setOralCommunication}
             />
-            <ConceptSelector
+            <ScoreInput
               label="Trabalho de pesquisa científica"
               value={researchWork}
               onChange={setResearchWork}
             />
-            <ConceptSelector
+            <ScoreInput
               label="Conhecimentos teóricos e técnicos para pesquisa no projeto temático"
               value={technicalKnowledge}
               onChange={setTechnicalKnowledge}
@@ -205,11 +190,11 @@ export function EvaluationForm({
             </div>
 
             <div className="space-y-3">
-              <ConceptSelector label="Critério 1" value={criterion1} onChange={setCriterion1} />
-              <ConceptSelector label="Critério 2" value={criterion2} onChange={setCriterion2} />
-              <ConceptSelector label="Critério 3" value={criterion3} onChange={setCriterion3} />
-              <ConceptSelector label="Critério 4" value={criterion4} onChange={setCriterion4} />
-              <ConceptSelector label="Critério 5" value={criterion5} onChange={setCriterion5} />
+              <ScoreInput label="Critério 1" value={criterion1} onChange={setCriterion1} />
+              <ScoreInput label="Critério 2" value={criterion2} onChange={setCriterion2} />
+              <ScoreInput label="Critério 3" value={criterion3} onChange={setCriterion3} />
+              <ScoreInput label="Critério 4" value={criterion4} onChange={setCriterion4} />
+              <ScoreInput label="Critério 5" value={criterion5} onChange={setCriterion5} />
             </div>
 
             <div className="mt-4 space-y-2">

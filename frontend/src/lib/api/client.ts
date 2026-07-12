@@ -2,6 +2,8 @@ import axios, { type AxiosError } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const BASE_URL = API_URL.includes('/api') ? `${API_URL}/v1` : `${API_URL}/api/v1`;
+
 export class ApiError extends Error {
   status: number;
   legacyErrors: Record<string, string> | null;
@@ -61,7 +63,7 @@ function parseErrorBody(body: unknown): {
 }
 
 export const apiClient = axios.create({
-  baseURL: `${API_URL}/v1`,
+  baseURL: BASE_URL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });

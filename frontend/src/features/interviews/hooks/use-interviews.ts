@@ -3,8 +3,6 @@ import { toast } from 'sonner';
 
 import { api } from '@/lib/api';
 
-import type { Concept } from '@/lib/api';
-
 export function useProfessorThemes(professorId: string) {
   return useQuery({
     queryKey: ['my-research-themes', professorId],
@@ -76,11 +74,11 @@ export function useCreateEvaluation(candidateId: string) {
 
   return useMutation({
     mutationFn: (data: {
-      decisionMaking: Concept;
-      problemAnalysis: Concept;
-      oralCommunication: Concept;
-      researchWork: Concept;
-      technicalKnowledge: Concept;
+      decisionMaking: number;
+      problemAnalysis: number;
+      oralCommunication: number;
+      researchWork: number;
+      technicalKnowledge: number;
       observations?: string;
     }) => api.interviews.createEvaluation(candidateId, data),
     onSuccess: () => {
@@ -99,11 +97,11 @@ export function useCreateProjectEvaluation(candidateId: string) {
 
   return useMutation({
     mutationFn: (data: {
-      criterion1: Concept;
-      criterion2: Concept;
-      criterion3: Concept;
-      criterion4: Concept;
-      criterion5: Concept;
+      criterion1: number;
+      criterion2: number;
+      criterion3: number;
+      criterion4: number;
+      criterion5: number;
       observations?: string;
     }) => api.interviews.createProjectEvaluation(candidateId, data),
     onSuccess: () => {
