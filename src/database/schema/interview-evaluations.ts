@@ -1,7 +1,5 @@
-import { pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { numeric, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { users } from './users';
-
-export const conceptEnum = pgEnum('evaluation_concept', ['FRACO', 'REGULAR', 'BOM', 'OTIMO']);
 
 export const interviewEvaluations = pgTable(
   'interview_evaluations',
@@ -14,11 +12,11 @@ export const interviewEvaluations = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
 
-    decisionMaking: conceptEnum('decision_making').notNull(),
-    problemAnalysis: conceptEnum('problem_analysis').notNull(),
-    oralCommunication: conceptEnum('oral_communication').notNull(),
-    researchWork: conceptEnum('research_work').notNull(),
-    technicalKnowledge: conceptEnum('technical_knowledge').notNull(),
+    decisionMaking: numeric('decision_making', { precision: 4, scale: 2 }).notNull(),
+    problemAnalysis: numeric('problem_analysis', { precision: 4, scale: 2 }).notNull(),
+    oralCommunication: numeric('oral_communication', { precision: 4, scale: 2 }).notNull(),
+    researchWork: numeric('research_work', { precision: 4, scale: 2 }).notNull(),
+    technicalKnowledge: numeric('technical_knowledge', { precision: 4, scale: 2 }).notNull(),
 
     observations: text('observations'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
